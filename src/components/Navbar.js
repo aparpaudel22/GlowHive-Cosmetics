@@ -4,7 +4,10 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Heart, ShoppingBag, User, Menu, X, ChevronDown } from 'lucide-react';
+import {
+  Search, Heart, ShoppingBag, User,
+  Menu, X, ChevronDown, Package,
+} from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 
 const navLinks = [
@@ -15,7 +18,7 @@ const navLinks = [
     label: 'Categories',
     href: '#',
     children: [
-      { label: 'Skincare',  href: '/products?category=skincare'  },
+      { label: 'Skincare',   href: '/products?category=skincare'  },
       { label: ' Makeup',    href: '/products?category=makeup'    },
       { label: ' Lip Care',  href: '/products?category=lip-care'  },
       { label: ' Eye Care',  href: '/products?category=eye-care'  },
@@ -31,8 +34,7 @@ function Logo() {
   return (
     <Link href="/" style={{ textDecoration: 'none' }}>
       <motion.div
-        whileHover={{ scale: 1.03 }}
-        whileTap={{ scale: 0.97 }}
+        whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
         transition={{ type: 'spring', stiffness: 380, damping: 22 }}
         style={{ display: 'flex', alignItems: 'center', gap: '11px' }}
       >
@@ -41,9 +43,8 @@ function Logo() {
             animate={{ opacity: [0.4, 0.9, 0.4], scale: [1, 1.08, 1] }}
             transition={{ duration: 2.8, repeat: Infinity, ease: 'easeInOut' }}
             style={{
-              position: 'absolute', inset: '-4px',
-              borderRadius: '16px',
-              background: 'linear-gradient(135deg, rgba(183,110,121,0.35), rgba(232,164,176,0.35))',
+              position: 'absolute', inset: '-4px', borderRadius: '16px',
+              background: 'linear-gradient(135deg,rgba(183,110,121,0.35),rgba(232,164,176,0.35))',
               filter: 'blur(6px)',
             }}
           />
@@ -51,58 +52,38 @@ function Logo() {
             animate={{ backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'] }}
             transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
             style={{
-              position: 'relative',
-              width: '42px', height: '42px',
-              borderRadius: '14px',
-              background: 'linear-gradient(135deg, #c2748a, #b76e79, #e8a4b0, #b76e79)',
+              position: 'relative', width: '42px', height: '42px', borderRadius: '14px',
+              background: 'linear-gradient(135deg,#c2748a,#b76e79,#e8a4b0,#b76e79)',
               backgroundSize: '200% 200%',
               display: 'flex', flexDirection: 'column',
               alignItems: 'center', justifyContent: 'center',
-              boxShadow: '0 4px 18px rgba(183,110,121,0.45), inset 0 1px 0 rgba(255,255,255,0.25)',
+              boxShadow: '0 4px 18px rgba(183,110,121,0.45),inset 0 1px 0 rgba(255,255,255,0.25)',
             }}
           >
             <motion.span
               animate={{ opacity: [0.6, 1, 0.6], y: [-1, 1, -1] }}
               transition={{ duration: 2, repeat: Infinity }}
-              style={{
-                position: 'absolute', top: '4px', right: '5px',
-                fontSize: '8px', color: 'rgba(255,255,255,0.9)',
-                lineHeight: 1,
-              }}
-            >
-              ✦
-            </motion.span>
+              style={{ position: 'absolute', top: '4px', right: '5px', fontSize: '8px', color: 'rgba(255,255,255,0.9)', lineHeight: 1 }}
+            >✦</motion.span>
             <span style={{
               fontSize: '22px', fontWeight: 900, color: '#fff',
               fontFamily: "'Playfair Display', Georgia, serif",
               lineHeight: 1, letterSpacing: '-1px',
               textShadow: '0 1px 4px rgba(0,0,0,0.15)',
-            }}>
-              G
-            </span>
+            }}>G</span>
           </motion.div>
         </div>
-
         <div>
-          <div style={{
-            fontSize: '20px', fontWeight: 800,
-            fontFamily: "'Playfair Display', Georgia, serif",
-            color: '#3d1f25', lineHeight: 1,
-            letterSpacing: '-0.3px',
-          }}>
+          <div style={{ fontSize: '20px', fontWeight: 800, fontFamily: "'Playfair Display', Georgia, serif", color: '#3d1f25', lineHeight: 1, letterSpacing: '-0.3px' }}>
             GlowHive
           </div>
           <div style={{
-            fontSize: '8.5px', fontWeight: 700,
-            letterSpacing: '2.5px', textTransform: 'uppercase',
-            background: 'linear-gradient(90deg, #b76e79, #c2748a)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            backgroundClip: 'text',
-            marginTop: '1px',
-          }}>
-            Beauty Essentials
-          </div>
+            fontSize: '8.5px', fontWeight: 700, letterSpacing: '2.5px',
+            textTransform: 'uppercase',
+            background: 'linear-gradient(90deg,#b76e79,#c2748a)',
+            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text', marginTop: '1px',
+          }}>Beauty Essentials</div>
         </div>
       </motion.div>
     </Link>
@@ -115,6 +96,8 @@ export default function Navbar() {
   const [searchOpen,  setSearchOpen]  = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [dropdown,    setDropdown]    = useState(false);
+  const [orders,      setOrders]      = useState([]);
+
   const { cartCount } = useCart();
   const pathname = usePathname();
 
@@ -126,11 +109,18 @@ export default function Navbar() {
 
   useEffect(() => { setMobileOpen(false); }, [pathname]);
 
+  // Load orders for badge count only
+  useEffect(() => {
+    try { setOrders(JSON.parse(localStorage.getItem('glowhive_orders') || '[]')); } catch (_) {}
+  }, []);
+
+  const activeOrders = orders.filter(o => o.status !== 'cancelled').length;
+
   return (
     <>
       {/* Announcement bar */}
       <div style={{
-        background: 'linear-gradient(90deg, #b76e79, #c2748a, #b76e79)',
+        background: 'linear-gradient(90deg,#b76e79,#c2748a,#b76e79)',
         color: '#fff', textAlign: 'center',
         fontSize: '12px', fontWeight: 600,
         letterSpacing: '1.5px', padding: '9px 16px',
@@ -160,8 +150,7 @@ export default function Navbar() {
           <Logo />
 
           {/* Desktop nav */}
-          <nav className="hidden md:flex"
-            style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+          <nav className="hidden md:flex" style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
             {navLinks.map((link) =>
               link.children ? (
                 <div key={link.label} style={{ position: 'relative' }}
@@ -232,9 +221,9 @@ export default function Navbar() {
 
           {/* Icons */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
-            {[
-              { el: searchOpen ? <X size={20} /> : <Search size={20} />, action: () => setSearchOpen(s => !s) },
-            ].map((btn, i) => (
+
+            {/* Search */}
+            {[{ el: searchOpen ? <X size={20} /> : <Search size={20} />, action: () => setSearchOpen(s => !s) }].map((btn, i) => (
               <motion.button key={i}
                 whileHover={{ background: '#fde8ec', scale: 1.08 }}
                 whileTap={{ scale: 0.88 }}
@@ -249,6 +238,7 @@ export default function Navbar() {
               </motion.button>
             ))}
 
+            {/* Wishlist + Account */}
             {[
               { icon: <Heart size={20} />, href: '/wishlist' },
               { icon: <User size={20} />,  href: '/account'  },
@@ -267,7 +257,38 @@ export default function Navbar() {
               </Link>
             ))}
 
-            {/* Cart with badge */}
+            {/* Orders — links directly to /orders page */}
+            <Link href="/orders" style={{ textDecoration: 'none' }}>
+              <motion.div
+                whileHover={{ background: '#fde8ec', scale: 1.08 }}
+                whileTap={{ scale: 0.88 }}
+                style={{
+                  padding: '9px', borderRadius: '50%', color: '#3d1f25',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  cursor: 'pointer', position: 'relative', transition: 'background 0.2s',
+                }}>
+                <Package size={20} />
+                <AnimatePresence>
+                  {activeOrders > 0 && (
+                    <motion.span
+                      key="obadge"
+                      initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
+                      style={{
+                        position: 'absolute', top: '2px', right: '2px',
+                        background: 'linear-gradient(135deg,#b76e79,#c2748a)',
+                        color: '#fff', fontSize: '10px', fontWeight: 700,
+                        width: '17px', height: '17px', borderRadius: '50%',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        border: '2px solid #fff8f5',
+                      }}>
+                      {activeOrders > 9 ? '9+' : activeOrders}
+                    </motion.span>
+                  )}
+                </AnimatePresence>
+              </motion.div>
+            </Link>
+
+            {/* Cart */}
             <Link href="/cart" style={{ textDecoration: 'none' }}>
               <motion.div
                 whileHover={{ background: '#fde8ec', scale: 1.08 }}
@@ -357,7 +378,6 @@ export default function Navbar() {
       <AnimatePresence>
         {mobileOpen && (
           <>
-            {/* ✅ FIX: zIndex raised above navbar (1000) */}
             <motion.div
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               onClick={() => setMobileOpen(false)}
@@ -377,56 +397,39 @@ export default function Navbar() {
                 boxShadow: '-12px 0 48px rgba(183,110,121,0.18)',
                 overflowY: 'auto',
               }}>
-              <div style={{
-                display: 'flex', alignItems: 'center',
-                justifyContent: 'space-between', marginBottom: '32px',
-              }}>
+
+              {/* Drawer header */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '32px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '9px' }}>
                   <div style={{
                     width: '34px', height: '34px', borderRadius: '11px',
-                    background: 'linear-gradient(135deg, #c2748a, #b76e79, #e8a4b0)',
+                    background: 'linear-gradient(135deg,#c2748a,#b76e79,#e8a4b0)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    boxShadow: '0 0 14px rgba(183,110,121,0.5)',
-                    position: 'relative',
+                    boxShadow: '0 0 14px rgba(183,110,121,0.5)', position: 'relative',
                   }}>
                     <span style={{ fontSize: '8px', position: 'absolute', top: '3px', right: '4px', color: 'rgba(255,255,255,0.85)' }}>✦</span>
-                    <span style={{
-                      fontSize: '18px', fontWeight: 900, color: '#fff',
-                      fontFamily: "'Playfair Display', Georgia, serif",
-                    }}>G</span>
+                    <span style={{ fontSize: '18px', fontWeight: 900, color: '#fff', fontFamily: "'Playfair Display', Georgia, serif" }}>G</span>
                   </div>
-                  <span style={{
-                    fontSize: '18px', fontWeight: 800, color: '#3d1f25',
-                    fontFamily: "'Playfair Display', Georgia, serif",
-                  }}>GlowHive</span>
+                  <span style={{ fontSize: '18px', fontWeight: 800, color: '#3d1f25', fontFamily: "'Playfair Display', Georgia, serif" }}>GlowHive</span>
                 </div>
-                <motion.button whileTap={{ scale: 0.88 }}
-                  onClick={() => setMobileOpen(false)}
-                  style={{
-                    background: '#fde8ec', border: 'none', borderRadius: '50%',
-                    width: '36px', height: '36px', cursor: 'pointer',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  }}>
+                <motion.button whileTap={{ scale: 0.88 }} onClick={() => setMobileOpen(false)}
+                  style={{ background: '#fde8ec', border: 'none', borderRadius: '50%', width: '36px', height: '36px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <X size={17} color="#b76e79" />
                 </motion.button>
               </div>
 
+              {/* Nav links */}
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '2px' }}>
                 {navLinks.map((link) =>
                   link.children ? (
                     <div key={link.label}>
-                      <p style={{
-                        fontSize: '10px', fontWeight: 700, color: '#b76e79',
-                        letterSpacing: '2px', textTransform: 'uppercase',
-                        margin: '16px 0 6px 12px',
-                      }}>{link.label}</p>
+                      <p style={{ fontSize: '10px', fontWeight: 700, color: '#b76e79', letterSpacing: '2px', textTransform: 'uppercase', margin: '16px 0 6px 12px' }}>
+                        {link.label}
+                      </p>
                       {link.children.map((child) => (
                         <Link key={child.href} href={child.href} style={{ textDecoration: 'none' }}>
                           <motion.div whileHover={{ x: 4, background: '#fdf0f3' }}
-                            style={{
-                              padding: '10px 14px', borderRadius: '10px',
-                              fontSize: '14px', color: '#3d1f25', fontWeight: 500,
-                            }}>
+                            style={{ padding: '10px 14px', borderRadius: '10px', fontSize: '14px', color: '#3d1f25', fontWeight: 500 }}>
                             {child.label}
                           </motion.div>
                         </Link>
@@ -448,23 +451,36 @@ export default function Navbar() {
                 )}
               </div>
 
+              {/* Bottom links */}
               <div style={{ borderTop: '1px solid #fde8ec', paddingTop: '16px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
                 {[
-                  { icon: <User size={17} color="#b76e79" />,  label: 'My Account', href: '/account' },
-                  { icon: <Heart size={17} color="#b76e79" />, label: 'Wishlist',    href: '/wishlist' },
+                  { icon: <User size={17} color="#b76e79" />,  label: 'My Account', href: '/account'  },
+                  { icon: <Heart size={17} color="#b76e79" />, label: 'Wishlist',   href: '/wishlist' },
                 ].map(item => (
                   <Link key={item.href} href={item.href} style={{ textDecoration: 'none' }}>
                     <motion.div whileHover={{ x: 4, background: '#fdf0f3' }}
-                      style={{
-                        display: 'flex', alignItems: 'center', gap: '12px',
-                        padding: '12px 14px', borderRadius: '10px',
-                        fontSize: '15px', color: '#3d1f25', fontWeight: 500,
-                      }}>
+                      style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 14px', borderRadius: '10px', fontSize: '15px', color: '#3d1f25', fontWeight: 500 }}>
                       {item.icon} {item.label}
                     </motion.div>
                   </Link>
                 ))}
+
+                {/* My Orders — goes to /orders page */}
+                <Link href="/orders" style={{ textDecoration: 'none' }} onClick={() => setMobileOpen(false)}>
+                  <motion.div whileHover={{ x: 4, background: '#fdf0f3' }}
+                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', borderRadius: '10px', fontSize: '15px', color: '#3d1f25', fontWeight: 500, cursor: 'pointer' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <Package size={17} color="#b76e79" /> My Orders
+                    </div>
+                    {activeOrders > 0 && (
+                      <span style={{ background: '#b76e79', color: '#fff', fontSize: '11px', fontWeight: 700, padding: '2px 8px', borderRadius: '50px' }}>
+                        {activeOrders}
+                      </span>
+                    )}
+                  </motion.div>
+                </Link>
               </div>
+
             </motion.div>
           </>
         )}

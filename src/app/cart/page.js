@@ -45,9 +45,9 @@ export default function CartPage() {
             Your cart is empty
           </h2>
           <p style={{ color: '#9ca3af', marginBottom: '28px', fontSize: '15px' }}>
-            Looks like you haven't added anything yet.
+            Looks like you haven't added anything yet.<br></br>Browse our collection and find something you'll love!
           </p>
-          <Link href="/Products" style={{
+          <Link href="/products" style={{
             background: '#b76e79', color: '#fff',
             padding: '14px 32px', borderRadius: '12px',
             textDecoration: 'none', fontWeight: 700, fontSize: '15px',
