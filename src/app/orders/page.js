@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Package, ChevronRight, XCircle, CheckCircle, Truck, AlertCircle, Sparkles } from 'lucide-react';
+import Footer from '@/components/Footer';
 const TRACKING_STEPS = [
   { key: 'placed',    label: 'Placed',    icon: '🛍️' },
   { key: 'picked',    label: 'Picked',    icon: '📦' },
@@ -88,6 +89,7 @@ export default function OrdersPage() {
   const filtered = filterStatus === 'all' ? orders : orders.filter(o => o.status === filterStatus);
 
   return (
+    <>
     <div style={{ minHeight: '100vh', background: '#fdf6f0', paddingBottom: '60px' }}>
 
             {/* Hero */}
@@ -605,5 +607,7 @@ export default function OrdersPage() {
       </AnimatePresence>
 
     </div>
+    <Footer />
+    </>
   );
 }
