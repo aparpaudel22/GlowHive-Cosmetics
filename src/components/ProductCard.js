@@ -5,11 +5,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ShoppingCart, Heart, Star } from 'lucide-react';
 import { useState } from 'react';
 import { useCart } from '@/context/CartContext';
+import { useWishlist } from '@/context/WishlistContext';
 import toast from 'react-hot-toast';
 
 export default function ProductCard({ product, index = 0 }) {
   const { addToCart } = useCart();
-  const [wishlisted, setWishlisted] = useState(false);
+  const { isWishlisted, toggleWishlist } = useWishlist();
+  const wishlisted = isWishlisted(product.id);
   const [adding, setAdding] = useState(false);
 
   const handleAddToCart = (e) => {
@@ -22,7 +24,7 @@ export default function ProductCard({ product, index = 0 }) {
 
   const handleWishlist = (e) => {
     e.preventDefault();
-    setWishlisted(w => !w);
+    toggleWishlist(product.id);
     toast(wishlisted ? 'Removed from wishlist' : 'Added to wishlist 💗');
   };
 
