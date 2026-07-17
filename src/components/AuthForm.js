@@ -1,26 +1,27 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
 import { jwtDecode } from 'jwt-decode';
-import { Lock, Mail, User as UserIcon, Gem } from 'lucide-react';
+import { Lock, Mail, User as UserIcon, Gem, Eye, EyeOff, X, KeyRound, Phone, Camera } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '@/context/AuthContext';
+import Image from 'next/image';
 
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 
 const inputStyle = {
-  width: '100%',
-  padding: '13px 16px',
-  borderRadius: '14px',
-  border: '1.5px solid #fde8ec',
-  background: '#fdf6f0',
-  fontSize: '14px',
-  color: '#3d1f25',
-  outline: 'none',
+  width: '100%', padding: '13px 16px', borderRadius: '14px',
+  border: '1.5px solid #fde8ec', background: '#fdf6f0',
+  fontSize: '14px', color: '#3d1f25', outline: 'none', boxSizing: 'border-box',
 };
 
-function Field({ icon: Icon, label, action, ...inputProps }) {
+/* ─── Field component — eye-toggle built-in for password fields ─── */
+function Field({ icon: Icon, label, action, type = 'text', ...inputProps }) {
+  const [showPw, setShowPw] = useState(false);
+  const isPassword = type === 'password';
+  const actualType = isPassword ? (showPw ? 'text' : 'password') : type;
+
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
@@ -30,22 +31,197 @@ function Field({ icon: Icon, label, action, ...inputProps }) {
       <div style={{ position: 'relative' }}>
         <input
           {...inputProps}
-          style={inputStyle}
-          onFocus={(e) => (e.currentTarget.style.borderColor = '#b76e79')}
-          onBlur={(e) => (e.currentTarget.style.borderColor = '#fde8ec')}
+          type={actualType}
+          style={{ ...inputStyle, paddingRight: '42px' }}
+          onFocus={e => (e.currentTarget.style.borderColor = '#b76e79')}
+          onBlur={e  => (e.currentTarget.style.borderColor = '#fde8ec')}
         />
-        {Icon && (
-          <Icon
-            size={16}
-            color="#c9a3a9"
-            style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)' }}
-          />
-        )}
+        {/* Eye toggle for password fields, static icon for others */}
+        {isPassword ? (
+          <button
+            type="button"
+            onClick={() => setShowPw(v => !v)}
+            tabIndex={-1}
+            style={{
+              position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)',
+              background: 'none', border: 'none', cursor: 'pointer', padding: '2px',
+              display: 'flex', alignItems: 'center', color: '#c9a3a9',
+            }}
+          >
+            {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
+          </button>
+        ) : Icon ? (
+          <Icon size={16} color="#c9a3a9"
+            style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)' }} />
+        ) : null}
       </div>
     </div>
   );
 }
 
+/* ─── Forgot-password modal ─── */
+function ForgotPasswordModal({ onClose }) {
+  const [step,    setStep]    = useState(1); // 1=email, 2=reset, 3=done
+  const [email,   setEmail]   = useState('');
+  const [newPw,   setNewPw]   = useState('');
+  const [confirm, setConfirm] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const findAccount = (e) => {
+    e.preventDefault();
+    if (!email.trim()) { toast.error('Enter your email address.'); return; }
+    setLoading(true);
+    setTimeout(() => {
+      const users = JSON.parse(localStorage.getItem('glowhive_users') || '[]');
+      const found = users.find(u => u.email.toLowerCase() === email.trim().toLowerCase());
+      setLoading(false);
+      if (!found) {
+        toast.error('No account found for that email.');
+        return;
+      }
+      setEmail(found.email); // normalise case
+      setStep(2);
+    }, 600);
+  };
+
+  const resetPassword = (e) => {
+    e.preventDefault();
+    if (newPw.length < 6)       { toast.error('Password must be at least 6 characters.');  return; }
+    if (newPw !== confirm)       { toast.error('Passwords do not match.');                   return; }
+    setLoading(true);
+    setTimeout(() => {
+      const users   = JSON.parse(localStorage.getItem('glowhive_users') || '[]');
+      const updated = users.map(u => u.email === email ? { ...u, password: newPw } : u);
+      localStorage.setItem('glowhive_users', JSON.stringify(updated));
+      setLoading(false);
+      setStep(3);
+    }, 600);
+  };
+
+  return (
+    <>
+      {/* backdrop */}
+      <div
+        onClick={onClose}
+        style={{ position: 'fixed', inset: 0, background: 'rgba(61,31,37,0.5)', backdropFilter: 'blur(6px)', zIndex: 9000 }}
+      />
+      {/* panel */}
+      <div style={{
+        position: 'fixed', inset: 0, zIndex: 9001,
+        display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px',
+      }}>
+        <div style={{
+          background: '#fff', borderRadius: '24px', padding: '32px',
+          width: 'min(420px, 96vw)', boxShadow: '0 32px 80px rgba(61,31,37,0.24)',
+          position: 'relative',
+        }}>
+          {/* close */}
+          <button onClick={onClose} style={{
+            position: 'absolute', top: '16px', right: '16px',
+            background: '#fdf6f0', border: 'none', borderRadius: '50%',
+            width: '34px', height: '34px', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <X size={15} color="#8c6468" />
+          </button>
+
+          {/* icon */}
+          <div style={{
+            width: '56px', height: '56px', borderRadius: '50%', background: '#fde8ec',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px',
+          }}>
+            <KeyRound size={24} color="#b76e79" />
+          </div>
+
+          {/* Step 1 — find account */}
+          {step === 1 && (
+            <form onSubmit={findAccount} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+              <div>
+                <h2 style={{ fontSize: '18px', fontWeight: 800, color: '#3d1f25', fontFamily: "'Playfair Display', Georgia, serif", marginBottom: '6px' }}>
+                  Forgot Password?
+                </h2>
+                <p style={{ fontSize: '13px', color: '#8c6468', lineHeight: 1.6, margin: 0 }}>
+                  Enter your registered email and we'll let you set a new password.
+                </p>
+              </div>
+              <Field
+                icon={Mail} label="Registered Email" type="email"
+                placeholder="your@email.com"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                required
+              />
+              <button type="submit" disabled={loading} style={{
+                background: 'linear-gradient(135deg,#b76e79,#c2748a)', color: '#fff',
+                border: 'none', borderRadius: '14px', padding: '14px',
+                fontSize: '14px', fontWeight: 700, cursor: 'pointer', opacity: loading ? 0.7 : 1,
+              }}>
+                {loading ? 'Looking up account…' : 'Continue →'}
+              </button>
+            </form>
+          )}
+
+          {/* Step 2 — set new password */}
+          {step === 2 && (
+            <form onSubmit={resetPassword} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+              <div>
+                <h2 style={{ fontSize: '18px', fontWeight: 800, color: '#3d1f25', fontFamily: "'Playfair Display', Georgia, serif", marginBottom: '6px' }}>
+                  Set New Password
+                </h2>
+                <p style={{ fontSize: '13px', color: '#8c6468', lineHeight: 1.6, margin: 0 }}>
+                  Account: <strong style={{ color: '#3d1f25' }}>{email}</strong>
+                </p>
+              </div>
+              <Field
+                label="New Password" type="password"
+                placeholder="At least 6 characters"
+                value={newPw}
+                onChange={e => setNewPw(e.target.value)}
+                required
+              />
+              <Field
+                label="Confirm New Password" type="password"
+                placeholder="••••••••••"
+                value={confirm}
+                onChange={e => setConfirm(e.target.value)}
+                required
+              />
+              <button type="submit" disabled={loading} style={{
+                background: 'linear-gradient(135deg,#b76e79,#c2748a)', color: '#fff',
+                border: 'none', borderRadius: '14px', padding: '14px',
+                fontSize: '14px', fontWeight: 700, cursor: 'pointer', opacity: loading ? 0.7 : 1,
+              }}>
+                {loading ? 'Saving…' : 'Reset Password →'}
+              </button>
+            </form>
+          )}
+
+          {/* Step 3 — done */}
+          {step === 3 && (
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '48px', marginBottom: '14px' }}>🎉</div>
+              <h2 style={{ fontSize: '18px', fontWeight: 800, color: '#3d1f25', fontFamily: "'Playfair Display', Georgia, serif", marginBottom: '8px' }}>
+                Password Reset!
+              </h2>
+              <p style={{ fontSize: '13px', color: '#8c6468', lineHeight: 1.6, marginBottom: '22px' }}>
+                Your password has been updated. You can now sign in with your new password.
+              </p>
+              <button onClick={onClose} style={{
+                background: 'linear-gradient(135deg,#3d1f25,#5a3a40)', color: '#fff',
+                border: 'none', borderRadius: '14px', padding: '13px 28px',
+                fontSize: '14px', fontWeight: 700, cursor: 'pointer', width: '100%',
+              }}>
+                Back to Sign In
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </>
+  );
+}
+
+/* ─── Google button (unchanged) ─── */
 function GoogleButton() {
   const { loginWithGoogle } = useAuth();
   const [demoLoading, setDemoLoading] = useState(false);
@@ -53,32 +229,20 @@ function GoogleButton() {
   const handleDemoGoogle = () => {
     setDemoLoading(true);
     setTimeout(() => {
-      loginWithGoogle({
-        name: 'Demo Google User',
-        email: 'demo.user@gmail.com',
-        picture: null,
-      });
-      toast.success('Signed in with Google (demo) ✨');
+      loginWithGoogle({ name: 'Demo Google User', email: 'demo.user@gmail.com', picture: null });
+      toast.success('Signed in with Google ✨');
       setDemoLoading(false);
     }, 900);
   };
 
   if (!GOOGLE_CLIENT_ID) {
-    // No Client ID configured yet — falls back to a labeled demo flow
-    // instead of crashing. Add NEXT_PUBLIC_GOOGLE_CLIENT_ID to .env.local
-    // (from Google Cloud Console → APIs & Services → Credentials) to
-    // enable real Google Sign-In.
     return (
-      <button
-        onClick={handleDemoGoogle}
-        disabled={demoLoading}
-        style={{
-          width: '100%', border: '1.5px solid #fde8ec', background: '#fff',
-          padding: '13px', borderRadius: '14px', fontSize: '14px', fontWeight: 600,
-          color: '#3d1f25', cursor: 'pointer', display: 'flex', alignItems: 'center',
-          justifyContent: 'center', gap: '10px', opacity: demoLoading ? 0.7 : 1,
-        }}
-      >
+      <button onClick={handleDemoGoogle} disabled={demoLoading} style={{
+        width: '100%', border: '1.5px solid #fde8ec', background: '#fff',
+        padding: '13px', borderRadius: '14px', fontSize: '14px', fontWeight: 600,
+        color: '#3d1f25', cursor: 'pointer', display: 'flex', alignItems: 'center',
+        justifyContent: 'center', gap: '10px', opacity: demoLoading ? 0.7 : 1,
+      }}>
         <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" alt="" width={18} height={18} />
         {demoLoading ? 'Signing in…' : 'Continue with Google'}
       </button>
@@ -89,16 +253,11 @@ function GoogleButton() {
     <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
       <div style={{ display: 'flex', justifyContent: 'center' }}>
         <GoogleLogin
-          width="100%"
-          shape="pill"
+          width="100%" shape="pill"
           onSuccess={(credentialResponse) => {
             try {
               const profile = jwtDecode(credentialResponse.credential);
-              loginWithGoogle({
-                name: profile.name,
-                email: profile.email,
-                picture: profile.picture,
-              });
+              loginWithGoogle({ name: profile.name, email: profile.email, picture: profile.picture });
               toast.success(`Welcome, ${profile.given_name || profile.name}! 💗`);
             } catch {
               toast.error('Could not read your Google profile.');
@@ -111,13 +270,50 @@ function GoogleButton() {
   );
 }
 
-export default function AuthForm() {
+/* ─── Main AuthForm ─── */
+export default function AuthForm({ redirectMessage }) {
   const { login, register } = useAuth();
-  const [tab, setTab] = useState('login');
-  const [loading, setLoading] = useState(false);
-  const [loginData, setLoginData] = useState({ email: '', password: '' });
-  const [regData, setRegData] = useState({ name: '', email: '', password: '', confirm: '', agree: false });
+  const fileRef = useRef(null);
 
+  const [tab,           setTab]           = useState('login');
+  const [loading,       setLoading]       = useState(false);
+  const [showForgot,    setShowForgot]    = useState(false);
+  const [loginData,     setLoginData]     = useState({ email: '', password: '' });
+  const [regData,       setRegData]       = useState({ 
+    name: '', 
+    email: '', 
+    password: '', 
+    confirm: '', 
+    agree: false,
+    phone: '',
+    avatar: null // base64 string
+  });
+  const [avatarPreview, setAvatarPreview] = useState(null);
+
+  // ── Handle avatar upload ──
+  const handleAvatarChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 3 * 1024 * 1024) {
+      toast.error('Photo must be under 3 MB.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const b64 = ev.target.result;
+      setRegData(d => ({ ...d, avatar: b64 }));
+      setAvatarPreview(b64);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const removeAvatar = () => {
+    setRegData(d => ({ ...d, avatar: null }));
+    setAvatarPreview(null);
+    if (fileRef.current) fileRef.current.value = '';
+  };
+
+  /* ── Login: pass individual args (was the root bug) ── */
   const handleLogin = async (e) => {
     e.preventDefault();
     if (!loginData.email || !loginData.password) {
@@ -125,12 +321,22 @@ export default function AuthForm() {
       return;
     }
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 700));
-    await login(loginData);
-    toast.success('Signed in successfully 🎉');
+    const result = await login(loginData.email, loginData.password);
     setLoading(false);
+    if (!result.error) {
+      toast.success('Signed in successfully 🎉');
+    } else if (result.error === 'NO_ACCOUNT') {
+      toast.error('No account found. Please register first!');
+      setTab('register');
+      setRegData(d => ({ ...d, email: loginData.email }));
+    } else if (result.error === 'WRONG_PASSWORD') {
+      toast.error('Incorrect password. Try again or reset it.');
+    } else {
+      toast.error('Sign in failed. Please try again.');
+    }
   };
 
+  /* ── Register: pass individual args with phone and avatar ── */
   const handleRegister = async (e) => {
     e.preventDefault();
     if (!regData.name || !regData.email || !regData.password) {
@@ -141,154 +347,273 @@ export default function AuthForm() {
       toast.error('Passwords do not match.');
       return;
     }
+    if (regData.password.length < 6) {
+      toast.error('Password must be at least 6 characters.');
+      return;
+    }
+    if (!regData.phone || regData.phone.replace(/\D/g, '').length < 10) {
+      toast.error('Please enter a valid 10-digit phone number.');
+      return;
+    }
+    if (!regData.avatar) {
+      toast.error('Please upload a profile photo.');
+      return;
+    }
     if (!regData.agree) {
       toast.error('Please agree to the Terms & Conditions.');
       return;
     }
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 900));
-    await register(regData);
-    toast.success('Account created — welcome to GlowHive ✨');
+    const result = await register(regData.name, regData.email, regData.password, regData.phone, regData.avatar);
     setLoading(false);
+    if (!result.error) {
+      toast.success('Account created — welcome to GlowHive ✨');
+    } else if (result.error === 'ALREADY_EXISTS') {
+      toast.error('Email already registered. Please sign in.');
+      setTab('login');
+      setLoginData(d => ({ ...d, email: regData.email }));
+    } else if (result.error === 'INVALID_PHONE') {
+      toast.error('Invalid phone number. Please check and try again.');
+    } else {
+      toast.error('Registration failed. Please try again.');
+    }
   };
 
   return (
-    <div style={{
-      minHeight: '100vh', background: 'linear-gradient(135deg, #fdf0f3, #fff8f5 45%, #fdf6f0)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 20px',
-    }}>
-      <div style={{ maxWidth: '440px', width: '100%' }}>
-        <div style={{
-          background: '#fff', borderRadius: '24px', overflow: 'hidden',
-          border: '1px solid #fde8ec', boxShadow: '0 30px 60px rgba(183,110,121,0.14)',
-        }}>
-          {/* Tabs */}
-          <div style={{ display: 'flex', borderBottom: '1px solid #fde8ec' }}>
-            {['login', 'register'].map((t) => (
-              <button
-                key={t}
-                onClick={() => setTab(t)}
-                style={{
+    <>
+      {showForgot && <ForgotPasswordModal onClose={() => setShowForgot(false)} />}
+
+      <div style={{
+        minHeight: '100vh', background: 'linear-gradient(135deg,#fdf0f3,#fff8f5 45%,#fdf6f0)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 20px',
+      }}>
+        <div style={{ maxWidth: '440px', width: '100%' }}>
+
+          {redirectMessage && (
+            <div style={{
+              background: '#fef9ec', border: '1px solid #fde68a', borderRadius: '14px',
+              padding: '12px 16px', marginBottom: '16px', fontSize: '13px',
+              color: '#92400e', fontWeight: 600, textAlign: 'center',
+            }}>
+              🔒 {redirectMessage}
+            </div>
+          )}
+
+          <div style={{ background: '#fff', borderRadius: '24px', overflow: 'hidden', border: '1px solid #fde8ec', boxShadow: '0 30px 60px rgba(183,110,121,0.14)' }}>
+
+            {/* Tabs */}
+            <div style={{ display: 'flex', borderBottom: '1px solid #fde8ec' }}>
+              {['login', 'register'].map(t => (
+                <button key={t} onClick={() => setTab(t)} style={{
                   flex: 1, padding: '18px', fontSize: '13px', fontWeight: 700,
                   letterSpacing: '0.5px', textTransform: 'uppercase', cursor: 'pointer',
                   border: 'none', background: tab === t ? '#fff' : '#fdf6f0',
                   color: tab === t ? '#3d1f25' : '#9ca3af',
                   borderBottom: tab === t ? '3px solid #b76e79' : '3px solid transparent',
-                }}
-              >
-                {t === 'login' ? 'Login' : 'Register'}
-              </button>
-            ))}
-          </div>
-
-          <div style={{ padding: '32px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '26px' }}>
-              <div style={{
-                width: '44px', height: '44px', borderRadius: '50%', background: '#fde8ec',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-              }}>
-                <Gem size={20} color="#b76e79" />
-              </div>
-              <div>
-                <p style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: '20px', fontWeight: 700, color: '#3d1f25' }}>
-                  GlowHive
-                </p>
-                <p style={{ fontSize: '13px', color: '#8c6468' }}>
-                  {tab === 'login' ? 'Welcome back! Sign in to continue.' : 'Join GlowHive for exclusive offers.'}
-                </p>
-              </div>
+                }}>
+                  {t === 'login' ? 'Login' : 'Register'}
+                </button>
+              ))}
             </div>
 
-            {tab === 'login' ? (
-              <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
-                <Field
-                  icon={Mail} label="Email Address" type="email" placeholder="your@email.com"
-                  value={loginData.email}
-                  onChange={(e) => setLoginData((d) => ({ ...d, email: e.target.value }))}
-                />
-                <Field
-                  icon={Lock} label="Password" type="password" placeholder="••••••••••"
-                  value={loginData.password}
-                  onChange={(e) => setLoginData((d) => ({ ...d, password: e.target.value }))}
-                  action={<span style={{ fontSize: '12px', color: '#b76e79', cursor: 'pointer', fontWeight: 600 }}>Forgot password?</span>}
-                />
-                <button type="submit" disabled={loading} style={{
-                  background: '#3d1f25', color: '#fff', border: 'none', borderRadius: '14px',
-                  padding: '14px', fontSize: '14px', fontWeight: 700, cursor: 'pointer',
-                  opacity: loading ? 0.75 : 1,
+            <div style={{ padding: '32px' }}>
+              {/* ─── Logo Section ─── */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '26px' }}>
+                <div style={{ 
+                  width: '44px', 
+                  height: '44px', 
+                  borderRadius: '50%', 
+                  background: '#fde8ec', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center', 
+                  flexShrink: 0,
+                  overflow: 'hidden',
                 }}>
-                  {loading ? 'Signing in…' : 'Sign In →'}
-                </button>
-
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', margin: '4px 0' }}>
-                  <div style={{ flex: 1, height: '1px', background: '#fde8ec' }} />
-                  <span style={{ fontSize: '11px', color: '#c9a3a9', fontWeight: 600 }}>OR</span>
-                  <div style={{ flex: 1, height: '1px', background: '#fde8ec' }} />
-                </div>
-
-                <GoogleButton />
-
-                <p style={{ textAlign: 'center', fontSize: '13px', color: '#8c6468', marginTop: '6px' }}>
-                  Don&apos;t have an account?{' '}
-                  <span onClick={() => setTab('register')} style={{ color: '#b76e79', fontWeight: 700, cursor: 'pointer' }}>
-                    Sign up →
-                  </span>
-                </p>
-              </form>
-            ) : (
-              <form onSubmit={handleRegister} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
-                <Field
-                  icon={UserIcon} label="Full Name" type="text" placeholder="Your full name"
-                  value={regData.name}
-                  onChange={(e) => setRegData((d) => ({ ...d, name: e.target.value }))}
-                />
-                <Field
-                  icon={Mail} label="Email Address" type="email" placeholder="your@email.com"
-                  value={regData.email}
-                  onChange={(e) => setRegData((d) => ({ ...d, email: e.target.value }))}
-                />
-                <Field
-                  icon={Lock} label="Password" type="password" placeholder="Create a strong password"
-                  value={regData.password}
-                  onChange={(e) => setRegData((d) => ({ ...d, password: e.target.value }))}
-                />
-                <Field
-                  icon={Lock} label="Confirm Password" type="password" placeholder="••••••••••"
-                  value={regData.confirm}
-                  onChange={(e) => setRegData((d) => ({ ...d, confirm: e.target.value }))}
-                />
-                <label style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '13px', color: '#8c6468', cursor: 'pointer' }}>
-                  <input
-                    type="checkbox"
-                    checked={regData.agree}
-                    onChange={(e) => setRegData((d) => ({ ...d, agree: e.target.checked }))}
-                    style={{ width: '16px', height: '16px', accentColor: '#b76e79' }}
+                  {/* Logo Image - Replace the src with your actual logo path */}
+                  <img 
+                    src="/Logo-full.png" 
+                    alt="GlowHive Logo" 
+                    style={{ 
+                      width: '100%', 
+                      height: '100%', 
+                      objectFit: 'cover',
+                    }}
+                    onError={(e) => {
+                      // Fallback to diamond icon if image fails to load
+                      e.target.style.display = 'none';
+                      e.target.parentElement.innerHTML = '<Gem size={20} color="#b76e79" />';
+                    }}
                   />
-                  I agree to <span style={{ color: '#b76e79', fontWeight: 600 }}>Terms &amp; Conditions</span>
-                </label>
-                <button type="submit" disabled={loading} style={{
-                  background: '#b76e79', color: '#fff', border: 'none', borderRadius: '14px',
-                  padding: '14px', fontSize: '14px', fontWeight: 700, cursor: 'pointer',
-                  opacity: loading ? 0.75 : 1,
-                }}>
-                  {loading ? 'Creating account…' : 'Create Account'}
-                </button>
+                </div>
+                <div>
+                  <p style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: '20px', fontWeight: 700, color: '#3d1f25', margin: 0 }}>GlowHive</p>
+                  <p style={{ fontSize: '13px', color: '#8c6468', margin: 0 }}>
+                    {tab === 'login' ? 'Welcome back! Sign in to continue.' : 'Join GlowHive for exclusive offers.'}
+                  </p>
+                </div>
+              </div>
 
-                <p style={{ textAlign: 'center', fontSize: '13px', color: '#8c6468' }}>
-                  Already have an account?{' '}
-                  <span onClick={() => setTab('login')} style={{ color: '#b76e79', fontWeight: 700, cursor: 'pointer' }}>
-                    Sign in →
-                  </span>
-                </p>
-              </form>
-            )}
+              {tab === 'login' ? (
+                <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+                  <Field
+                    icon={Mail} label="Email Address" type="email" placeholder="your@email.com"
+                    value={loginData.email}
+                    onChange={e => setLoginData(d => ({ ...d, email: e.target.value }))}
+                  />
+                  <Field
+                    label="Password" type="password" placeholder="••••••••••"
+                    value={loginData.password}
+                    onChange={e => setLoginData(d => ({ ...d, password: e.target.value }))}
+                    action={
+                      <span
+                        onClick={() => setShowForgot(true)}
+                        style={{ fontSize: '12px', color: '#b76e79', cursor: 'pointer', fontWeight: 600 }}
+                      >
+                        Forgot password?
+                      </span>
+                    }
+                  />
+                  <button type="submit" disabled={loading} style={{
+                    background: '#3d1f25', color: '#fff', border: 'none', borderRadius: '14px',
+                    padding: '14px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', opacity: loading ? 0.75 : 1,
+                  }}>
+                    {loading ? 'Signing in…' : 'Sign In →'}
+                  </button>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', margin: '4px 0' }}>
+                    <div style={{ flex: 1, height: '1px', background: '#fde8ec' }} />
+                    <span style={{ fontSize: '11px', color: '#c9a3a9', fontWeight: 600 }}>OR</span>
+                    <div style={{ flex: 1, height: '1px', background: '#fde8ec' }} />
+                  </div>
+                  <GoogleButton />
+                  <p style={{ textAlign: 'center', fontSize: '13px', color: '#8c6468', marginTop: '6px', margin: 0 }}>
+                    Don&apos;t have an account?{' '}
+                    <span onClick={() => setTab('register')} style={{ color: '#b76e79', fontWeight: 700, cursor: 'pointer' }}>Sign up →</span>
+                  </p>
+                </form>
+              ) : (
+                <form onSubmit={handleRegister} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+                  {/* Profile Photo Upload - NEW */}
+                  <div>
+                    <label style={{ fontSize: '13px', fontWeight: 600, color: '#3d1f25', display: 'block', marginBottom: '6px' }}>
+                      Profile Photo *
+                    </label>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                      {/* Avatar Preview Circle */}
+                      <div style={{
+                        width: '64px', height: '64px', borderRadius: '50%',
+                        background: avatarPreview ? 'transparent' : '#fdf6f0',
+                        border: '2px dashed #fde8ec',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        overflow: 'hidden', position: 'relative', flexShrink: 0,
+                      }}>
+                        {avatarPreview ? (
+                          <>
+                            <img src={avatarPreview} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            <button
+                              type="button"
+                              onClick={removeAvatar}
+                              style={{
+                                position: 'absolute', top: '-2px', right: '-2px',
+                                background: '#b76e79', border: '2px solid #fff',
+                                borderRadius: '50%', width: '20px', height: '20px',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                cursor: 'pointer', color: '#fff', padding: 0,
+                              }}
+                            >
+                              <X size={12} />
+                            </button>
+                          </>
+                        ) : (
+                          <UserIcon size={24} color="#c9a3a9" />
+                        )}
+                      </div>
+
+                      {/* Upload Button */}
+                      <div style={{ flex: 1 }}>
+                        <input
+                          ref={fileRef}
+                          type="file"
+                          accept="image/*"
+                          style={{ display: 'none' }}
+                          onChange={handleAvatarChange}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => fileRef.current?.click()}
+                          style={{
+                            padding: '10px 16px', background: '#fdf6f0',
+                            border: '1.5px solid #fde8ec', borderRadius: '10px',
+                            cursor: 'pointer', fontSize: '13px', fontWeight: 600,
+                            color: '#b76e79', display: 'flex', alignItems: 'center',
+                            gap: '8px', width: '100%', justifyContent: 'center',
+                            transition: 'all 0.2s',
+                          }}
+                        >
+                          <Camera size={16} />
+                          {avatarPreview ? 'Change Photo' : 'Upload Photo'}
+                        </button>
+                        <p style={{ fontSize: '10px', color: '#c9a3a9', marginTop: '4px' }}>
+                          Max 3MB • JPG, PNG, GIF
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <Field
+                    icon={UserIcon} label="Full Name" type="text" placeholder="Your full name"
+                    value={regData.name}
+                    onChange={e => setRegData(d => ({ ...d, name: e.target.value }))}
+                  />
+                  <Field
+                    icon={Mail} label="Email Address" type="email" placeholder="your@email.com"
+                    value={regData.email}
+                    onChange={e => setRegData(d => ({ ...d, email: e.target.value }))}
+                  />
+                  
+                  {/* Phone Number - NEW */}
+                  <Field
+                    icon={Phone} label="Phone Number *" type="tel" placeholder="98XXXXXXXX"
+                    value={regData.phone}
+                    onChange={e => setRegData(d => ({ ...d, phone: e.target.value }))}
+                  />
+                  
+                  <Field
+                    label="Password" type="password" placeholder="Create a strong password"
+                    value={regData.password}
+                    onChange={e => setRegData(d => ({ ...d, password: e.target.value }))}
+                  />
+                  <Field
+                    label="Confirm Password" type="password" placeholder="••••••••••"
+                    value={regData.confirm}
+                    onChange={e => setRegData(d => ({ ...d, confirm: e.target.value }))}
+                  />
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '13px', color: '#8c6468', cursor: 'pointer' }}>
+                    <input type="checkbox" checked={regData.agree}
+                      onChange={e => setRegData(d => ({ ...d, agree: e.target.checked }))}
+                      style={{ width: '16px', height: '16px', accentColor: '#b76e79' }} />
+                    I agree to <span style={{ color: '#b76e79', fontWeight: 600 }}>Terms &amp; Conditions</span>
+                  </label>
+                  <button type="submit" disabled={loading} style={{
+                    background: '#b76e79', color: '#fff', border: 'none', borderRadius: '14px',
+                    padding: '14px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', opacity: loading ? 0.75 : 1,
+                  }}>
+                    {loading ? 'Creating account…' : 'Create Account'}
+                  </button>
+                  <p style={{ textAlign: 'center', fontSize: '13px', color: '#8c6468', margin: 0 }}>
+                    Already have an account?{' '}
+                    <span onClick={() => setTab('login')} style={{ color: '#b76e79', fontWeight: 700, cursor: 'pointer' }}>Sign in →</span>
+                  </p>
+                </form>
+              )}
+            </div>
           </div>
-        </div>
 
-        <p style={{ textAlign: 'center', fontSize: '12px', color: '#c9a3a9', marginTop: '24px' }}>
-          © 2026 GlowHive • Premium Skincare &amp; Makeup
-        </p>
+          <p style={{ textAlign: 'center', fontSize: '12px', color: '#c9a3a9', marginTop: '24px' }}>
+            © 2026 GlowHive • Made with ❤️ for your GLOW.
+          </p>
+        </div>
       </div>
-    </div>
+    </>
   );
 }

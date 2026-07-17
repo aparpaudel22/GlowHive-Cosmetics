@@ -1,8 +1,8 @@
 'use client';
 
+import { AuthProvider } from '@/context/AuthContext';
 import { CartProvider } from '@/context/CartContext';
 import { WishlistProvider } from '@/context/WishlistContext';
-import { AuthProvider } from '@/context/AuthContext';
 import Navbar from '@/components/Navbar';
 import { Toaster } from 'react-hot-toast';
 

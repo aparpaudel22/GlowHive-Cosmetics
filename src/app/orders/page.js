@@ -3,8 +3,9 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Package, ChevronRight, XCircle, CheckCircle, Truck, AlertCircle, Sparkles } from 'lucide-react';
+import { Package, ChevronRight, XCircle, CheckCircle, Truck, AlertCircle, Sparkles, Trash2 } from 'lucide-react';
 import Footer from '@/components/Footer';
+
 const TRACKING_STEPS = [
   { key: 'placed',    label: 'Placed',    icon: '🛍️' },
   { key: 'picked',    label: 'Picked',    icon: '📦' },
@@ -56,6 +57,8 @@ export default function OrdersPage() {
   const [cancelReason,  setCancelReason]  = useState('');
   const [cancelOther,   setCancelOther]   = useState('');
   const [cancelStep,    setCancelStep]    = useState(1);
+  // ── NEW: delete state ──
+  const [deleteTarget,  setDeleteTarget]  = useState(null);
 
   useEffect(() => {
     try { setOrders(JSON.parse(localStorage.getItem('glowhive_orders') || '[]')); } catch (_) {}
@@ -86,19 +89,26 @@ export default function OrdersPage() {
     setCancelStep(3);
   };
 
+  // ── NEW: delete handler (only for delivered / cancelled) ──
+  const confirmDelete = () => {
+    const updated = orders.filter(o => o.id !== deleteTarget.id);
+    setOrders(updated);
+    localStorage.setItem('glowhive_orders', JSON.stringify(updated));
+    setDeleteTarget(null);
+  };
+
   const filtered = filterStatus === 'all' ? orders : orders.filter(o => o.status === filterStatus);
 
   return (
     <>
     <div style={{ minHeight: '100vh', background: '#fdf6f0', paddingBottom: '60px' }}>
 
-            {/* Hero */}
+      {/* Hero */}
       <div style={{
         background: 'linear-gradient(135deg, #3d1f25 0%, #b76e79 60%, #e8a4b0 100%)',
         padding: '60px 28px', textAlign: 'center',
         position: 'relative', overflow: 'hidden',
       }}>
-        {/* Decorative circles */}
         <div style={{ position: 'absolute', top: '-40px', right: '-40px', width: '200px', height: '200px', borderRadius: '50%', background: 'rgba(255,255,255,0.05)' }} />
         <div style={{ position: 'absolute', bottom: '-60px', left: '-30px', width: '240px', height: '240px', borderRadius: '50%', background: 'rgba(255,255,255,0.04)' }} />
 
@@ -120,9 +130,9 @@ export default function OrdersPage() {
           {/* Stats row */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '32px', marginTop: '28px', flexWrap: 'wrap' }}>
             {[
-              { value: orders.length,                                                   label: 'Total Orders'   },
-              { value: orders.filter(o => o.status !== 'cancelled').length,             label: 'Active Orders'  },
-              { value: orders.filter(o => o.status === 'delivered').length,             label: 'Delivered'      },
+              { value: orders.length,                                                   label: 'Total Orders'  },
+              { value: orders.filter(o => o.status !== 'cancelled').length,             label: 'Active Orders' },
+              { value: orders.filter(o => o.status === 'delivered').length,             label: 'Delivered'     },
             ].map((s, i) => (
               <div key={i} style={{ textAlign: 'center' }}>
                 <div style={{ fontSize: '28px', fontWeight: 900, color: '#fff', lineHeight: 1 }}>{s.value}</div>
@@ -159,251 +169,266 @@ export default function OrdersPage() {
 
         {/* Order cards */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-          {filtered.map((order) => {
-            const st        = STATUS_STYLE[order.status] || STATUS_STYLE.placed;
-            const stepIdx   = STEP_IDX[order.status] ?? 0;
-            const isOpen    = expandedOrder === order.id;
-            const canCancel = order.status === 'placed' || order.status === 'picked';
-            const refund    = REFUND_INFO[order.paymentMethod] || REFUND_INFO.cod;
-            const isCOD     = order.paymentMethod === 'cod' || !order.paymentMethod;
+          <AnimatePresence mode="popLayout">
+            {filtered.map((order) => {
+              const st        = STATUS_STYLE[order.status] || STATUS_STYLE.placed;
+              const stepIdx   = STEP_IDX[order.status] ?? 0;
+              const isOpen    = expandedOrder === order.id;
+              const canCancel = order.status === 'placed' || order.status === 'picked';
+              // ── Only delivered and cancelled orders can be deleted ──
+              const canDelete = order.status === 'delivered' || order.status === 'cancelled';
+              const refund    = REFUND_INFO[order.paymentMethod] || REFUND_INFO.cod;
+              const isCOD     = order.paymentMethod === 'cod' || !order.paymentMethod;
 
-            return (
-              <div key={order.id} style={{ background: '#fff', border: '1px solid #fde8ec', borderRadius: '20px', overflow: 'hidden', boxShadow: '0 2px 12px rgba(183,110,121,0.07)' }}>
+              return (
+                <motion.div
+                  key={order.id}
+                  layout
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, x: -40, scale: 0.97 }}
+                  transition={{ duration: 0.22 }}
+                  style={{ background: '#fff', border: '1px solid #fde8ec', borderRadius: '20px', overflow: 'hidden', boxShadow: '0 2px 12px rgba(183,110,121,0.07)' }}
+                >
 
-                {/* Card header */}
-                <div style={{ padding: '18px 20px' }}>
-                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px', marginBottom: '12px' }}>
-                    <div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '4px' }}>
-                        <span style={{ fontSize: '13px', fontWeight: 800, color: '#3d1f25' }}>{order.id}</span>
-                        <span style={{ fontSize: '11px', fontWeight: 700, background: st.bg, color: st.color, padding: '3px 10px', borderRadius: '50px', border: `1px solid ${st.color}33` }}>
-                          {order.status === 'cancelled' ? '✕ ' : order.status === 'delivered' ? '✓ ' : '● '}
-                          {st.label}
-                        </span>
+                  {/* Card header */}
+                  <div style={{ padding: '18px 20px' }}>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px', marginBottom: '12px' }}>
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '4px' }}>
+                          <span style={{ fontSize: '13px', fontWeight: 800, color: '#3d1f25' }}>{order.id}</span>
+                          <span style={{ fontSize: '11px', fontWeight: 700, background: st.bg, color: st.color, padding: '3px 10px', borderRadius: '50px', border: `1px solid ${st.color}33` }}>
+                            {order.status === 'cancelled' ? '✕ ' : order.status === 'delivered' ? '✓ ' : '● '}
+                            {st.label}
+                          </span>
+                        </div>
+                        <div style={{ fontSize: '12px', color: '#8c6468' }}>
+                          {new Date(order.date).toLocaleDateString('en-NP', { month: 'long', day: 'numeric', year: 'numeric' })}
+                          {' · '}{order.items?.length} {order.items?.length === 1 ? 'item' : 'items'}
+                          {' · '}<strong style={{ color: '#3d1f25' }}>Rs. {order.total?.toLocaleString()}</strong>
+                        </div>
                       </div>
-                      <div style={{ fontSize: '12px', color: '#8c6468' }}>
-                        {new Date(order.date).toLocaleDateString('en-NP', { month: 'long', day: 'numeric', year: 'numeric' })}
-                        {' · '}{order.items?.length} {order.items?.length === 1 ? 'item' : 'items'}
-                        {' · '}<strong style={{ color: '#3d1f25' }}>Rs. {order.total?.toLocaleString()}</strong>
-                      </div>
-                    </div>
-                    <motion.button whileTap={{ scale: 0.9 }}
-                      onClick={() => setExpandedOrder(isOpen ? null : order.id)}
-                      style={{ background: '#fdf6f0', border: '1px solid #fde8ec', borderRadius: '50%', width: '34px', height: '34px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
-                      <motion.span animate={{ rotate: isOpen ? 90 : 0 }} transition={{ duration: 0.2 }}>
-                        <ChevronRight size={15} color="#b76e79" />
-                      </motion.span>
-                    </motion.button>
-                  </div>
-
-                  {/* Items preview chips */}
-                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '12px' }}>
-                    {order.items?.slice(0, 3).map((item, i) => (
-                      <div key={i} style={{ background: '#fdf6f0', borderRadius: '10px', padding: '6px 10px', fontSize: '11px', color: '#5a3a40', fontWeight: 600 }}>
-                        {item.name} ×{item.quantity}
-                      </div>
-                    ))}
-                    {order.items?.length > 3 && (
-                      <div style={{ background: '#fdf6f0', borderRadius: '10px', padding: '6px 10px', fontSize: '11px', color: '#8c6468' }}>
-                        +{order.items.length - 3} more
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Buttons */}
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <Link href={`/checkout/success?id=${order.id}`}
-                      style={{ flex: 1, textAlign: 'center', fontSize: '12px', fontWeight: 700, color: '#b76e79', textDecoration: 'none', background: '#fdf0f3', border: '1px solid #fde8ec', borderRadius: '50px', padding: '9px 12px' }}>
-                      Track Order
-                    </Link>
-                    {canCancel && (
-                      <motion.button whileTap={{ scale: 0.95 }} onClick={() => openCancel(order)}
-                        style={{ flex: 1, fontSize: '12px', fontWeight: 700, color: '#ef4444', background: '#fff', border: '1px solid #fecaca', borderRadius: '50px', padding: '9px 12px', cursor: 'pointer' }}>
-                        Cancel Order
+                      <motion.button whileTap={{ scale: 0.9 }}
+                        onClick={() => setExpandedOrder(isOpen ? null : order.id)}
+                        style={{ background: '#fdf6f0', border: '1px solid #fde8ec', borderRadius: '50%', width: '34px', height: '34px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
+                        <motion.span animate={{ rotate: isOpen ? 90 : 0 }} transition={{ duration: 0.2 }}>
+                          <ChevronRight size={15} color="#b76e79" />
+                        </motion.span>
                       </motion.button>
-                    )}
+                    </div>
+
+                    {/* Items preview chips */}
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '12px' }}>
+                      {order.items?.slice(0, 3).map((item, i) => (
+                        <div key={i} style={{ background: '#fdf6f0', borderRadius: '10px', padding: '6px 10px', fontSize: '11px', color: '#5a3a40', fontWeight: 600 }}>
+                          {item.name} ×{item.quantity}
+                        </div>
+                      ))}
+                      {order.items?.length > 3 && (
+                        <div style={{ background: '#fdf6f0', borderRadius: '10px', padding: '6px 10px', fontSize: '11px', color: '#8c6468' }}>
+                          +{order.items.length - 3} more
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Action buttons */}
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <Link href={`/checkout/success?id=${order.id}`}
+                        style={{ flex: 1, textAlign: 'center', fontSize: '12px', fontWeight: 700, color: '#b76e79', textDecoration: 'none', background: '#fdf0f3', border: '1px solid #fde8ec', borderRadius: '50px', padding: '9px 12px' }}>
+                        Track Order
+                      </Link>
+                      {canCancel && (
+                        <motion.button whileTap={{ scale: 0.95 }} onClick={() => openCancel(order)}
+                          style={{ flex: 1, fontSize: '12px', fontWeight: 700, color: '#ef4444', background: '#fff', border: '1px solid #fecaca', borderRadius: '50px', padding: '9px 12px', cursor: 'pointer' }}>
+                          Cancel Order
+                        </motion.button>
+                      )}
+                      {/* ── Delete button — only for delivered / cancelled ── */}
+                      {canDelete && (
+                        <motion.button
+                          whileHover={{ background: '#fff0f0' }}
+                          whileTap={{ scale: 0.95 }}
+                          onClick={() => setDeleteTarget(order)}
+                          title="Delete from history"
+                          style={{ width: '38px', height: '38px', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fff', border: '1px solid #fecaca', borderRadius: '50%', cursor: 'pointer', transition: 'background 0.2s' }}
+                        >
+                          <Trash2 size={14} color="#ef4444" />
+                        </motion.button>
+                      )}
+                    </div>
                   </div>
-                </div>
 
-                {/* Expanded section */}
-                <AnimatePresence>
-                  {isOpen && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: 'auto', opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.25 }}
-                      style={{ overflow: 'hidden' }}
-                    >
-                      <div style={{ borderTop: '1px solid #fde8ec', padding: '18px 20px', background: '#fdf8f5' }}>
+                  {/* Expanded section — unchanged */}
+                  <AnimatePresence>
+                    {isOpen && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.25 }}
+                        style={{ overflow: 'hidden' }}
+                      >
+                        <div style={{ borderTop: '1px solid #fde8ec', padding: '18px 20px', background: '#fdf8f5' }}>
 
-                        {order.status !== 'cancelled' ? (
-                          <>
-                            {/* Live tracking */}
-                            <p style={{ fontSize: '11px', fontWeight: 800, color: '#b76e79', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '16px' }}>
-                              📍 Live Tracking
-                            </p>
-                            <div style={{ display: 'flex', alignItems: 'flex-start', position: 'relative', marginBottom: '16px' }}>
-                              <div style={{ position: 'absolute', top: '19px', left: '19px', right: '19px', height: '2px', background: '#fde8ec', zIndex: 0 }} />
-                              <div style={{ position: 'absolute', top: '19px', left: '19px', width: `${(stepIdx / (TRACKING_STEPS.length - 1)) * 100}%`, height: '2px', background: 'linear-gradient(to right,#b76e79,#c2748a)', zIndex: 1, transition: 'width 0.8s ease' }} />
-                              {TRACKING_STEPS.map((s, i) => {
-                                const done    = i < stepIdx;
-                                const current = i === stepIdx;
-                                return (
-                                  <div key={s.key} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', zIndex: 2 }}>
-                                    <div style={{ width: '38px', height: '38px', borderRadius: '50%', background: done || current ? 'linear-gradient(135deg,#b76e79,#c2748a)' : '#fff', border: `2px solid ${done || current ? '#b76e79' : '#fde8ec'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '15px', marginBottom: '6px', boxShadow: current ? '0 0 0 4px rgba(183,110,121,0.15)' : 'none' }}>
-                                      {done ? <CheckCircle size={16} color="#fff" /> : s.icon}
-                                    </div>
-                                    <div style={{ fontSize: '10px', fontWeight: current ? 800 : 600, color: done || current ? '#3d1f25' : '#9ca3af', textAlign: 'center' }}>{s.label}</div>
-                                    {current && <div style={{ fontSize: '9px', color: '#b76e79', fontWeight: 700 }}>Now</div>}
-                                  </div>
-                                );
-                              })}
-                            </div>
-
-                            {order.estimatedDelivery && (
-                              <div style={{ background: '#fff', border: '1px solid #fde8ec', borderRadius: '12px', padding: '12px 14px', display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
-                                <Truck size={15} color="#b76e79" />
-                                <span style={{ fontSize: '13px', color: '#3d1f25' }}><strong>Estimated delivery:</strong> {order.estimatedDelivery}</span>
-                              </div>
-                            )}
-
-                            <div style={{ background: '#fff', border: '1px solid #fde8ec', borderRadius: '12px', padding: '12px 14px', fontSize: '13px', color: '#5a3a40', marginBottom: '10px' }}>
-                              📍 {order.address?.address}, {order.address?.city}, {order.address?.province}
-                            </div>
-                          </>
-                        ) : (
-                          <>
-                            {/* Cancelled banner */}
-                            <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '12px', padding: '14px', display: 'flex', gap: '10px', alignItems: 'flex-start', marginBottom: '14px' }}>
-                              <XCircle size={16} color="#ef4444" style={{ flexShrink: 0, marginTop: '1px' }} />
-                              <div>
-                                <div style={{ fontSize: '13px', fontWeight: 700, color: '#ef4444', marginBottom: '2px' }}>Order Cancelled</div>
-                                {order.cancelReason && <div style={{ fontSize: '12px', color: '#6b7280' }}>Reason: {order.cancelReason}</div>}
-                                {order.cancelledAt && (
-                                  <div style={{ fontSize: '11px', color: '#9ca3af', marginTop: '2px' }}>
-                                    On {new Date(order.cancelledAt).toLocaleDateString('en-NP', { month: 'short', day: 'numeric', year: 'numeric' })}
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-
-                            {/* ── REFUND SECTION ── */}
-                            <div style={{ marginBottom: '12px' }}>
-                              <div style={{ fontSize: '11px', fontWeight: 800, color: '#b76e79', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>
-                                💸 Refund Status
-                              </div>
-
-                              {isCOD ? (
-                                <div style={{ background: '#fef9ec', border: '1px solid #fde68a', borderRadius: '12px', padding: '14px 16px', display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
-                                  <span style={{ fontSize: '18px', flexShrink: 0 }}>💡</span>
-                                  <div>
-                                    <div style={{ fontSize: '13px', fontWeight: 700, color: '#92400e', marginBottom: '3px' }}>No Refund Required</div>
-                                    <div style={{ fontSize: '12px', color: '#78350f', lineHeight: 1.6 }}>
-                                      This was a Cash on Delivery order — no payment was collected, so no refund is needed.
-                                    </div>
-                                  </div>
-                                </div>
-                              ) : (
-                                <div style={{ background: '#f0fdf4', border: '1.5px solid #bbf7d0', borderRadius: '14px', overflow: 'hidden' }}>
-
-                                  {/* Status bar */}
-                                  <div style={{ background: 'linear-gradient(135deg,#dcfce7,#f0fdf4)', padding: '12px 16px', borderBottom: '1px solid #bbf7d0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                      <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#22c55e', boxShadow: '0 0 0 3px rgba(34,197,94,0.25)' }} />
-                                      <span style={{ fontSize: '12px', fontWeight: 800, color: '#15803d' }}>Refund Initiated</span>
-                                    </div>
-                                    <span style={{ fontSize: '11px', fontWeight: 700, color: '#16a34a', background: '#dcfce7', padding: '3px 10px', borderRadius: '50px', border: '1px solid #bbf7d0' }}>
-                                      In Progress
-                                    </span>
-                                  </div>
-
-                                  {/* Details */}
-                                  <div style={{ padding: '14px 16px' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                                      <span style={{ fontSize: '13px', color: '#5a3a40' }}>Refund Amount</span>
-                                      <span style={{ fontSize: '17px', fontWeight: 900, color: '#16a34a' }}>Rs. {order.total?.toLocaleString()}</span>
-                                    </div>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                                      <span style={{ fontSize: '12px', color: '#5a3a40' }}>Refund To</span>
-                                      <span style={{ fontSize: '12px', fontWeight: 700, color: '#3d1f25' }}>{refund.icon} {refund.label}</span>
-                                    </div>
-                                    <div style={{ fontSize: '12px', color: '#6b7280', lineHeight: 1.6, marginBottom: '12px' }}>
-                                      {refund.method}
-                                    </div>
-
-                                    {/* Timeline */}
-                                    <div style={{ background: '#dcfce7', borderRadius: '10px', padding: '10px 14px', display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
-                                      <span style={{ fontSize: '18px' }}>⏱</span>
-                                      <div>
-                                        <div style={{ fontSize: '12px', fontWeight: 800, color: '#15803d' }}>Expected within {refund.time}</div>
-                                        <div style={{ fontSize: '11px', color: '#4ade80' }}>
-                                          Initiated on {order.cancelledAt
-                                            ? new Date(order.cancelledAt).toLocaleDateString('en-NP', { month: 'short', day: 'numeric', year: 'numeric' })
-                                            : new Date().toLocaleDateString('en-NP', { month: 'short', day: 'numeric', year: 'numeric' })}
-                                        </div>
+                          {order.status !== 'cancelled' ? (
+                            <>
+                              {/* Live tracking */}
+                              <p style={{ fontSize: '11px', fontWeight: 800, color: '#b76e79', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '16px' }}>
+                                📍 Live Tracking
+                              </p>
+                              <div style={{ display: 'flex', alignItems: 'flex-start', position: 'relative', marginBottom: '16px' }}>
+                                <div style={{ position: 'absolute', top: '19px', left: '19px', right: '19px', height: '2px', background: '#fde8ec', zIndex: 0 }} />
+                                <div style={{ position: 'absolute', top: '19px', left: '19px', width: `${(stepIdx / (TRACKING_STEPS.length - 1)) * 100}%`, height: '2px', background: 'linear-gradient(to right,#b76e79,#c2748a)', zIndex: 1, transition: 'width 0.8s ease' }} />
+                                {TRACKING_STEPS.map((s, i) => {
+                                  const done    = i < stepIdx;
+                                  const current = i === stepIdx;
+                                  return (
+                                    <div key={s.key} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', zIndex: 2 }}>
+                                      <div style={{ width: '38px', height: '38px', borderRadius: '50%', background: done || current ? 'linear-gradient(135deg,#b76e79,#c2748a)' : '#fff', border: `2px solid ${done || current ? '#b76e79' : '#fde8ec'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '15px', marginBottom: '6px', boxShadow: current ? '0 0 0 4px rgba(183,110,121,0.15)' : 'none' }}>
+                                        {done ? <CheckCircle size={16} color="#fff" /> : s.icon}
                                       </div>
+                                      <div style={{ fontSize: '10px', fontWeight: current ? 800 : 600, color: done || current ? '#3d1f25' : '#9ca3af', textAlign: 'center' }}>{s.label}</div>
+                                      {current && <div style={{ fontSize: '9px', color: '#b76e79', fontWeight: 700 }}>Now</div>}
                                     </div>
+                                  );
+                                })}
+                              </div>
 
-                                    {/* Refund steps */}
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                      {[
-                                        { label: 'Refund Request Submitted',       done: true  },
-                                        { label: 'Refund Being Processed',         done: true  },
-                                        { label: `Refund Sent to ${refund.label}`, done: false },
-                                        { label: 'Refund Received',                done: false },
-                                      ].map((step, i) => (
-                                        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                          <div style={{ width: '20px', height: '20px', borderRadius: '50%', flexShrink: 0, background: step.done ? '#22c55e' : '#e5e7eb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                            {step.done
-                                              ? <CheckCircle size={12} color="#fff" />
-                                              : <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#9ca3af' }} />
-                                            }
-                                          </div>
-                                          <span style={{ fontSize: '12px', fontWeight: step.done ? 700 : 400, color: step.done ? '#15803d' : '#9ca3af' }}>
-                                            {step.label}
-                                          </span>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  </div>
+                              {order.estimatedDelivery && (
+                                <div style={{ background: '#fff', border: '1px solid #fde8ec', borderRadius: '12px', padding: '12px 14px', display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
+                                  <Truck size={15} color="#b76e79" />
+                                  <span style={{ fontSize: '13px', color: '#3d1f25' }}><strong>Estimated delivery:</strong> {order.estimatedDelivery}</span>
                                 </div>
                               )}
 
-                              {/* Help line */}
-                              <div style={{ marginTop: '10px', background: '#fdf6f0', border: '1px solid #fde8ec', borderRadius: '10px', padding: '10px 14px' }}>
-                                <div style={{ fontSize: '11px', fontWeight: 700, color: '#b76e79', marginBottom: '3px' }}>Refund not received?</div>
-                                <div style={{ fontSize: '11px', color: '#8c6468', lineHeight: 1.6 }}>
-                                  Contact us at <strong style={{ color: '#3d1f25' }}>+977 984-1234567</strong> or <strong style={{ color: '#3d1f25' }}>support@glowhive.com</strong>
+                              <div style={{ background: '#fff', border: '1px solid #fde8ec', borderRadius: '12px', padding: '12px 14px', fontSize: '13px', color: '#5a3a40', marginBottom: '10px' }}>
+                                📍 {order.address?.address}, {order.address?.city}, {order.address?.province}
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              {/* Cancelled banner */}
+                              <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '12px', padding: '14px', display: 'flex', gap: '10px', alignItems: 'flex-start', marginBottom: '14px' }}>
+                                <XCircle size={16} color="#ef4444" style={{ flexShrink: 0, marginTop: '1px' }} />
+                                <div>
+                                  <div style={{ fontSize: '13px', fontWeight: 700, color: '#ef4444', marginBottom: '2px' }}>Order Cancelled</div>
+                                  {order.cancelReason && <div style={{ fontSize: '12px', color: '#6b7280' }}>Reason: {order.cancelReason}</div>}
+                                  {order.cancelledAt && (
+                                    <div style={{ fontSize: '11px', color: '#9ca3af', marginTop: '2px' }}>
+                                      On {new Date(order.cancelledAt).toLocaleDateString('en-NP', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                    </div>
+                                  )}
                                 </div>
                               </div>
-                            </div>
-                          </>
-                        )}
 
-                        {/* Support buttons */}
-                        <div style={{ display: 'flex', gap: '8px' }}>
-                          <a href="tel:+9779841234567" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontSize: '12px', fontWeight: 700, color: '#b76e79', textDecoration: 'none', background: '#fff', border: '1px solid #fde8ec', borderRadius: '50px', padding: '9px' }}>
-                            📞 Call Support
-                          </a>
-                          <a href="mailto:support@glowhive.com" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontSize: '12px', fontWeight: 700, color: '#b76e79', textDecoration: 'none', background: '#fff', border: '1px solid #fde8ec', borderRadius: '50px', padding: '9px' }}>
-                            ✉️ Email Us
-                          </a>
+                              {/* Refund section */}
+                              <div style={{ marginBottom: '12px' }}>
+                                <div style={{ fontSize: '11px', fontWeight: 800, color: '#b76e79', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>
+                                  💸 Refund Status
+                                </div>
+
+                                {isCOD ? (
+                                  <div style={{ background: '#fef9ec', border: '1px solid #fde68a', borderRadius: '12px', padding: '14px 16px', display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
+                                    <span style={{ fontSize: '18px', flexShrink: 0 }}>💡</span>
+                                    <div>
+                                      <div style={{ fontSize: '13px', fontWeight: 700, color: '#92400e', marginBottom: '3px' }}>No Refund Required</div>
+                                      <div style={{ fontSize: '12px', color: '#78350f', lineHeight: 1.6 }}>
+                                        This was a Cash on Delivery order — no payment was collected, so no refund is needed.
+                                      </div>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div style={{ background: '#f0fdf4', border: '1.5px solid #bbf7d0', borderRadius: '14px', overflow: 'hidden' }}>
+                                    <div style={{ background: 'linear-gradient(135deg,#dcfce7,#f0fdf4)', padding: '12px 16px', borderBottom: '1px solid #bbf7d0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#22c55e', boxShadow: '0 0 0 3px rgba(34,197,94,0.25)' }} />
+                                        <span style={{ fontSize: '12px', fontWeight: 800, color: '#15803d' }}>Refund Initiated</span>
+                                      </div>
+                                      <span style={{ fontSize: '11px', fontWeight: 700, color: '#16a34a', background: '#dcfce7', padding: '3px 10px', borderRadius: '50px', border: '1px solid #bbf7d0' }}>
+                                        In Progress
+                                      </span>
+                                    </div>
+                                    <div style={{ padding: '14px 16px' }}>
+                                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                                        <span style={{ fontSize: '13px', color: '#5a3a40' }}>Refund Amount</span>
+                                        <span style={{ fontSize: '17px', fontWeight: 900, color: '#16a34a' }}>Rs. {order.total?.toLocaleString()}</span>
+                                      </div>
+                                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                                        <span style={{ fontSize: '12px', color: '#5a3a40' }}>Refund To</span>
+                                        <span style={{ fontSize: '12px', fontWeight: 700, color: '#3d1f25' }}>{refund.icon} {refund.label}</span>
+                                      </div>
+                                      <div style={{ fontSize: '12px', color: '#6b7280', lineHeight: 1.6, marginBottom: '12px' }}>
+                                        {refund.method}
+                                      </div>
+                                      <div style={{ background: '#dcfce7', borderRadius: '10px', padding: '10px 14px', display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
+                                        <span style={{ fontSize: '18px' }}>⏱</span>
+                                        <div>
+                                          <div style={{ fontSize: '12px', fontWeight: 800, color: '#15803d' }}>Expected within {refund.time}</div>
+                                          <div style={{ fontSize: '11px', color: '#4ade80' }}>
+                                            Initiated on {order.cancelledAt
+                                              ? new Date(order.cancelledAt).toLocaleDateString('en-NP', { month: 'short', day: 'numeric', year: 'numeric' })
+                                              : new Date().toLocaleDateString('en-NP', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                          </div>
+                                        </div>
+                                      </div>
+                                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                        {[
+                                          { label: 'Refund Request Submitted',       done: true  },
+                                          { label: 'Refund Being Processed',         done: true  },
+                                          { label: `Refund Sent to ${refund.label}`, done: false },
+                                          { label: 'Refund Received',                done: false },
+                                        ].map((step, i) => (
+                                          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                            <div style={{ width: '20px', height: '20px', borderRadius: '50%', flexShrink: 0, background: step.done ? '#22c55e' : '#e5e7eb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                              {step.done
+                                                ? <CheckCircle size={12} color="#fff" />
+                                                : <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#9ca3af' }} />
+                                              }
+                                            </div>
+                                            <span style={{ fontSize: '12px', fontWeight: step.done ? 700 : 400, color: step.done ? '#15803d' : '#9ca3af' }}>
+                                              {step.label}
+                                            </span>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  </div>
+                                )}
+
+                                <div style={{ marginTop: '10px', background: '#fdf6f0', border: '1px solid #fde8ec', borderRadius: '10px', padding: '10px 14px' }}>
+                                  <div style={{ fontSize: '11px', fontWeight: 700, color: '#b76e79', marginBottom: '3px' }}>Refund not received?</div>
+                                  <div style={{ fontSize: '11px', color: '#8c6468', lineHeight: 1.6 }}>
+                                    Contact us at <strong style={{ color: '#3d1f25' }}>+977 984-1234567</strong> or <strong style={{ color: '#3d1f25' }}>support@glowhive.com</strong>
+                                  </div>
+                                </div>
+                              </div>
+                            </>
+                          )}
+
+                          {/* Support buttons */}
+                          <div style={{ display: 'flex', gap: '8px' }}>
+                            <a href="tel:+9779841234567" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontSize: '12px', fontWeight: 700, color: '#b76e79', textDecoration: 'none', background: '#fff', border: '1px solid #fde8ec', borderRadius: '50px', padding: '9px' }}>
+                              📞 Call Support
+                            </a>
+                            <a href="mailto:support@glowhive.com" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontSize: '12px', fontWeight: 700, color: '#b76e79', textDecoration: 'none', background: '#fff', border: '1px solid #fde8ec', borderRadius: '50px', padding: '9px' }}>
+                              ✉️ Email Us
+                            </a>
+                          </div>
+
                         </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
 
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-
-              </div>
-            );
-          })}
+                </motion.div>
+              );
+            })}
+          </AnimatePresence>
         </div>
       </div>
 
       {/* ══════════════════════════════════
-          CANCEL MODAL
+          CANCEL MODAL  (unchanged)
       ══════════════════════════════════ */}
       <AnimatePresence>
         {cancelTarget && (
@@ -414,7 +439,6 @@ export default function OrdersPage() {
               style={{ position: 'fixed', inset: 0, background: 'rgba(61,31,37,0.55)', backdropFilter: 'blur(6px)', zIndex: 9000 }}
             />
 
-            {/* Centering wrapper */}
             <div style={{ position: 'fixed', inset: 0, zIndex: 9001, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px', pointerEvents: 'none' }}>
               <motion.div
                 initial={{ scale: 0.88, opacity: 0, y: 20 }}
@@ -600,6 +624,66 @@ export default function OrdersPage() {
                   </>
                 )}
 
+              </motion.div>
+            </div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* ══════════════════════════════════
+          DELETE CONFIRM MODAL  (new)
+      ══════════════════════════════════ */}
+      <AnimatePresence>
+        {deleteTarget && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              onClick={() => setDeleteTarget(null)}
+              style={{ position: 'fixed', inset: 0, background: 'rgba(61,31,37,0.55)', backdropFilter: 'blur(6px)', zIndex: 9000 }}
+            />
+            <div style={{ position: 'fixed', inset: 0, zIndex: 9001, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px', pointerEvents: 'none' }}>
+              <motion.div
+                initial={{ scale: 0.88, opacity: 0, y: 20 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 0.88, opacity: 0, y: 20 }}
+                transition={{ type: 'spring', stiffness: 280, damping: 26 }}
+                style={{ background: '#fff', borderRadius: '24px', padding: '28px', width: 'min(400px, 92vw)', boxShadow: '0 32px 80px rgba(61,31,37,0.28)', pointerEvents: 'auto' }}
+              >
+                <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+                  <div style={{ width: '60px', height: '60px', borderRadius: '50%', background: '#fef2f2', margin: '0 auto 14px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Trash2 size={26} color="#ef4444" />
+                  </div>
+                  <h2 style={{ fontSize: '18px', fontWeight: 800, color: '#3d1f25', fontFamily: "'Playfair Display', Georgia, serif", marginBottom: '8px' }}>
+                    Delete This Order?
+                  </h2>
+                  <p style={{ fontSize: '13px', color: '#8c6468', lineHeight: 1.65, margin: 0 }}>
+                    <strong style={{ color: '#3d1f25' }}>{deleteTarget.id}</strong> will be permanently removed from your order history.
+                  </p>
+                </div>
+
+                {/* Mini order summary */}
+                <div style={{ background: '#fdf6f0', borderRadius: '12px', padding: '12px 14px', marginBottom: '20px' }}>
+                  <div style={{ fontSize: '11px', fontWeight: 700, color: '#b76e79', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '6px' }}>
+                    {STATUS_STYLE[deleteTarget.status]?.label || deleteTarget.status}
+                  </div>
+                  <div style={{ fontSize: '13px', color: '#5a3a40', marginBottom: '4px' }}>
+                    {deleteTarget.items?.length} {deleteTarget.items?.length === 1 ? 'item' : 'items'} · <strong style={{ color: '#3d1f25' }}>Rs. {deleteTarget.total?.toLocaleString()}</strong>
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#8c6468' }}>
+                    {new Date(deleteTarget.date).toLocaleDateString('en-NP', { month: 'long', day: 'numeric', year: 'numeric' })}
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <motion.button whileTap={{ scale: 0.97 }} onClick={() => setDeleteTarget(null)}
+                    style={{ flex: 1, background: '#fff', color: '#3d1f25', border: '1.5px solid #fde8ec', borderRadius: '12px', padding: '13px', fontWeight: 700, fontSize: '14px', cursor: 'pointer' }}>
+                    Keep It
+                  </motion.button>
+                  <motion.button whileTap={{ scale: 0.97 }} onClick={confirmDelete}
+                    style={{ flex: 1, background: '#ef4444', color: '#fff', border: 'none', borderRadius: '12px', padding: '13px', fontWeight: 700, fontSize: '14px', cursor: 'pointer' }}>
+                    Yes, Delete
+                  </motion.button>
+                </div>
               </motion.div>
             </div>
           </>
