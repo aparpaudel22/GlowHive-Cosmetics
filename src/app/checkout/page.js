@@ -1,11 +1,15 @@
 'use client';
 
+
+
 import { useState } from 'react';
 import { useRouter } from 'next/navigation'; // ✅ Changed from 'next/router'
 import Link from 'next/link';
 import { CheckCircle, ArrowLeft, MapPin, CreditCard, Truck } from 'lucide-react';
 import { IoIosCash } from "react-icons/io";
 import { BsBank } from "react-icons/bs";
+import { useAuth } from '@/context/AuthContext';
+import AuthForm from '@/components/AuthForm';
 
 // Cities and Provinces data
 const CITIES = ['Kathmandu', 'Pokhara', 'Lalitpur', 'Biratnagar', 'Bhaktapur', 'Butwal', 'Dharan', 'Hetauda', 'Janakpur', 'Nepalgunj'];
@@ -40,6 +44,7 @@ const inputStyle = (field, errors = {}) => ({
 
 export default function Checkout() {
   const router = useRouter();
+  const { isAuthenticated, hydrated } = useAuth();
   const [step, setStep] = useState(1);
   const [form, setForm] = useState({
     firstName: '',
@@ -101,6 +106,11 @@ export default function Checkout() {
     setStep(3);
     // Here you would typically send order data to your backend
   };
+
+
+  // ── Require login before checkout ──
+  if (!hydrated) return null;
+  if (!isAuthenticated) return <AuthForm />;
 
   // ── Order confirmed ──
   if (step === 3) {

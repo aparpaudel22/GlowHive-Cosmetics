@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Heart, ShoppingBag, User, Menu, X, ChevronDown } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
+import { useWishlist } from '@/context/WishlistContext';
 
 const navLinks = [
   { label: 'Home',         href: '/' },
@@ -115,7 +116,8 @@ export default function Navbar() {
   const [searchOpen,  setSearchOpen]  = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [dropdown,    setDropdown]    = useState(false);
-  const { cartCount } = useCart();
+  const { totalItems: cartCount } = useCart();
+  const { wishlistCount } = useWishlist();
   const pathname = usePathname();
 
   useEffect(() => {
@@ -135,7 +137,11 @@ export default function Navbar() {
         fontSize: '12px', fontWeight: 600,
         letterSpacing: '1.5px', padding: '9px 16px',
       }}>
-        ✨ FREE SHIPPING ON ORDERS OVER Rs.5000 &nbsp;|&nbsp; USE CODE: <strong>GLOWHIVE15</strong> FOR 15% OFF ✨
+        ✨ FREE SHIPPING ON ORDERS OVER Rs.5000
+        <span className="hidden sm:inline">
+          &nbsp;|&nbsp; USE CODE: <strong>GLOWHIVE15</strong> FOR 15% OFF
+        </span>
+        {' '}✨
       </div>
 
       {/* Main header */}
@@ -153,7 +159,7 @@ export default function Navbar() {
         }}
       >
         <div style={{
-          maxWidth: '1280px', margin: '0 auto', padding: '0 28px',
+          maxWidth: '1280px', margin: '0 auto', padding: '0 clamp(14px, 4vw, 28px)',
           display: 'flex', alignItems: 'center',
           justifyContent: 'space-between', height: '70px',
         }}>
@@ -161,7 +167,7 @@ export default function Navbar() {
 
           {/* Desktop nav */}
           <nav className="hidden md:flex"
-            style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+            style={{ alignItems: 'center', gap: '2px' }}>
             {navLinks.map((link) =>
               link.children ? (
                 <div key={link.label} style={{ position: 'relative' }}
@@ -249,23 +255,50 @@ export default function Navbar() {
               </motion.button>
             ))}
 
-            {[
-              { icon: <Heart size={20} />, href: '/wishlist' },
-              { icon: <User size={20} />,  href: '/account'  },
-            ].map(item => (
-              <Link key={item.href} href={item.href} style={{ textDecoration: 'none' }}>
-                <motion.div
-                  whileHover={{ background: '#fde8ec', scale: 1.08 }}
-                  whileTap={{ scale: 0.88 }}
-                  style={{
-                    padding: '9px', borderRadius: '50%', color: '#3d1f25',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    cursor: 'pointer', transition: 'background 0.2s',
-                  }}>
-                  {item.icon}
-                </motion.div>
-              </Link>
-            ))}
+            <Link href="/wishlist" className="hidden md:block" style={{ textDecoration: 'none' }}>
+              <motion.div
+                whileHover={{ background: '#fde8ec', scale: 1.08 }}
+                whileTap={{ scale: 0.88 }}
+                style={{
+                  padding: '9px', borderRadius: '50%', color: '#3d1f25',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  cursor: 'pointer', position: 'relative', transition: 'background 0.2s',
+                }}>
+                <Heart size={20} />
+                <AnimatePresence>
+                  {wishlistCount > 0 && (
+                    <motion.span
+                      key="wishlist-badge"
+                      initial={{ scale: 0, rotate: -15 }}
+                      animate={{ scale: 1, rotate: 0 }}
+                      exit={{ scale: 0 }}
+                      style={{
+                        position: 'absolute', top: '2px', right: '2px',
+                        background: '#b76e79', color: '#fff',
+                        fontSize: '10px', fontWeight: 700,
+                        width: '17px', height: '17px', borderRadius: '50%',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        border: '2px solid #fff8f5',
+                      }}>
+                      {wishlistCount > 9 ? '9+' : wishlistCount}
+                    </motion.span>
+                  )}
+                </AnimatePresence>
+              </motion.div>
+            </Link>
+
+            <Link href="/account" className="hidden md:block" style={{ textDecoration: 'none' }}>
+              <motion.div
+                whileHover={{ background: '#fde8ec', scale: 1.08 }}
+                whileTap={{ scale: 0.88 }}
+                style={{
+                  padding: '9px', borderRadius: '50%', color: '#3d1f25',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  cursor: 'pointer', transition: 'background 0.2s',
+                }}>
+                <User size={20} />
+              </motion.div>
+            </Link>
 
             {/* Cart with badge */}
             <Link href="/cart" style={{ textDecoration: 'none' }}>
@@ -308,7 +341,7 @@ export default function Navbar() {
               style={{
                 background: 'none', border: 'none', cursor: 'pointer',
                 padding: '9px', borderRadius: '50%', color: '#3d1f25',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                alignItems: 'center', justifyContent: 'center',
                 marginLeft: '4px',
               }}>
               {mobileOpen ? <X size={22} /> : <Menu size={22} />}
@@ -357,7 +390,6 @@ export default function Navbar() {
       <AnimatePresence>
         {mobileOpen && (
           <>
-            {/* ✅ FIX: zIndex raised above navbar (1000) */}
             <motion.div
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               onClick={() => setMobileOpen(false)}
