@@ -471,7 +471,7 @@ export default function CheckoutPage() {
                         </h2>
                         {editingProfile && (
                           <p style={{ fontSize: '11px', color: '#b76e79', margin: '2px 0 0', fontWeight: 600 }}>
-                            📱 Phone number is required to checkout
+                             Fill all the box below to checkout.
                           </p>
                         )}
                       </div>
@@ -636,7 +636,7 @@ export default function CheckoutPage() {
                               readOnly
                             />
                             <p style={{ fontSize: '10px', color: '#8c6468', marginTop: '4px' }}>
-                              Auto-filled based on city
+                              Postal code is auto-filled based on the selected city.
                             </p>
                           </div>
                         </div>

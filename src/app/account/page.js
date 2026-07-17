@@ -324,7 +324,7 @@ export default function AccountPage() {
                   </div>
                   <div>
                     <h2 style={{ fontSize: '16px', fontWeight: 800, color: '#1a0a0f' }}>Personal Details</h2>
-                    <p style={{ fontSize: '12px', color: '#888' }}>Auto-fills checkout</p>
+                    
                   </div>
                 </div>
                 {!editingProfile && (
