@@ -54,6 +54,18 @@ class DataFetcher {
     }
     return null;
   }
+
+  static async fetchAbout() {
+    try {
+      const response = await fetch('/api/about');
+      if (response.ok) {
+        return await response.json();
+      }
+    } catch (e) {
+      console.error('Failed to fetch about:', e);
+    }
+    return null;
+  }
 }
 
 // ─── Product Search Engine ───
@@ -114,12 +126,10 @@ class ProductSearchEngine {
       .map(item => item.product);
   }
 
-  // Get featured products (first 4 or 6)
   getFeaturedProducts(limit = 6) {
     return this.products.slice(0, limit);
   }
 
-  // Get products by category
   getProductsByCategory(category) {
     const cat = category.toLowerCase();
     return this.products.filter(p => 
@@ -136,23 +146,26 @@ class ResponseGenerator {
     this.faqs = [];
     this.terms = null;
     this.privacy = null;
+    this.about = null;
     this.productEngine = null;
     this.isReady = false;
   }
 
   async initialize() {
     try {
-      const [products, faqs, terms, privacy] = await Promise.all([
+      const [products, faqs, terms, privacy, about] = await Promise.all([
         DataFetcher.fetchProducts(),
         DataFetcher.fetchFAQs(),
         DataFetcher.fetchTerms(),
-        DataFetcher.fetchPrivacy()
+        DataFetcher.fetchPrivacy(),
+        DataFetcher.fetchAbout()
       ]);
 
       this.products = products || [];
       this.faqs = faqs || [];
       this.terms = terms;
       this.privacy = privacy;
+      this.about = about;
       this.productEngine = new ProductSearchEngine(this.products);
       this.isReady = true;
       
@@ -167,19 +180,33 @@ class ResponseGenerator {
     if (!this.isReady) {
       return {
         type: 'loading',
-        text: "⏳ Loading product data... Please wait a moment.",
+        text: "⏳ Loading data... Please wait a moment.",
         products: []
       };
     }
 
     const msg = message.toLowerCase().trim();
     
-    // ─── 1. Check for "what products are available" or similar ───
+    // ─── 1. Check if asking about the chatbot itself ───
+    if (this.isAboutChatbotQuery(msg)) {
+      return {
+        type: 'about',
+        text: `🤖 **About Me:**\n\nI'm GlowHive's Beauty Assistant, your personal guide to all things beauty!\n\n✨ **What I Can Help With:**\n• Product information (prices, ingredients, how to use)\n• Order tracking and returns\n• Account management\n• Payment methods\n• FAQs, Terms, and Privacy Policy\n\n📋 **About GlowHive:**\n${this.about ? this.about.description : 'Premium beauty and cosmetics brand.'}\n\n💡 Feel free to ask me anything about GlowHive, our products, or your orders!`,
+        products: []
+      };
+    }
+    
+    // ─── 2. Check if asking about "About GlowHive" or company info ───
+    if (this.isAboutCompanyQuery(msg) && this.about) {
+      return this.generateAboutResponse();
+    }
+    
+    // ─── 3. Product Listing Queries ───
     if (this.isProductListingQuery(msg)) {
       return this.generateProductListingResponse(msg);
     }
     
-    // ─── 2. Check for "how to order" ───
+    // ─── 4. Check for "how to order" ───
     if (msg.includes('how to order') || msg.includes('place order') || msg.includes('make order')) {
       return {
         type: 'order',
@@ -188,13 +215,13 @@ class ResponseGenerator {
       };
     }
     
-    // ─── 3. Account Queries ───
+    // ─── 5. Account Queries ───
     const accountResponse = this.getAccountResponse(msg);
     if (accountResponse) {
       return accountResponse;
     }
     
-    // ─── 4. FAQ Queries ───
+    // ─── 6. FAQ Queries ───
     const faqMatch = this.matchFAQ(msg);
     if (faqMatch) {
       return {
@@ -204,7 +231,7 @@ class ResponseGenerator {
       };
     }
     
-    // ─── 5. Product Queries ───
+    // ─── 7. Product Queries ───
     if (this.isProductQuery(msg)) {
       const productResults = this.productEngine.search(msg);
       if (productResults.length > 0) {
@@ -214,7 +241,7 @@ class ResponseGenerator {
       }
     }
     
-    // ─── 6. Terms & Conditions ───
+    // ─── 8. Terms & Conditions ───
     if (this.isTermsQuery(msg) && this.terms) {
       return {
         type: 'terms',
@@ -223,7 +250,7 @@ class ResponseGenerator {
       };
     }
     
-    // ─── 7. Privacy Policy ───
+    // ─── 9. Privacy Policy ───
     if (this.isPrivacyQuery(msg) && this.privacy) {
       return {
         type: 'privacy',
@@ -232,24 +259,65 @@ class ResponseGenerator {
       };
     }
     
-    // ─── 8. Greetings ───
+    // ─── 10. Greetings ───
     if (this.isGreeting(msg)) {
       return {
         type: 'greeting',
-        text: `👋 Hello! Welcome to GlowHive Beauty Assistant!\n\nI can help you with:\n\n🛍️ **Products** - What's available, prices, ingredients, how to use\n📦 **Orders** - How to place, track, cancel, returns\n👤 **Account** - Create, delete, reset password, update profile\n💳 **Payments** - Methods, refunds\n📋 **Policies** - FAQs, Terms, Privacy\n\nWhat would you like to know today? ✨`,
+        text: `👋 Hello! Welcome to GlowHive Beauty Assistant!\n\nI can help you with:\n\n🛍️ **Products** - What's available, prices, ingredients, how to use\n📦 **Orders** - How to place, track, cancel, returns\n👤 **Account** - Create, delete, reset password, update profile\n💳 **Payments** - Methods, refunds\n📋 **Policies** - FAQs, Terms, Privacy\n🏢 **About** - Learn about GlowHive\n\nWhat would you like to know today? ✨`,
         products: []
       };
     }
     
-    // ─── 9. Unknown ───
+    // ─── 11. Unknown ───
     return {
       type: 'unknown',
-      text: `🌸 I appreciate your question! I don't have specific information about that topic yet.\n\nHere's what I can help with:\n• What products are available\n• How to place an order\n• Product details (prices, ingredients, how to use)\n• Order tracking and returns\n• Account management (create, delete, reset password)\n• Payment methods\n• FAQs, Terms, and Privacy Policy\n\nOur team will get back to you if you need more specific assistance. You can also reach us at support@glowhive.com ✨`,
+      text: `🌸 I appreciate your question! I don't have specific information about that topic yet.\n\nHere's what I can help with:\n• About GlowHive\n• What products are available\n• How to place an order\n• Product details (prices, ingredients, how to use)\n• Order tracking and returns\n• Account management (create, delete, reset password)\n• Payment methods\n• FAQs, Terms, and Privacy Policy\n\nOur team will get back to you if you need more specific assistance. You can also reach us at support@glowhive.com ✨`,
       products: []
     };
   }
 
-  // ─── Check if user is asking for product listing ───
+  // ─── About Chatbot Query ───
+  isAboutChatbotQuery(msg) {
+    const aboutKeywords = [
+      'who are you', 'what are you', 'about you', 'tell me about yourself',
+      'what is your name', 'who made you', 'what can you do', 'your purpose',
+      'what is this chatbot', 'about this chatbot', 'what do you do'
+    ];
+    return aboutKeywords.some(keyword => msg.includes(keyword));
+  }
+
+  // ─── About Company Query ───
+  isAboutCompanyQuery(msg) {
+    const aboutCompanyKeywords = [
+      'about glowhive', 'what is glowhive', 'tell me about glowhive',
+      'about the company', 'what is your company', 'who are you guys',
+      'about your brand', 'what is your brand', 'glowhive story',
+      'about us', 'what do you sell', 'what is this website'
+    ];
+    return aboutCompanyKeywords.some(keyword => msg.includes(keyword));
+  }
+
+  // ─── Generate About Response ───
+  generateAboutResponse() {
+    const about = this.about;
+    if (!about) {
+      return {
+        type: 'about',
+        text: `🏢 **About GlowHive**\n\nGlowHive is a premium beauty and cosmetics brand dedicated to bringing you the finest skincare, makeup, and beauty products.\n\n💡 Visit our About page for more information!`,
+        products: []
+      };
+    }
+
+    const valuesList = about.values ? about.values.map(v => `• ${v}`).join('\n') : '';
+    
+    return {
+      type: 'about',
+      text: `🏢 **${about.title || 'About GlowHive'}**\n\n${about.description || ''}\n\n📖 **Our Story:**\n${about.story || ''}\n\n🎯 **Our Mission:**\n${about.mission || ''}\n\n💎 **Our Values:**\n${valuesList}\n\n👥 **Our Team:**\n${about.team || ''}\n\n📧 **Contact:**\n• Email: ${about.contact?.email || 'support@glowhive.com'}\n• Phone: ${about.contact?.phone || '+977 984-1234567'}\n• Address: ${about.contact?.address || 'Kathmandu, Nepal'}\n\n✨ Follow us on social media for updates and exclusive offers!`,
+      products: []
+    };
+  }
+
+  // ─── Product Listing Query Detection ───
   isProductListingQuery(msg) {
     const listingKeywords = [
       'what products are available',
@@ -333,7 +401,6 @@ class ResponseGenerator {
       };
     }
     
-    // Default: Show featured products
     return {
       type: 'product',
       text: `🛍️ **Featured Products Available:**\n\n${productList}\n\n✨ Click on any product below to view details, price, and availability! 👇`,
@@ -343,7 +410,6 @@ class ResponseGenerator {
 
   // ─── Account Query Detection ───
   getAccountResponse(msg) {
-    // Create Account
     if (msg.includes('create account') || msg.includes('make account') || msg.includes('sign up') || msg.includes('register')) {
       return {
         type: 'account',
@@ -352,7 +418,6 @@ class ResponseGenerator {
       };
     }
     
-    // Delete Account
     if (msg.includes('delete account') || msg.includes('remove account') || msg.includes('close account')) {
       return {
         type: 'account',
@@ -361,7 +426,6 @@ class ResponseGenerator {
       };
     }
     
-    // Change/Reset Password
     if (msg.includes('change password') || msg.includes('reset password') || msg.includes('update password')) {
       return {
         type: 'account',
@@ -370,7 +434,6 @@ class ResponseGenerator {
       };
     }
     
-    // Update Profile
     if (msg.includes('update profile') || msg.includes('edit profile') || msg.includes('change email')) {
       return {
         type: 'account',
@@ -415,6 +478,8 @@ class ResponseGenerator {
   // ─── Product Query Detection ───
   isProductQuery(msg) {
     if (this.isProductListingQuery(msg)) return false;
+    if (this.isAboutChatbotQuery(msg)) return false;
+    if (this.isAboutCompanyQuery(msg)) return false;
     if (msg.includes('how to order') || msg.includes('place order') || msg.includes('make order')) return false;
     if (this.getAccountResponse(msg)) return false;
     
@@ -440,7 +505,8 @@ class ResponseGenerator {
            !msg.includes('privacy') && 
            !msg.includes('cookie') &&
            !msg.includes('account') &&
-           !msg.includes('order');
+           !msg.includes('order') &&
+           !msg.includes('about');
   }
 
   isPrivacyQuery(msg) {
@@ -449,7 +515,8 @@ class ResponseGenerator {
            !msg.includes('terms') && 
            !msg.includes('cookie') &&
            !msg.includes('account') &&
-           !msg.includes('order');
+           !msg.includes('order') &&
+           !msg.includes('about');
   }
 
   isGreeting(msg) {
@@ -583,7 +650,7 @@ export function ChatbotProvider({ children }) {
       } else {
         const welcome = {
           id: Date.now(),
-          text: "👋 Welcome to GlowHive Beauty Assistant!\n\nI'm here to help you with:\n\n🛍️ **Products** - What's available, prices, ingredients, how to use\n📦 **Orders** - How to place, track, cancel, returns\n👤 **Account** - Create, delete, reset password, update profile\n💳 **Payments** - Methods, refunds\n📋 **Policies** - FAQs, Terms, Privacy\n\nWhat would you like to know today? ✨",
+          text: "👋 Welcome to GlowHive Beauty Assistant!\n\nI'm here to help you with:\n\n🛍️ **Products** - What's available, prices, ingredients, how to use\n📦 **Orders** - How to place, track, cancel, returns\n👤 **Account** - Create, delete, reset password, update profile\n💳 **Payments** - Methods, refunds\n📋 **Policies** - FAQs, Terms, Privacy\n🏢 **About** - Learn about GlowHive\n\nWhat would you like to know today? ✨",
           sender: 'bot',
           timestamp: new Date().toISOString(),
         };
@@ -626,7 +693,7 @@ export function ChatbotProvider({ children }) {
       if (!responseGenerator || !isInitialized) {
         const loadingMessage = {
           id: Date.now() + 1,
-          text: "⏳ Loading product data... Please wait a moment.",
+          text: "⏳ Loading data... Please wait a moment.",
           sender: 'bot',
           timestamp: new Date().toISOString(),
           type: 'loading',
@@ -671,7 +738,7 @@ export function ChatbotProvider({ children }) {
   const clearChat = () => {
     const welcome = {
       id: Date.now(),
-      text: "👋 Welcome to GlowHive Beauty Assistant!\n\nI'm here to help you with:\n\n🛍️ **Products** - What's available, prices, ingredients, how to use\n📦 **Orders** - How to place, track, cancel, returns\n👤 **Account** - Create, delete, reset password, update profile\n💳 **Payments** - Methods, refunds\n📋 **Policies** - FAQs, Terms, Privacy\n\nWhat would you like to know today? ✨",
+      text: "👋 Welcome to GlowHive Beauty Assistant!\n\nI'm here to help you with:\n\n🛍️ **Products** - What's available, prices, ingredients, how to use\n📦 **Orders** - How to place, track, cancel, returns\n👤 **Account** - Create, delete, reset password, update profile\n💳 **Payments** - Methods, refunds\n📋 **Policies** - FAQs, Terms, Privacy\n🏢 **About** - Learn about GlowHive\n\nWhat would you like to know today? ✨",
       sender: 'bot',
       timestamp: new Date().toISOString(),
     };

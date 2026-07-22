@@ -11,7 +11,7 @@ import { Toaster } from 'react-hot-toast';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata = {
-  title: 'GlowHive - Beauty & Cosmetics',
+  title: 'GlowHive - Beauty',
   description: 'Premium skincare & makeup crafted for your natural beauty',
 };
 
