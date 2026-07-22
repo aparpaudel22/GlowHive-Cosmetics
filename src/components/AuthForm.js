@@ -3,10 +3,11 @@
 import { useState, useRef } from 'react';
 import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
 import { jwtDecode } from 'jwt-decode';
-import { Lock, Mail, User as UserIcon, Gem, Eye, EyeOff, X, KeyRound, Phone, Camera } from 'lucide-react';
+import { Lock, Mail, User as UserIcon, Eye, EyeOff, X, KeyRound, Phone, Camera, Scale } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '@/context/AuthContext';
 import Image from 'next/image';
+import Link from 'next/link';
 
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 
@@ -36,7 +37,6 @@ function Field({ icon: Icon, label, action, type = 'text', ...inputProps }) {
           onFocus={e => (e.currentTarget.style.borderColor = '#b76e79')}
           onBlur={e  => (e.currentTarget.style.borderColor = '#fde8ec')}
         />
-        {/* Eye toggle for password fields, static icon for others */}
         {isPassword ? (
           <button
             type="button"
@@ -61,7 +61,7 @@ function Field({ icon: Icon, label, action, type = 'text', ...inputProps }) {
 
 /* ─── Forgot-password modal ─── */
 function ForgotPasswordModal({ onClose }) {
-  const [step,    setStep]    = useState(1); // 1=email, 2=reset, 3=done
+  const [step,    setStep]    = useState(1);
   const [email,   setEmail]   = useState('');
   const [newPw,   setNewPw]   = useState('');
   const [confirm, setConfirm] = useState('');
@@ -79,7 +79,7 @@ function ForgotPasswordModal({ onClose }) {
         toast.error('No account found for that email.');
         return;
       }
-      setEmail(found.email); // normalise case
+      setEmail(found.email);
       setStep(2);
     }, 600);
   };
@@ -100,12 +100,10 @@ function ForgotPasswordModal({ onClose }) {
 
   return (
     <>
-      {/* backdrop */}
       <div
         onClick={onClose}
         style={{ position: 'fixed', inset: 0, background: 'rgba(61,31,37,0.5)', backdropFilter: 'blur(6px)', zIndex: 9000 }}
       />
-      {/* panel */}
       <div style={{
         position: 'fixed', inset: 0, zIndex: 9001,
         display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px',
@@ -115,7 +113,6 @@ function ForgotPasswordModal({ onClose }) {
           width: 'min(420px, 96vw)', boxShadow: '0 32px 80px rgba(61,31,37,0.24)',
           position: 'relative',
         }}>
-          {/* close */}
           <button onClick={onClose} style={{
             position: 'absolute', top: '16px', right: '16px',
             background: '#fdf6f0', border: 'none', borderRadius: '50%',
@@ -125,7 +122,6 @@ function ForgotPasswordModal({ onClose }) {
             <X size={15} color="#8c6468" />
           </button>
 
-          {/* icon */}
           <div style={{
             width: '56px', height: '56px', borderRadius: '50%', background: '#fde8ec',
             display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px',
@@ -133,7 +129,6 @@ function ForgotPasswordModal({ onClose }) {
             <KeyRound size={24} color="#b76e79" />
           </div>
 
-          {/* Step 1 — find account */}
           {step === 1 && (
             <form onSubmit={findAccount} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
               <div>
@@ -161,7 +156,6 @@ function ForgotPasswordModal({ onClose }) {
             </form>
           )}
 
-          {/* Step 2 — set new password */}
           {step === 2 && (
             <form onSubmit={resetPassword} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
               <div>
@@ -196,7 +190,6 @@ function ForgotPasswordModal({ onClose }) {
             </form>
           )}
 
-          {/* Step 3 — done */}
           {step === 3 && (
             <div style={{ textAlign: 'center' }}>
               <div style={{ fontSize: '48px', marginBottom: '14px' }}>🎉</div>
@@ -221,7 +214,201 @@ function ForgotPasswordModal({ onClose }) {
   );
 }
 
-/* ─── Google button (unchanged) ─── */
+/* ─── Terms & Conditions Modal ─── */
+function TermsModal({ onClose }) {
+  return (
+    <>
+      <div
+        onClick={onClose}
+        style={{ 
+          position: 'fixed', inset: 0, 
+          background: 'rgba(61,31,37,0.6)', 
+          backdropFilter: 'blur(8px)', 
+          zIndex: 10000 
+        }}
+      />
+      <div style={{
+        position: 'fixed', inset: 0, zIndex: 10001,
+        display: 'flex', alignItems: 'center', justifyContent: 'center', 
+        padding: '20px',
+      }}>
+        <div style={{
+          background: '#fff', borderRadius: '24px', padding: '32px',
+          width: 'min(700px, 96vw)', 
+          maxHeight: '90vh',
+          boxShadow: '0 32px 80px rgba(61,31,37,0.3)',
+          position: 'relative',
+          overflowY: 'auto',
+          display: 'flex',
+          flexDirection: 'column',
+        }}>
+          {/* Close button */}
+          <button onClick={onClose} style={{
+            position: 'sticky', top: 0, alignSelf: 'flex-end',
+            background: '#fdf6f0', border: 'none', borderRadius: '50%',
+            width: '40px', height: '40px', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            flexShrink: 0,
+            zIndex: 10,
+            marginBottom: '16px',
+          }}>
+            <X size={18} color="#8c6468" />
+          </button>
+
+          {/* Content */}
+          <div style={{ flex: 1, overflowY: 'auto' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+              <div style={{
+                width: '48px', height: '48px', borderRadius: '50%',
+                background: '#fdf0f3',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <Scale size={24} color="#b76e79" />
+              </div>
+              <h2 style={{
+                fontSize: '24px', fontWeight: 800, color: '#3d1f25',
+                fontFamily: "'Playfair Display', Georgia, serif",
+                margin: 0,
+              }}>
+                Terms & Conditions
+              </h2>
+            </div>
+
+            <div style={{ 
+              fontSize: '14px', 
+              color: '#5a3a40', 
+              lineHeight: 1.9,
+              maxHeight: 'calc(90vh - 200px)',
+              overflowY: 'auto',
+              paddingRight: '8px',
+            }}>
+              <p style={{ marginBottom: '16px' }}>
+                <strong>Welcome to GlowHive!</strong> By using our website and services, you agree to the following terms and conditions.
+              </p>
+
+              <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#3d1f25', marginTop: '20px', marginBottom: '8px' }}>
+                1. Account Registration
+              </h3>
+              <p style={{ marginBottom: '12px' }}>
+                To access certain features, you may need to create an account. You agree to provide accurate information and maintain the security of your account. You must be at least 16 years old to use our services.
+              </p>
+
+              <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#3d1f25', marginTop: '16px', marginBottom: '8px' }}>
+                2. Orders and Pricing
+              </h3>
+              <p style={{ marginBottom: '12px' }}>
+                All orders are subject to acceptance and availability. We reserve the right to refuse or cancel orders. Prices are subject to change without notice.
+              </p>
+
+              <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#3d1f25', marginTop: '16px', marginBottom: '8px' }}>
+                3. Payment Terms
+              </h3>
+              <p style={{ marginBottom: '12px' }}>
+                We accept Cash on Delivery, eSewa, Khalti, and Bank Transfer. By providing payment information, you authorize us to charge the total amount of your order.
+              </p>
+
+              <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#3d1f25', marginTop: '16px', marginBottom: '8px' }}>
+                4. Shipping and Delivery
+              </h3>
+              <p style={{ marginBottom: '12px' }}>
+                We ship within Nepal. Delivery times are estimates and not guaranteed. Risk of loss passes to you upon delivery to the shipping carrier.
+              </p>
+
+              <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#3d1f25', marginTop: '16px', marginBottom: '8px' }}>
+                5. Returns and Refunds
+              </h3>
+              <p style={{ marginBottom: '12px' }}>
+                You may return items within 30 days of delivery if unused and in original packaging. Refunds are processed within 3-5 business days.
+              </p>
+
+              <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#3d1f25', marginTop: '16px', marginBottom: '8px' }}>
+                6. Intellectual Property
+              </h3>
+              <p style={{ marginBottom: '12px' }}>
+                All content on our website is the property of GlowHive and is protected by intellectual property laws. You may not use our content without permission.
+              </p>
+
+              <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#3d1f25', marginTop: '16px', marginBottom: '8px' }}>
+                7. User-Generated Content
+              </h3>
+              <p style={{ marginBottom: '12px' }}>
+                By submitting content, you grant us a non-exclusive, royalty-free license to use, reproduce, and distribute such content.
+              </p>
+
+              <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#3d1f25', marginTop: '16px', marginBottom: '8px' }}>
+                8. Privacy and Data Protection
+              </h3>
+              <p style={{ marginBottom: '12px' }}>
+                Your privacy is important to us. We collect and use your personal information as described in our Privacy Policy.
+              </p>
+
+              <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#3d1f25', marginTop: '16px', marginBottom: '8px' }}>
+                9. Limitations of Liability
+              </h3>
+              <p style={{ marginBottom: '12px' }}>
+                GlowHive shall not be liable for any indirect, incidental, or consequential damages arising from the use of our website.
+              </p>
+
+              <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#3d1f25', marginTop: '16px', marginBottom: '8px' }}>
+                10. Governing Law
+              </h3>
+              <p style={{ marginBottom: '12px' }}>
+                These terms are governed by the laws of Nepal. Any disputes shall be subject to the jurisdiction of courts in Kathmandu.
+              </p>
+
+              <div style={{
+                marginTop: '20px',
+                paddingTop: '16px',
+                borderTop: '1px solid #fde8ec',
+                fontSize: '12px',
+                color: '#8c6468',
+                textAlign: 'center',
+              }}>
+                <p>Effective Date: January 1, 2026</p>
+                <p style={{ marginTop: '4px' }}>
+                  For full details, please visit our{' '}
+                  <Link href="/terms" style={{ color: '#b76e79', fontWeight: 600, textDecoration: 'underline' }}>
+                    Terms & Conditions page
+                  </Link>
+                </p>
+              </div>
+            </div>
+
+            {/* Accept Button */}
+            <div style={{
+              marginTop: '20px',
+              paddingTop: '16px',
+              borderTop: '1px solid #fde8ec',
+              display: 'flex',
+              justifyContent: 'flex-end',
+            }}>
+              <button
+                onClick={onClose}
+                style={{
+                  padding: '10px 32px',
+                  background: 'linear-gradient(135deg, #b76e79, #c2748a)',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '50px',
+                  fontSize: '14px',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                }}
+                onMouseEnter={(e) => e.target.style.transform = 'scale(1.02)'}
+                onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
+              >
+                I Understand & Agree
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
+/* ─── Google button ─── */
 function GoogleButton() {
   const { loginWithGoogle } = useAuth();
   const [demoLoading, setDemoLoading] = useState(false);
@@ -243,8 +430,16 @@ function GoogleButton() {
         color: '#3d1f25', cursor: 'pointer', display: 'flex', alignItems: 'center',
         justifyContent: 'center', gap: '10px', opacity: demoLoading ? 0.7 : 1,
       }}>
-        <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" alt="" width={18} height={18} />
-        {demoLoading ? 'Signing in…' : 'Continue with Google'}
+        <span style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <img 
+            src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" 
+            alt="Google" 
+            width={18} 
+            height={18} 
+            style={{ display: 'inline-block' }}
+          />
+          {demoLoading ? 'Signing in…' : 'Continue with Google'}
+        </span>
       </button>
     );
   }
@@ -278,6 +473,7 @@ export default function AuthForm({ redirectMessage }) {
   const [tab,           setTab]           = useState('login');
   const [loading,       setLoading]       = useState(false);
   const [showForgot,    setShowForgot]    = useState(false);
+  const [showTerms,     setShowTerms]     = useState(false);
   const [loginData,     setLoginData]     = useState({ email: '', password: '' });
   const [regData,       setRegData]       = useState({ 
     name: '', 
@@ -286,11 +482,10 @@ export default function AuthForm({ redirectMessage }) {
     confirm: '', 
     agree: false,
     phone: '',
-    avatar: null // base64 string
+    avatar: null
   });
   const [avatarPreview, setAvatarPreview] = useState(null);
 
-  // ── Handle avatar upload ──
   const handleAvatarChange = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -313,7 +508,6 @@ export default function AuthForm({ redirectMessage }) {
     if (fileRef.current) fileRef.current.value = '';
   };
 
-  /* ── Login: pass individual args (was the root bug) ── */
   const handleLogin = async (e) => {
     e.preventDefault();
     if (!loginData.email || !loginData.password) {
@@ -323,20 +517,24 @@ export default function AuthForm({ redirectMessage }) {
     setLoading(true);
     const result = await login(loginData.email, loginData.password);
     setLoading(false);
-    if (!result.error) {
-      toast.success('Signed in successfully 🎉');
-    } else if (result.error === 'NO_ACCOUNT') {
-      toast.error('No account found. Please register first!');
-      setTab('register');
-      setRegData(d => ({ ...d, email: loginData.email }));
-    } else if (result.error === 'WRONG_PASSWORD') {
-      toast.error('Incorrect password. Try again or reset it.');
+    
+    if (result && typeof result === 'object') {
+      if (!result.error) {
+        toast.success('Signed in successfully 🎉');
+      } else if (result.error === 'NO_ACCOUNT') {
+        toast.error('No account found. Please register first!');
+        setTab('register');
+        setRegData(d => ({ ...d, email: loginData.email }));
+      } else if (result.error === 'WRONG_PASSWORD') {
+        toast.error('Incorrect password. Try again or reset it.');
+      } else {
+        toast.error('Sign in failed. Please try again.');
+      }
     } else {
       toast.error('Sign in failed. Please try again.');
     }
   };
 
-  /* ── Register: pass individual args with phone and avatar ── */
   const handleRegister = async (e) => {
     e.preventDefault();
     if (!regData.name || !regData.email || !regData.password) {
@@ -355,25 +553,33 @@ export default function AuthForm({ redirectMessage }) {
       toast.error('Please enter a valid 10-digit phone number.');
       return;
     }
-    if (!regData.avatar) {
-      toast.error('Please upload a profile photo.');
-      return;
-    }
     if (!regData.agree) {
       toast.error('Please agree to the Terms & Conditions.');
       return;
     }
+    
     setLoading(true);
-    const result = await register(regData.name, regData.email, regData.password, regData.phone, regData.avatar);
+    const result = await register(
+      regData.name, 
+      regData.email, 
+      regData.password, 
+      regData.phone, 
+      regData.avatar
+    );
     setLoading(false);
-    if (!result.error) {
-      toast.success('Account created — welcome to GlowHive ✨');
-    } else if (result.error === 'ALREADY_EXISTS') {
-      toast.error('Email already registered. Please sign in.');
-      setTab('login');
-      setLoginData(d => ({ ...d, email: regData.email }));
-    } else if (result.error === 'INVALID_PHONE') {
-      toast.error('Invalid phone number. Please check and try again.');
+    
+    if (result && typeof result === 'object') {
+      if (!result.error) {
+        toast.success('Account created — welcome to GlowHive ✨');
+      } else if (result.error === 'ALREADY_EXISTS') {
+        toast.error('Email already registered. Please sign in.');
+        setTab('login');
+        setLoginData(d => ({ ...d, email: regData.email }));
+      } else if (result.error === 'INVALID_PHONE') {
+        toast.error('Invalid phone number. Please check and try again.');
+      } else {
+        toast.error('Registration failed. Please try again.');
+      }
     } else {
       toast.error('Registration failed. Please try again.');
     }
@@ -382,6 +588,7 @@ export default function AuthForm({ redirectMessage }) {
   return (
     <>
       {showForgot && <ForgotPasswordModal onClose={() => setShowForgot(false)} />}
+      {showTerms && <TermsModal onClose={() => setShowTerms(false)} />}
 
       <div style={{
         minHeight: '100vh', background: 'linear-gradient(135deg,#fdf0f3,#fff8f5 45%,#fdf6f0)',
@@ -417,37 +624,39 @@ export default function AuthForm({ redirectMessage }) {
             </div>
 
             <div style={{ padding: '32px' }}>
-              {/* ─── Logo Section ─── */}
+              {/* ─── Logo Section - Using your logo image ─── */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '26px' }}>
                 <div style={{ 
-                  width: '44px', 
-                  height: '44px', 
-                  borderRadius: '50%', 
+                  width: '48px', 
+                  height: '48px', 
+                  borderRadius: '12px', 
                   background: '#fde8ec', 
                   display: 'flex', 
                   alignItems: 'center', 
                   justifyContent: 'center', 
                   flexShrink: 0,
                   overflow: 'hidden',
+                  padding: '6px',
                 }}>
-                  {/* Logo Image - Replace the src with your actual logo path */}
                   <img 
                     src="/Logo-full.png" 
                     alt="GlowHive Logo" 
                     style={{ 
                       width: '100%', 
                       height: '100%', 
-                      objectFit: 'cover',
+                      objectFit: 'contain',
                     }}
                     onError={(e) => {
-                      // Fallback to diamond icon if image fails to load
+                      // Fallback if image fails to load
                       e.target.style.display = 'none';
-                      e.target.parentElement.innerHTML = '<Gem size={20} color="#b76e79" />';
+                      e.target.parentElement.innerHTML = '<span style="font-size:24px;font-weight:900;color:#b76e79;font-family:\'Playfair Display\',Georgia,serif;">G</span>';
                     }}
                   />
                 </div>
                 <div>
-                  <p style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: '20px', fontWeight: 700, color: '#3d1f25', margin: 0 }}>GlowHive</p>
+                  <p style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: '20px', fontWeight: 700, color: '#3d1f25', margin: 0 }}>
+                    GlowHive
+                  </p>
                   <p style={{ fontSize: '13px', color: '#8c6468', margin: 0 }}>
                     {tab === 'login' ? 'Welcome back! Sign in to continue.' : 'Join GlowHive for exclusive offers.'}
                   </p>
@@ -493,13 +702,12 @@ export default function AuthForm({ redirectMessage }) {
                 </form>
               ) : (
                 <form onSubmit={handleRegister} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
-                  {/* Profile Photo Upload - NEW */}
+                  {/* Profile Photo Upload - OPTIONAL */}
                   <div>
                     <label style={{ fontSize: '13px', fontWeight: 600, color: '#3d1f25', display: 'block', marginBottom: '6px' }}>
-                      Profile Photo *
+                      Profile Photo <span style={{ color: '#c9a3a9', fontWeight: 400 }}>(Optional)</span>
                     </label>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                      {/* Avatar Preview Circle */}
                       <div style={{
                         width: '64px', height: '64px', borderRadius: '50%',
                         background: avatarPreview ? 'transparent' : '#fdf6f0',
@@ -509,7 +717,11 @@ export default function AuthForm({ redirectMessage }) {
                       }}>
                         {avatarPreview ? (
                           <>
-                            <img src={avatarPreview} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            <img 
+                              src={avatarPreview} 
+                              alt="Profile" 
+                              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                            />
                             <button
                               type="button"
                               onClick={removeAvatar}
@@ -529,7 +741,6 @@ export default function AuthForm({ redirectMessage }) {
                         )}
                       </div>
 
-                      {/* Upload Button */}
                       <div style={{ flex: 1 }}>
                         <input
                           ref={fileRef}
@@ -551,27 +762,26 @@ export default function AuthForm({ redirectMessage }) {
                           }}
                         >
                           <Camera size={16} />
-                          {avatarPreview ? 'Change Photo' : 'Upload Photo'}
+                          {avatarPreview ? 'Change Photo' : 'Upload Photo (Optional)'}
                         </button>
                         <p style={{ fontSize: '10px', color: '#c9a3a9', marginTop: '4px' }}>
-                          Max 3MB • JPG, PNG, GIF
+                          Max 3MB • JPG, PNG, GIF • Not required
                         </p>
                       </div>
                     </div>
                   </div>
 
                   <Field
-                    icon={UserIcon} label="Full Name" type="text" placeholder="Your full name"
+                    icon={UserIcon} label="Full Name *" type="text" placeholder="Your full name"
                     value={regData.name}
                     onChange={e => setRegData(d => ({ ...d, name: e.target.value }))}
                   />
                   <Field
-                    icon={Mail} label="Email Address" type="email" placeholder="your@email.com"
+                    icon={Mail} label="Email Address *" type="email" placeholder="your@email.com"
                     value={regData.email}
                     onChange={e => setRegData(d => ({ ...d, email: e.target.value }))}
                   />
                   
-                  {/* Phone Number - NEW */}
                   <Field
                     icon={Phone} label="Phone Number *" type="tel" placeholder="98XXXXXXXX"
                     value={regData.phone}
@@ -579,21 +789,52 @@ export default function AuthForm({ redirectMessage }) {
                   />
                   
                   <Field
-                    label="Password" type="password" placeholder="Create a strong password"
+                    label="Password *" type="password" placeholder="Create a strong password"
                     value={regData.password}
                     onChange={e => setRegData(d => ({ ...d, password: e.target.value }))}
                   />
                   <Field
-                    label="Confirm Password" type="password" placeholder="••••••••••"
+                    label="Confirm Password *" type="password" placeholder="••••••••••"
                     value={regData.confirm}
                     onChange={e => setRegData(d => ({ ...d, confirm: e.target.value }))}
                   />
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '13px', color: '#8c6468', cursor: 'pointer' }}>
-                    <input type="checkbox" checked={regData.agree}
+                  
+                  {/* ─── TERMS & CONDITIONS CHECKBOX ─── */}
+                  <label style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: '10px', 
+                    fontSize: '13px', 
+                    color: '#8c6468', 
+                    cursor: 'pointer' 
+                  }}>
+                    <input 
+                      type="checkbox" 
+                      checked={regData.agree}
                       onChange={e => setRegData(d => ({ ...d, agree: e.target.checked }))}
-                      style={{ width: '16px', height: '16px', accentColor: '#b76e79' }} />
-                    I agree to <span style={{ color: '#b76e79', fontWeight: 600 }}>Terms &amp; Conditions</span>
+                      style={{ width: '16px', height: '16px', accentColor: '#b76e79' }} 
+                    />
+                    I agree to{' '}
+                    <span
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setShowTerms(true);
+                      }}
+                      style={{ 
+                        color: '#b76e79', 
+                        fontWeight: 600, 
+                        textDecoration: 'underline',
+                        cursor: 'pointer',
+                        transition: 'color 0.2s',
+                      }}
+                      onMouseEnter={(e) => e.target.style.color = '#c2748a'}
+                      onMouseLeave={(e) => e.target.style.color = '#b76e79'}
+                    >
+                      Terms &amp; Conditions
+                    </span>
                   </label>
+                  
                   <button type="submit" disabled={loading} style={{
                     background: '#b76e79', color: '#fff', border: 'none', borderRadius: '14px',
                     padding: '14px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', opacity: loading ? 0.75 : 1,

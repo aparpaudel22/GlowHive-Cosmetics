@@ -5,8 +5,8 @@ import { createContext, useContext, useState, useEffect } from 'react';
 // ── All keys that belong to a signed-in user ──
 const DATA_KEYS = ['orders', 'profile', 'avatar', 'addresses', 'cart'];
 
-const generic = (key)        => `glowhive_${key}`;
-const scoped  = (email, key) => `glowhive_${encodeURIComponent(email)}_${key}`;
+const generic = (key) => `glowhive_${key}`;
+const scoped = (email, key) => `glowhive_${encodeURIComponent(email)}_${key}`;
 
 /** Copy current generic keys → user-scoped storage */
 function backupData(email) {
@@ -21,7 +21,7 @@ function restoreData(email) {
   DATA_KEYS.forEach(k => {
     const val = localStorage.getItem(scoped(email, k));
     if (val !== null) localStorage.setItem(generic(k), val);
-    else              localStorage.removeItem(generic(k));
+    else localStorage.removeItem(generic(k));
   });
 }
 
@@ -48,7 +48,7 @@ function deleteAllUserData(email) {
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  const [user,     setUser]     = useState(null);
+  const [user, setUser] = useState(null);
   const [hydrated, setHydrated] = useState(false);
 
   // ── Rehydrate session on page load ──
@@ -70,14 +70,14 @@ export function AuthProvider({ children }) {
     try {
       const users = JSON.parse(localStorage.getItem('glowhive_users') || '[]');
       const found = users.find(u => u.email === email);
-      if (!found)                    return { error: 'NO_ACCOUNT'     };
+      if (!found) return { error: 'NO_ACCOUNT' };
       if (found.password !== password) return { error: 'WRONG_PASSWORD' };
 
-      const u = { 
-        name: found.name, 
-        email: found.email, 
+      const u = {
+        name: found.name,
+        email: found.email,
         phone: found.phone || '',
-        picture: found.picture || null 
+        picture: found.picture || null
       };
       localStorage.setItem('glowhive_user', JSON.stringify(u));
       // Load this user's saved data into the generic keys
@@ -101,36 +101,36 @@ export function AuthProvider({ children }) {
       if (users.find(u => u.email === email)) return { error: 'ALREADY_EXISTS' };
 
       // Create user with phone and avatar
-      const newUser = { 
-        name, 
-        email, 
-        password, 
+      const newUser = {
+        name,
+        email,
+        password,
         phone: phone.trim(),
-        picture: avatar || null 
+        picture: avatar || null
       };
-      
+
       localStorage.setItem('glowhive_users', JSON.stringify([...users, newUser]));
-      
-      const u = { 
-        name, 
-        email, 
+
+      const u = {
+        name,
+        email,
         phone: phone.trim(),
-        picture: avatar || null 
+        picture: avatar || null
       };
-      
+
       localStorage.setItem('glowhive_user', JSON.stringify(u));
-      
+
       // Save avatar if provided
       if (avatar) {
         localStorage.setItem(generic('avatar'), avatar);
         localStorage.setItem(scoped(email, 'avatar'), avatar);
       }
-      
+
       // Save profile with phone number
       const profile = { firstName: name.split(' ')[0] || '', lastName: name.split(' ').slice(1).join(' ') || '', phone: phone.trim() };
       localStorage.setItem(generic('profile'), JSON.stringify(profile));
       localStorage.setItem(scoped(email, 'profile'), JSON.stringify(profile));
-      
+
       // Brand-new account → start completely fresh
       clearGenericData();
       setUser(u);
@@ -145,26 +145,26 @@ export function AuthProvider({ children }) {
     // Check if user exists in our system
     const users = JSON.parse(localStorage.getItem('glowhive_users') || '[]');
     const existingUser = users.find(u => u.email === googleUser.email);
-    
+
     let u;
     if (existingUser) {
       // User exists, use their data
-      u = { 
-        name: existingUser.name, 
-        email: existingUser.email, 
+      u = {
+        name: existingUser.name,
+        email: existingUser.email,
         phone: existingUser.phone || '',
-        picture: existingUser.picture || googleUser.picture || null 
+        picture: existingUser.picture || googleUser.picture || null
       };
     } else {
       // New Google user - they need to provide phone number
       // We'll store with empty phone and they can update later
-      u = { 
-        name: googleUser.name, 
-        email: googleUser.email, 
+      u = {
+        name: googleUser.name,
+        email: googleUser.email,
         phone: '',
-        picture: googleUser.picture || null 
+        picture: googleUser.picture || null
       };
-      
+
       // Save to users list with empty phone
       const newUser = {
         name: googleUser.name,
@@ -175,7 +175,7 @@ export function AuthProvider({ children }) {
       };
       localStorage.setItem('glowhive_users', JSON.stringify([...users, newUser]));
     }
-    
+
     localStorage.setItem('glowhive_user', JSON.stringify(u));
     restoreData(u.email);
     setUser(u);
@@ -199,13 +199,13 @@ export function AuthProvider({ children }) {
       }
 
       const email = user.email;
-      
+
       // Delete all user data
       deleteAllUserData(email);
-      
+
       // Update state
       setUser(null);
-      
+
       return { success: true };
     } catch (error) {
       console.error('Delete account error:', error);
@@ -230,7 +230,21 @@ export function AuthProvider({ children }) {
 }
 
 export function useAuth() {
-  return useContext(AuthContext);
+  const context = useContext(AuthContext);
+  if (!context) {
+    // Return a default value instead of throwing error
+    return {
+      user: null,
+      isAuthenticated: false,
+      hydrated: true,
+      login: async () => ({ error: 'Auth not initialized' }),
+      register: async () => ({ error: 'Auth not initialized' }),
+      loginWithGoogle: () => {},
+      logout: () => {},
+      deleteAccount: async () => {},
+    };
+  }
+  return context;
 }
 
 export default AuthProvider;

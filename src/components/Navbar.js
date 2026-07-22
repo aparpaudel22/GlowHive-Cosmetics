@@ -2,39 +2,62 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Search, Heart, ShoppingBag, User,
   Menu, X, ChevronDown, Package,
 } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
+import { useAuth } from '@/context/AuthContext';
 
 const navLinks = [
-  { label: 'Home',         href: '/' },
-  { label: 'Shop All',     href: '/products' },
+  { label: 'Home', href: '/' },
+  { label: 'Shop All', href: '/products' },
   { label: 'New Arrivals', href: '/new-arrivals' },
   {
     label: 'Categories',
     href: '#',
     children: [
-      { label: 'Skincare',   href: '/products?category=skincare'  },
-      { label: ' Makeup',    href: '/products?category=makeup'    },
-      { label: ' Lip Care',  href: '/products?category=lip-care'  },
-      { label: ' Eye Care',  href: '/products?category=eye-care'  },
-      { label: ' Fragrance', href: '/products?category=fragrance' },
-      { label: ' Hair Care', href: '/products?category=hair-care' },
-      { label: ' Body Care', href: '/products?category=body-care' },
+      { label: 'Skincare', href: '/products?category=skincare' },
+      { label: 'Makeup', href: '/products?category=makeup' },
+      { label: 'Lip Care', href: '/products?category=lip-care' },
+      { label: 'Eye Care', href: '/products?category=eye-care' },
+      { label: 'Fragrance', href: '/products?category=fragrance' },
+      { label: 'Hair Care', href: '/products?category=hair-care' },
+      { label: 'Body Care', href: '/products?category=body-care' },
     ],
+    
   },
+  { label: 'Best Sellers', href: '/best-seller' },
   { label: 'About', href: '/about' },
 ];
 
 function Logo() {
+  const pathname = usePathname();
+  const router = useRouter();
+
+  const handleLogoClick = (e) => {
+    e.preventDefault();
+    
+    // If we're already on the home page, scroll to top
+    if (pathname === '/') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      // Otherwise navigate to home page
+      router.push('/');
+    }
+  };
+
   return (
-    <Link href="/" style={{ textDecoration: 'none' }}>
+    <a 
+      href="/" 
+      onClick={handleLogoClick}
+      style={{ textDecoration: 'none', cursor: 'pointer' }}
+    >
       <motion.div
-        whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+        whileHover={{ scale: 1.03 }}
+        whileTap={{ scale: 0.97 }}
         transition={{ type: 'spring', stiffness: 380, damping: 22 }}
         style={{ display: 'flex', alignItems: 'center', gap: '11px' }}
       >
@@ -86,19 +109,21 @@ function Logo() {
           }}>Beauty Essentials</div>
         </div>
       </motion.div>
-    </Link>
+    </a>
   );
 }
 
 export default function Navbar() {
-  const [scrolled,    setScrolled]    = useState(false);
-  const [mobileOpen,  setMobileOpen]  = useState(false);
-  const [searchOpen,  setSearchOpen]  = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [dropdown,    setDropdown]    = useState(false);
-  const [orders,      setOrders]      = useState([]);
+  const [dropdown, setDropdown] = useState(false);
+  const [orders, setOrders] = useState([]);
 
   const { cartCount } = useCart();
+  const auth = useAuth();
+  const user = auth?.user || null;
   const pathname = usePathname();
 
   useEffect(() => {
@@ -109,7 +134,6 @@ export default function Navbar() {
 
   useEffect(() => { setMobileOpen(false); }, [pathname]);
 
-  // Load orders for badge count only
   useEffect(() => {
     try { setOrders(JSON.parse(localStorage.getItem('glowhive_orders') || '[]')); } catch (_) {}
   }, []);
@@ -223,41 +247,62 @@ export default function Navbar() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
 
             {/* Search */}
-            {[{ el: searchOpen ? <X size={20} /> : <Search size={20} />, action: () => setSearchOpen(s => !s) }].map((btn, i) => (
-              <motion.button key={i}
+            <motion.button
+              whileHover={{ background: '#fde8ec', scale: 1.08 }}
+              whileTap={{ scale: 0.88 }}
+              onClick={() => setSearchOpen(s => !s)}
+              style={{
+                background: 'none', border: 'none', cursor: 'pointer',
+                padding: '9px', borderRadius: '50%', color: '#3d1f25',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                transition: 'background 0.2s',
+              }}>
+              {searchOpen ? <X size={20} /> : <Search size={20} />}
+            </motion.button>
+
+            {/* Wishlist */}
+            <Link href="/wishlist" style={{ textDecoration: 'none' }}>
+              <motion.div
                 whileHover={{ background: '#fde8ec', scale: 1.08 }}
                 whileTap={{ scale: 0.88 }}
-                onClick={btn.action}
                 style={{
-                  background: 'none', border: 'none', cursor: 'pointer',
                   padding: '9px', borderRadius: '50%', color: '#3d1f25',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  transition: 'background 0.2s',
+                  cursor: 'pointer', transition: 'background 0.2s',
                 }}>
-                {btn.el}
-              </motion.button>
-            ))}
+                <Heart size={20} />
+              </motion.div>
+            </Link>
 
-            {/* Wishlist + Account */}
-            {[
-              { icon: <Heart size={20} />, href: '/wishlist' },
-              { icon: <User size={20} />,  href: '/account'  },
-            ].map(item => (
-              <Link key={item.href} href={item.href} style={{ textDecoration: 'none' }}>
-                <motion.div
-                  whileHover={{ background: '#fde8ec', scale: 1.08 }}
-                  whileTap={{ scale: 0.88 }}
-                  style={{
-                    padding: '9px', borderRadius: '50%', color: '#3d1f25',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    cursor: 'pointer', transition: 'background 0.2s',
-                  }}>
-                  {item.icon}
-                </motion.div>
-              </Link>
-            ))}
+            {/* Account */}
+            <Link href={user ? "/account" : "/auth"} style={{ textDecoration: 'none' }}>
+              <motion.div
+                whileHover={{ background: '#fde8ec', scale: 1.08 }}
+                whileTap={{ scale: 0.88 }}
+                style={{
+                  padding: '9px', borderRadius: '50%', color: '#3d1f25',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  cursor: 'pointer', transition: 'background 0.2s',
+                  position: 'relative',
+                }}>
+                {user?.picture ? (
+                  <img 
+                    src={user.picture} 
+                    alt="Profile" 
+                    style={{
+                      width: '20px',
+                      height: '20px',
+                      borderRadius: '50%',
+                      objectFit: 'cover',
+                    }}
+                  />
+                ) : (
+                  <User size={20} />
+                )}
+              </motion.div>
+            </Link>
 
-            {/* Orders — links directly to /orders page */}
+            {/* Orders */}
             <Link href="/orders" style={{ textDecoration: 'none' }}>
               <motion.div
                 whileHover={{ background: '#fde8ec', scale: 1.08 }}
@@ -453,19 +498,20 @@ export default function Navbar() {
 
               {/* Bottom links */}
               <div style={{ borderTop: '1px solid #fde8ec', paddingTop: '16px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                {[
-                  { icon: <User size={17} color="#b76e79" />,  label: 'My Account', href: '/account'  },
-                  { icon: <Heart size={17} color="#b76e79" />, label: 'Wishlist',   href: '/wishlist' },
-                ].map(item => (
-                  <Link key={item.href} href={item.href} style={{ textDecoration: 'none' }}>
-                    <motion.div whileHover={{ x: 4, background: '#fdf0f3' }}
-                      style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 14px', borderRadius: '10px', fontSize: '15px', color: '#3d1f25', fontWeight: 500 }}>
-                      {item.icon} {item.label}
-                    </motion.div>
-                  </Link>
-                ))}
+                <Link href="/wishlist" style={{ textDecoration: 'none' }}>
+                  <motion.div whileHover={{ x: 4, background: '#fdf0f3' }}
+                    style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 14px', borderRadius: '10px', fontSize: '15px', color: '#3d1f25', fontWeight: 500 }}>
+                    <Heart size={17} color="#b76e79" /> Wishlist
+                  </motion.div>
+                </Link>
 
-                {/* My Orders — goes to /orders page */}
+                <Link href={user ? "/account" : "/auth"} style={{ textDecoration: 'none' }}>
+                  <motion.div whileHover={{ x: 4, background: '#fdf0f3' }}
+                    style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 14px', borderRadius: '10px', fontSize: '15px', color: '#3d1f25', fontWeight: 500 }}>
+                    <User size={17} color="#b76e79" /> {user ? 'My Account' : 'Sign In'}
+                  </motion.div>
+                </Link>
+
                 <Link href="/orders" style={{ textDecoration: 'none' }} onClick={() => setMobileOpen(false)}>
                   <motion.div whileHover={{ x: 4, background: '#fdf0f3' }}
                     style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', borderRadius: '10px', fontSize: '15px', color: '#3d1f25', fontWeight: 500, cursor: 'pointer' }}>

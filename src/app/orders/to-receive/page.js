@@ -3,8 +3,9 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Package, Truck, MapPin, Trash2, ShoppingBag, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Package, Truck, MapPin, Trash2, ShoppingBag, AlertTriangle, RefreshCw, FileText } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import Link from 'next/link';
 
 const TO_RECEIVE_STATUSES = ['shipped', 'out_for_delivery'];
 
@@ -126,14 +127,41 @@ export default function ToReceivePage() {
             <button onClick={() => router.back()} style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none', color: '#f43f68', fontSize: '14px', fontWeight: 600, cursor: 'pointer', marginBottom: '14px' }}>
               <ArrowLeft size={15} /> Back
             </button>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: '#eef3fd', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Package size={20} color="#5b8dd9" />
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: '#eef3fd', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Package size={20} color="#5b8dd9" />
+                </div>
+                <div>
+                  <h1 style={{ fontSize: '22px', fontWeight: 800, color: '#1a0a0f', fontFamily: "'Playfair Display', Georgia, serif" }}>To Receive</h1>
+                  <p style={{ fontSize: '13px', color: '#888', marginTop: '2px' }}>Orders on their way to you</p>
+                </div>
               </div>
-              <div>
-                <h1 style={{ fontSize: '22px', fontWeight: 800, color: '#1a0a0f', fontFamily: "'Playfair Display', Georgia, serif" }}>To Receive</h1>
-                <p style={{ fontSize: '13px', color: '#888', marginTop: '2px' }}>Orders on their way to you</p>
-              </div>
+              
+              {/* ── NEW: View All Returns Link ── */}
+              <Link href="/returns" style={{ textDecoration: 'none' }}>
+                <motion.div
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.95 }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '8px 16px',
+                    background: '#fef1f4',
+                    border: '1px solid #fde8ec',
+                    borderRadius: '50px',
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    color: '#b76e79',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                  }}
+                >
+                  <RefreshCw size={14} />
+                  Returns
+                </motion.div>
+              </Link>
             </div>
           </div>
         </div>
@@ -218,7 +246,56 @@ export default function ToReceivePage() {
                         </div>
                       )}
 
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#888' }}>
+                      {/* ── NEW: Action Buttons Row ── */}
+                      <div style={{ 
+                        display: 'flex', 
+                        gap: '8px', 
+                        marginTop: '12px',
+                        marginBottom: '8px',
+                      }}>
+                        {/* View Order Details */}
+                        <Link href={`/orders`} style={{ 
+                          flex: 1, 
+                          textAlign: 'center', 
+                          fontSize: '12px', 
+                          fontWeight: 700, 
+                          color: '#b76e79', 
+                          textDecoration: 'none', 
+                          background: '#fdf0f3', 
+                          border: '1px solid #fde8ec', 
+                          borderRadius: '50px', 
+                          padding: '9px 12px' 
+                        }}>
+                          <FileText size={13} style={{ display: 'inline', marginRight: '4px' }} />
+                          View Order
+                        </Link>
+
+                        {/* Request Return */}
+                        <Link href={`/returns`} style={{ 
+                          flex: 1, 
+                          textAlign: 'center', 
+                          fontSize: '12px', 
+                          fontWeight: 700, 
+                          color: '#f43f68', 
+                          textDecoration: 'none', 
+                          background: '#fff', 
+                          border: '1px solid #fecaca', 
+                          borderRadius: '50px', 
+                          padding: '9px 12px' 
+                        }}>
+                          <RefreshCw size={13} style={{ display: 'inline', marginRight: '4px' }} />
+                          Request Return
+                        </Link>
+                      </div>
+
+                      {/* Order date and estimated delivery */}
+                      <div style={{ 
+                        display: 'flex', 
+                        justifyContent: 'space-between', 
+                        fontSize: '12px', 
+                        color: '#888',
+                        marginTop: '4px',
+                      }}>
                         <span>{new Date(order.date).toLocaleDateString('en-NP', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
                         {order.estimatedDelivery && (
                           <span style={{ fontWeight: 600, color: '#5b8dd9' }}>Est. {order.estimatedDelivery}</span>
@@ -242,6 +319,7 @@ export default function ToReceivePage() {
           />
         )}
       </AnimatePresence>
+      
     </>
   );
 }

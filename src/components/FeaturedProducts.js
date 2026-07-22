@@ -10,8 +10,15 @@ export default function FeaturedProducts() {
   const featured = products.slice(0, 4);
 
   return (
-    <section style={{ padding: '72px 0', background: '#fff' }}>
-      <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0 28px' }}>
+    <section style={{ 
+      padding: 'clamp(40px, 8vh, 72px) 0', 
+      background: '#fff' 
+    }}>
+      <div style={{ 
+        maxWidth: '1280px', 
+        margin: '0 auto', 
+        padding: '0 clamp(16px, 3vw, 28px)' 
+      }}>
 
         {/* Header row */}
         <motion.div
@@ -22,12 +29,13 @@ export default function FeaturedProducts() {
           style={{
             display: 'flex', alignItems: 'center',
             justifyContent: 'space-between',
-            marginBottom: '36px',
+            marginBottom: 'clamp(24px, 3vh, 36px)',
             flexWrap: 'wrap', gap: '12px',
           }}
         >
           <h2 style={{
-            fontSize: '22px', fontWeight: 800, color: '#3d1f25',
+            fontSize: 'clamp(20px, 2.5vw, 22px)',
+            fontWeight: 800, color: '#3d1f25',
             fontFamily: "'Playfair Display', Georgia, serif",
           }}>
             Featured Products
@@ -37,7 +45,8 @@ export default function FeaturedProducts() {
               whileHover={{ gap: '10px', color: '#b76e79' }}
               style={{
                 display: 'flex', alignItems: 'center', gap: '6px',
-                fontSize: '14px', fontWeight: 600, color: '#8c6468',
+                fontSize: 'clamp(12px, 1.2vw, 14px)',
+                fontWeight: 600, color: '#8c6468',
                 transition: 'color 0.2s',
               }}
             >
@@ -49,15 +58,21 @@ export default function FeaturedProducts() {
           </Link>
         </motion.div>
 
-        {/* 4-column product grid */}
+        {/* Responsive product grid - 4 columns on desktop, 2 on tablet, 1 on mobile */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(4, 1fr)',
-          gap: '24px',
+          gridTemplateColumns: '1fr',
+          gap: 'clamp(16px, 2vw, 24px)',
         }}>
-          {featured.map((product, i) => (
-            <ProductCard key={product.id} product={product} index={i} />
-          ))}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))',
+            gap: 'clamp(16px, 2vw, 24px)',
+          }}>
+            {featured.map((product, i) => (
+              <ProductCard key={product.id} product={product} index={i} />
+            ))}
+          </div>
         </div>
       </div>
     </section>

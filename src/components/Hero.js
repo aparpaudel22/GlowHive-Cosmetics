@@ -24,33 +24,39 @@ export default function Hero() {
   return (
     <section style={{
       background: 'linear-gradient(135deg, #fdf6f0 0%, #fde8ec 50%, #fdf0f3 100%)',
-      minHeight: '520px',
+      minHeight: 'clamp(400px, 80vh, 520px)',
       display: 'flex',
       alignItems: 'center',
       position: 'relative',
       overflow: 'hidden',
     }}>
-      {/* Background decorative circles */}
+      {/* Background decorative circles - hidden on mobile */}
       <div style={{
         position: 'absolute', top: '-80px', right: '-80px',
-        width: '400px', height: '400px', borderRadius: '50%',
+        width: 'clamp(150px, 30vw, 400px)',
+        height: 'clamp(150px, 30vw, 400px)',
+        borderRadius: '50%',
         background: 'radial-gradient(circle, rgba(183,110,121,0.12), transparent 70%)',
         pointerEvents: 'none',
       }} />
       <div style={{
         position: 'absolute', bottom: '-60px', left: '-60px',
-        width: '300px', height: '300px', borderRadius: '50%',
+        width: 'clamp(120px, 20vw, 300px)',
+        height: 'clamp(120px, 20vw, 300px)',
+        borderRadius: '50%',
         background: 'radial-gradient(circle, rgba(194,116,138,0.10), transparent 70%)',
         pointerEvents: 'none',
       }} />
 
       <div style={{
-        maxWidth: '1280px', margin: '0 auto', padding: '60px 28px',
+        maxWidth: '1280px',
+        margin: '0 auto',
+        padding: 'clamp(30px, 5vh, 60px) clamp(16px, 3vw, 28px)',
         width: '100%',
         display: 'grid',
         gridTemplateColumns: '1fr 1fr',
         alignItems: 'center',
-        gap: '48px',
+        gap: 'clamp(24px, 4vh, 48px)',
       }}>
 
         {/* LEFT — Text */}
@@ -70,9 +76,10 @@ export default function Hero() {
               style={{
                 display: 'inline-flex', alignItems: 'center', gap: '6px',
                 background: '#fff', border: '1px solid #fde8ec',
-                borderRadius: '50px', padding: '6px 16px',
-                fontSize: '12px', fontWeight: 700, color: '#b76e79',
-                letterSpacing: '0.5px', marginBottom: '24px',
+                borderRadius: '50px', padding: 'clamp(4px, 0.8vw, 6px) clamp(12px, 2vw, 16px)',
+                fontSize: 'clamp(10px, 1.2vw, 12px)',
+                fontWeight: 700, color: '#b76e79',
+                letterSpacing: '0.5px', marginBottom: 'clamp(12px, 2vh, 24px)',
                 boxShadow: '0 2px 12px rgba(183,110,121,0.12)',
               }}
             >
@@ -85,12 +92,12 @@ export default function Hero() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.15 }}
               style={{
-                fontSize: 'clamp(38px, 5vw, 64px)',
+                fontSize: 'clamp(28px, 5vw, 64px)',
                 fontWeight: 800,
                 fontFamily: "'Playfair Display', Georgia, serif",
                 color: '#3d1f25',
                 lineHeight: 1.1,
-                marginBottom: '8px',
+                marginBottom: '4px',
               }}
             >
               {slide.title}
@@ -100,7 +107,7 @@ export default function Hero() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
               style={{
-                fontSize: 'clamp(38px, 5vw, 64px)',
+                fontSize: 'clamp(28px, 5vw, 64px)',
                 fontWeight: 800,
                 fontFamily: "'Playfair Display', Georgia, serif",
                 background: 'linear-gradient(135deg, #b76e79, #c2748a)',
@@ -108,7 +115,7 @@ export default function Hero() {
                 WebkitTextFillColor: 'transparent',
                 backgroundClip: 'text',
                 lineHeight: 1.1,
-                marginBottom: '20px',
+                marginBottom: 'clamp(12px, 2vh, 20px)',
               }}
             >
               {slide.titleAccent}
@@ -120,8 +127,10 @@ export default function Hero() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.25 }}
               style={{
-                fontSize: '16px', color: '#8c6468',
-                lineHeight: 1.75, marginBottom: '36px',
+                fontSize: 'clamp(14px, 1.5vw, 16px)',
+                color: '#8c6468',
+                lineHeight: 1.75,
+                marginBottom: 'clamp(20px, 3vh, 36px)',
                 maxWidth: '440px',
               }}
             >
@@ -133,7 +142,7 @@ export default function Hero() {
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
-              style={{ display: 'flex', gap: '14px', flexWrap: 'wrap' }}
+              style={{ display: 'flex', gap: 'clamp(10px, 1.5vw, 14px)', flexWrap: 'wrap' }}
             >
               <Link href={slide.ctaLink} style={{ textDecoration: 'none' }}>
                 <motion.div
@@ -143,10 +152,13 @@ export default function Hero() {
                   }}
                   whileTap={{ scale: 0.96 }}
                   style={{
-                    display: 'inline-flex', alignItems: 'center', gap: '8px',
+                    display: 'inline-flex', alignItems: 'center', gap: '6px',
                     background: 'linear-gradient(135deg, #b76e79, #c2748a)',
-                    color: '#fff', padding: '14px 32px', borderRadius: '50px',
-                    fontSize: '15px', fontWeight: 700,
+                    color: '#fff',
+                    padding: 'clamp(10px, 1.5vw, 14px) clamp(20px, 3vw, 32px)',
+                    borderRadius: '50px',
+                    fontSize: 'clamp(13px, 1.5vw, 15px)',
+                    fontWeight: 700,
                     boxShadow: '0 6px 24px rgba(183,110,121,0.30)',
                     letterSpacing: '0.3px',
                   }}
@@ -164,10 +176,12 @@ export default function Hero() {
                   }}
                   whileTap={{ scale: 0.96 }}
                   style={{
-                    display: 'inline-flex', alignItems: 'center', gap: '8px',
+                    display: 'inline-flex', alignItems: 'center', gap: '6px',
                     background: '#fff', color: '#3d1f25',
-                    padding: '14px 32px', borderRadius: '50px',
-                    fontSize: '15px', fontWeight: 600,
+                    padding: 'clamp(10px, 1.5vw, 14px) clamp(20px, 3vw, 32px)',
+                    borderRadius: '50px',
+                    fontSize: 'clamp(13px, 1.5vw, 15px)',
+                    fontWeight: 600,
                     border: '1.5px solid #fde8ec',
                     transition: 'background 0.2s',
                   }}
@@ -178,7 +192,7 @@ export default function Hero() {
             </motion.div>
 
             {/* Dots */}
-            <div style={{ display: 'flex', gap: '8px', marginTop: '36px' }}>
+            <div style={{ display: 'flex', gap: '8px', marginTop: 'clamp(24px, 4vh, 36px)' }}>
               {heroSlides.map((_, i) => (
                 <motion.button
                   key={i}
@@ -203,13 +217,18 @@ export default function Hero() {
             animate={{ opacity: 1, scale: 1, x: 0 }}
             exit={{ opacity: 0, scale: 0.9, x: -40 }}
             transition={{ duration: 0.55, ease: 'easeOut' }}
-            style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}
+            style={{
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+            }}
           >
             <motion.div
               whileHover={{ rotate: 2, scale: 1.04 }}
               transition={{ type: 'spring', stiffness: 200 }}
               style={{
-                width: '420px', height: '420px',
+                width: 'clamp(280px, 35vw, 420px)',
+                height: 'clamp(280px, 35vw, 420px)',
                 borderRadius: '50%',
                 background: 'rgba(255,255,255,0.6)',
                 border: '2px solid rgba(183,110,121,0.15)',
@@ -220,38 +239,40 @@ export default function Hero() {
               }}
             >
               {/* Floating image */}
-                <motion.div
-                  animate={{ y: [0, -12, 0] }}
-                  transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                  style={{ position: "relative", zIndex: 10 }}
+              <motion.div
+                animate={{ y: [0, -12, 0] }}
+                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                style={{ position: "relative", zIndex: 10 }}
+              >
+                <div
+                  style={{
+                    width: 'clamp(200px, 25vw, 320px)',
+                    height: 'clamp(200px, 25vw, 320px)',
+                    borderRadius: '50%',
+                    overflow: "hidden",
+                    border: "4px solid white",
+                    boxShadow: "0 25px 60px rgba(244,63,104,0.2)",
+                  }}
                 >
-                  <div
-                    style={{
-                      width: "320px",
-                      height: "320px",
-                      borderRadius: "50%",
-                      overflow: "hidden",
-                      border: "4px solid white",
-                      boxShadow: "0 25px 60px rgba(244,63,104,0.2)",
-                    }}
-                  >
-                    <img
-                      src={slide.image}
-                      alt={slide.title}
-                      style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                    />
-                  </div>
-                </motion.div>
+                  <img
+                    src={slide.image}
+                    alt={slide.title}
+                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                  />
+                </div>
+              </motion.div>
               
-              {/* Floating badges */}
+              {/* Floating badges - hidden on small tablets */}
               <motion.div
                 animate={{ y: [-6, 6, -6] }}
                 transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
                 style={{
-                  position: 'absolute', top: '24px', right: '24px',
+                  position: 'absolute', top: 'clamp(16px, 2vw, 24px)', right: 'clamp(16px, 2vw, 24px)',
                   background: '#fff', borderRadius: '16px',
-                  padding: '10px 16px', boxShadow: '0 8px 24px rgba(183,110,121,0.18)',
-                  fontSize: '12px', fontWeight: 700, color: '#3d1f25',
+                  padding: 'clamp(6px, 1vw, 10px) clamp(10px, 1.5vw, 16px)',
+                  boxShadow: '0 8px 24px rgba(183,110,121,0.18)',
+                  fontSize: 'clamp(10px, 1vw, 12px)',
+                  fontWeight: 700, color: '#3d1f25',
                 }}
               >
                 ⭐ 4.9 Rating
@@ -260,10 +281,12 @@ export default function Hero() {
                 animate={{ y: [6, -6, 6] }}
                 transition={{ duration: 3.5, repeat: Infinity, ease: 'easeInOut' }}
                 style={{
-                  position: 'absolute', bottom: '40px', left: '20px',
+                  position: 'absolute', bottom: 'clamp(24px, 3vw, 40px)', left: 'clamp(12px, 1.5vw, 20px)',
                   background: '#b76e79', color: '#fff', borderRadius: '16px',
-                  padding: '10px 16px', boxShadow: '0 8px 24px rgba(183,110,121,0.28)',
-                  fontSize: '12px', fontWeight: 700,
+                  padding: 'clamp(6px, 1vw, 10px) clamp(10px, 1.5vw, 16px)',
+                  boxShadow: '0 8px 24px rgba(183,110,121,0.28)',
+                  fontSize: 'clamp(10px, 1vw, 12px)',
+                  fontWeight: 700,
                 }}
               >
                 🌿 100% Clean
@@ -271,10 +294,12 @@ export default function Hero() {
 
               {/* Center product visual */}
               <div style={{
-                width: '260px', height: '260px', borderRadius: '50%',
+                width: 'clamp(160px, 20vw, 260px)',
+                height: 'clamp(160px, 20vw, 260px)',
+                borderRadius: '50%',
                 background: 'linear-gradient(135deg, #fde8ec, #fdf0f3, #fff)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: '100px',
+                fontSize: 'clamp(60px, 8vw, 100px)',
                 boxShadow: 'inset 0 4px 32px rgba(183,110,121,0.1)',
               }}>
                 {slide.emoji}
@@ -286,8 +311,8 @@ export default function Hero() {
 
       {/* Prev / Next arrows */}
       {[
-        { fn: prev, icon: <ChevronLeft size={20} />, side: 'left', pos: '24px' },
-        { fn: next, icon: <ChevronRight size={20} />, side: 'right', pos: '24px' },
+        { fn: prev, icon: <ChevronLeft size={20} />, side: 'left', pos: 'clamp(8px, 1vw, 24px)' },
+        { fn: next, icon: <ChevronRight size={20} />, side: 'right', pos: 'clamp(8px, 1vw, 24px)' },
       ].map((btn, i) => (
         <motion.button
           key={i}
@@ -299,7 +324,9 @@ export default function Hero() {
             [btn.side]: btn.pos,
             top: '50%', transform: 'translateY(-50%)',
             background: '#fff', border: '1px solid #fde8ec',
-            borderRadius: '50%', width: '44px', height: '44px',
+            borderRadius: '50%',
+            width: 'clamp(36px, 4vw, 44px)',
+            height: 'clamp(36px, 4vw, 44px)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             cursor: 'pointer', color: '#3d1f25',
             boxShadow: '0 4px 16px rgba(183,110,121,0.14)',
@@ -310,6 +337,21 @@ export default function Hero() {
           {btn.icon}
         </motion.button>
       ))}
+
+      {/* Responsive styles */}
+      <style jsx>{`
+        @media (max-width: 768px) {
+          .hero-grid {
+            grid-template-columns: 1fr !important;
+          }
+          .hero-text {
+            order: 1;
+          }
+          .hero-image {
+            order: 2;
+          }
+        }
+      `}</style>
     </section>
   );
 }

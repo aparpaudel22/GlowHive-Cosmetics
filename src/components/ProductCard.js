@@ -49,7 +49,7 @@ export default function ProductCard({ product, index = 0 }) {
           transition={{ type: 'spring', stiffness: 280, damping: 22 }}
           style={{
             background: '#fff',
-            borderRadius: '20px',
+            borderRadius: 'clamp(16px, 2vw, 20px)',
             overflow: 'hidden',
             border: '1px solid #fde8ec',
             cursor: 'pointer',
@@ -63,10 +63,12 @@ export default function ProductCard({ product, index = 0 }) {
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 style={{
-                  position: 'absolute', top: '12px', left: '12px',
+                  position: 'absolute', top: 'clamp(8px, 1.5vw, 12px)', left: 'clamp(8px, 1.5vw, 12px)',
                   background: '#b76e79', color: '#fff',
-                  fontSize: '11px', fontWeight: 700,
-                  padding: '4px 10px', borderRadius: '20px',
+                  fontSize: 'clamp(9px, 1.2vw, 11px)',
+                  fontWeight: 700,
+                  padding: '3px 8px',
+                  borderRadius: '20px',
                   zIndex: 2,
                 }}
               >
@@ -81,10 +83,12 @@ export default function ProductCard({ product, index = 0 }) {
             whileTap={{ scale: 0.85 }}
             onClick={handleWishlist}
             style={{
-              position: 'absolute', top: '12px', right: '12px',
+              position: 'absolute', top: 'clamp(8px, 1.5vw, 12px)', right: 'clamp(8px, 1.5vw, 12px)',
               background: wishlisted ? '#fde8ec' : 'rgba(255,255,255,0.9)',
               border: '1px solid #fde8ec',
-              borderRadius: '50%', width: '34px', height: '34px',
+              borderRadius: '50%',
+              width: 'clamp(30px, 4vw, 34px)',
+              height: 'clamp(30px, 4vw, 34px)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               cursor: 'pointer', zIndex: 2,
               backdropFilter: 'blur(8px)',
@@ -99,7 +103,8 @@ export default function ProductCard({ product, index = 0 }) {
 
           {/* Product image */}
           <div style={{
-            height: '200px', overflow: 'hidden',
+            height: 'clamp(160px, 25vw, 200px)',
+            overflow: 'hidden',
             background: '#fdf6f0',
           }}>
             <motion.img
@@ -112,31 +117,38 @@ export default function ProductCard({ product, index = 0 }) {
           </div>
 
           {/* Info */}
-          <div style={{ padding: '16px' }}>
+          <div style={{ padding: 'clamp(12px, 1.5vw, 16px)' }}>
             {/* Category */}
             <div style={{
-              fontSize: '11px', color: '#b76e79',
+              fontSize: 'clamp(10px, 1.2vw, 11px)',
+              color: '#b76e79',
               fontWeight: 600, textTransform: 'uppercase',
-              letterSpacing: '1px', marginBottom: '6px',
+              letterSpacing: '1px', marginBottom: '4px',
             }}>
               {product.category}
             </div>
 
             {/* Name */}
             <div style={{
-              fontSize: '15px', fontWeight: 700,
-              color: '#3d1f25', marginBottom: '8px',
+              fontSize: 'clamp(13px, 1.5vw, 15px)',
+              fontWeight: 700,
+              color: '#3d1f25',
+              marginBottom: '6px',
               lineHeight: 1.35,
+              display: '-webkit-box',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
+              overflow: 'hidden',
             }}>
               {product.name}
             </div>
 
             {/* Stars */}
             <div style={{
-              display: 'flex', alignItems: 'center', gap: '5px',
-              marginBottom: '12px',
+              display: 'flex', alignItems: 'center', gap: '4px',
+              marginBottom: 'clamp(8px, 1vw, 12px)',
             }}>
-              <div style={{ display: 'flex', gap: '2px' }}>
+              <div style={{ display: 'flex', gap: '1px' }}>
                 {[...Array(5)].map((_, i) => (
                   <Star
                     key={i}
@@ -146,24 +158,28 @@ export default function ProductCard({ product, index = 0 }) {
                   />
                 ))}
               </div>
-              <span style={{ fontSize: '12px', color: '#8c6468', fontWeight: 600 }}>
+              <span style={{ fontSize: 'clamp(10px, 1.2vw, 12px)', color: '#8c6468', fontWeight: 600 }}>
                 {product.rating || '4.5'}
               </span>
             </div>
 
             {/* Price */}
             <div style={{
-              display: 'flex', alignItems: 'center', gap: '8px',
-              marginBottom: '14px',
+              display: 'flex', alignItems: 'center', gap: '6px',
+              marginBottom: 'clamp(10px, 1.5vw, 14px)',
+              flexWrap: 'wrap',
             }}>
               <span style={{
-                fontSize: '17px', fontWeight: 800, color: '#3d1f25',
+                fontSize: 'clamp(15px, 1.8vw, 17px)',
+                fontWeight: 800,
+                color: '#3d1f25',
               }}>
                 Rs. {product.price?.toLocaleString()}
               </span>
               {product.originalPrice && (
                 <span style={{
-                  fontSize: '13px', color: '#bbb',
+                  fontSize: 'clamp(11px, 1.2vw, 13px)',
+                  color: '#bbb',
                   textDecoration: 'line-through',
                 }}>
                   Rs. {product.originalPrice?.toLocaleString()}
@@ -185,10 +201,12 @@ export default function ProductCard({ product, index = 0 }) {
                   ? '#c2748a'
                   : 'linear-gradient(135deg, #b76e79, #c2748a)',
                 color: '#fff', border: 'none', borderRadius: '50px',
-                padding: '12px 16px', fontSize: '13px', fontWeight: 700,
+                padding: 'clamp(10px, 1.2vw, 12px) clamp(12px, 1.5vw, 16px)',
+                fontSize: 'clamp(11px, 1.2vw, 13px)',
+                fontWeight: 700,
                 cursor: 'pointer',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                gap: '8px',
+                gap: '6px',
                 transition: 'background 0.2s',
               }}
             >

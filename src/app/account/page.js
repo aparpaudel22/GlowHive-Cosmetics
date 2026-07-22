@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   User, Mail, LogOut, ShoppingBag, Heart, Package, Gem,
   Phone, Edit3, Check, X, Camera, ChevronDown, ArrowRight,
-  Truck, CreditCard, Trash2, AlertTriangle
+  Truck, CreditCard, Trash2, AlertTriangle, RefreshCw
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import AuthForm from '@/components/AuthForm';
@@ -63,7 +63,7 @@ export default function AccountPage() {
       const av = localStorage.getItem('glowhive_avatar');
       if (av) {
         setAvatar(av);
-      } else if (user?.picture) {
+      } else if (user?.picture && typeof user.picture === 'string') {
         setAvatar(user.picture);
       } else if (user?.email) {
         // Check if avatar exists in scoped storage
@@ -196,6 +196,8 @@ export default function AccountPage() {
     { icon: <Truck size={14} color="#f43f68" />,      label: 'To Ship',    desc: 'Being prepared',        href: '/orders',           bg: '#fef1f4' },
     { icon: <CreditCard size={14} color="#c9a87c" />, label: 'To Pay',     desc: 'Cash on delivery',      href: '/orders/to-pay',    bg: '#fdf8ef' },
     { icon: <Package size={14} color="#5b8dd9" />,    label: 'To Receive', desc: 'On its way to you',     href: '/orders/to-receive', bg: '#eef3fd' },
+    // ── NEW: Returns link ──
+    { icon: <RefreshCw size={14} color="#b76e79" />,  label: 'Returns',    desc: 'Manage your returns',   href: '/returns',          bg: '#fdf0f3' },
   ];
 
   const otherLinks = [
@@ -233,8 +235,8 @@ export default function AccountPage() {
             >
               {avatar ? (
                 <img src={avatar} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
-              ) : user?.picture ? (
-                <img src={user.picture} alt={user.name} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+              ) : user?.picture && typeof user.picture === 'string' ? (
+                <img src={user.picture} alt={user.name || 'User'} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
               ) : (
                 <div style={{ width: '100%', height: '100%', borderRadius: '50%', background: '#f9e4ea', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <User size={30} color="#f43f68" />
@@ -289,7 +291,7 @@ export default function AccountPage() {
               )}
             </AnimatePresence>
 
-            {/* Name + badge */}
+            {/* Name + badge - FIXED: Only render user properties, not the user object */}
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '6px' }}>
               <div>
                 <h1 style={{ fontSize: '22px', fontWeight: 800, color: '#1a0a0f', fontFamily: "'Playfair Display', Georgia, serif", marginBottom: '4px' }}>
@@ -297,13 +299,13 @@ export default function AccountPage() {
                 </h1>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <Mail size={13} color="#888" />
-                  <p style={{ fontSize: '13px', color: '#888' }}>{user?.email}</p>
+                  <p style={{ fontSize: '13px', color: '#888' }}>{user?.email || ''}</p>
                 </div>
                 {/* Display phone number if available */}
                 {(profile.phone || user?.phone) && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '4px' }}>
                     <Phone size={13} color="#888" />
-                    <p style={{ fontSize: '13px', color: '#888' }}>{profile.phone || user?.phone}</p>
+                    <p style={{ fontSize: '13px', color: '#888' }}>{profile.phone || user?.phone || ''}</p>
                   </div>
                 )}
               </div>

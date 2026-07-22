@@ -43,8 +43,15 @@ const categories = [
 
 export default function CategoryGrid() {
   return (
-    <section style={{ padding: '72px 0', background: '#fdf6f0' }}>
-      <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0 28px' }}>
+    <section style={{ 
+      padding: 'clamp(40px, 8vh, 72px) 0', 
+      background: '#fdf6f0' 
+    }}>
+      <div style={{ 
+        maxWidth: '1280px', 
+        margin: '0 auto', 
+        padding: '0 clamp(16px, 3vw, 28px)' 
+      }}>
 
         {/* Heading */}
         <motion.div
@@ -52,21 +59,22 @@ export default function CategoryGrid() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
-          style={{ marginBottom: '36px' }}
+          style={{ marginBottom: 'clamp(24px, 3vh, 36px)' }}
         >
           <h2 style={{
-            fontSize: '22px', fontWeight: 800, color: '#3d1f25',
+            fontSize: 'clamp(20px, 2.5vw, 22px)',
+            fontWeight: 800, color: '#3d1f25',
             fontFamily: "'Playfair Display', Georgia, serif",
           }}>
             Shop by Category
           </h2>
         </motion.div>
 
-        {/* 6-card single row */}
+        {/* Responsive Category Grid - 6 on desktop, 4 on tablet, 3 on mobile */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(6, 1fr)',
-          gap: '16px',
+          gridTemplateColumns: 'repeat(3, 1fr)',
+          gap: 'clamp(10px, 1.5vw, 16px)',
         }}>
           {categories.map((cat, i) => (
             <motion.div
@@ -86,7 +94,7 @@ export default function CategoryGrid() {
                   whileTap={{ scale: 0.96 }}
                   transition={{ type: 'spring', stiffness: 300, damping: 20 }}
                   style={{
-                    borderRadius: '20px',
+                    borderRadius: 'clamp(14px, 2vw, 20px)',
                     overflow: 'hidden',
                     background: '#fff',
                     border: '1px solid #fde8ec',
@@ -95,7 +103,10 @@ export default function CategoryGrid() {
                   }}
                 >
                   {/* Photo */}
-                  <div style={{ height: '130px', overflow: 'hidden' }}>
+                  <div style={{ 
+                    height: 'clamp(80px, 12vw, 130px)',
+                    overflow: 'hidden' 
+                  }}>
                     <motion.img
                       whileHover={{ scale: 1.15 }}
                       transition={{ duration: 0.5 }}
@@ -110,8 +121,9 @@ export default function CategoryGrid() {
 
                   {/* Label */}
                   <div style={{
-                    padding: '14px 8px',
-                    fontSize: '13px', fontWeight: 700,
+                    padding: 'clamp(8px, 1.2vw, 14px) clamp(4px, 0.5vw, 8px)',
+                    fontSize: 'clamp(10px, 1.2vw, 13px)',
+                    fontWeight: 700,
                     color: '#3d1f25',
                   }}>
                     {cat.name}
