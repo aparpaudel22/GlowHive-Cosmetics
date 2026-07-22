@@ -13,13 +13,16 @@ export default function FilterSidebar({
 }) {
   return (
     <div style={{
-      width: '210px', flexShrink: 0,
+      width: window.innerWidth < 768 ? '100%' : '210px',
+      flexShrink: 0,
       background: '#fdf6f0',
       borderRadius: '20px',
       border: '1px solid #fde8ec',
-      padding: '24px 20px',
+      padding: 'clamp(16px, 3vw, 24px) clamp(14px, 2.5vw, 20px)',
       height: 'fit-content',
-      position: 'sticky', top: '140px',
+      position: window.innerWidth < 768 ? 'relative' : 'sticky',
+      top: window.innerWidth < 768 ? 'auto' : '140px',
+      marginBottom: window.innerWidth < 768 ? '20px' : '0',
     }}>
       {/* Header */}
       <div style={{
@@ -28,7 +31,7 @@ export default function FilterSidebar({
       }}>
         <div style={{
           display: 'flex', alignItems: 'center', gap: '7px',
-          fontSize: '13px', fontWeight: 800,
+          fontSize: 'clamp(12px, 1.1vw, 13px)', fontWeight: 800,
           color: '#3d1f25', letterSpacing: '1.5px',
           textTransform: 'uppercase',
         }}>
@@ -50,7 +53,7 @@ export default function FilterSidebar({
       {/* Category */}
       <div style={{ marginBottom: '24px' }}>
         <p style={{
-          fontSize: '12px', fontWeight: 700, color: '#3d1f25',
+          fontSize: 'clamp(11px, 1vw, 12px)', fontWeight: 700, color: '#3d1f25',
           letterSpacing: '0.5px', marginBottom: '12px',
         }}>
           Category
@@ -59,7 +62,7 @@ export default function FilterSidebar({
           {CATEGORIES.map(cat => (
             <label key={cat} style={{
               display: 'flex', alignItems: 'center', gap: '9px',
-              cursor: 'pointer', fontSize: '13px', color: '#5a3a40',
+              cursor: 'pointer', fontSize: 'clamp(12px, 1.1vw, 13px)', color: '#5a3a40',
               fontWeight: categories.includes(cat) ? 700 : 400,
             }}>
               <motion.div
@@ -95,14 +98,14 @@ export default function FilterSidebar({
       {/* Price range */}
       <div style={{ marginBottom: '24px' }}>
         <p style={{
-          fontSize: '12px', fontWeight: 700, color: '#3d1f25',
+          fontSize: 'clamp(11px, 1vw, 12px)', fontWeight: 700, color: '#3d1f25',
           letterSpacing: '0.5px', marginBottom: '12px',
         }}>
           Price Range
         </p>
         <div style={{
           display: 'flex', justifyContent: 'space-between',
-          fontSize: '12px', color: '#8c6468', marginBottom: '10px',
+          fontSize: 'clamp(11px, 1vw, 12px)', color: '#8c6468', marginBottom: '10px',
         }}>
           <span>Rs. {priceRange[0].toLocaleString()}</span>
           <span>Rs. {priceRange[1].toLocaleString()}</span>
@@ -120,7 +123,7 @@ export default function FilterSidebar({
       {/* Min rating */}
       <div style={{ marginBottom: '24px' }}>
         <p style={{
-          fontSize: '12px', fontWeight: 700, color: '#3d1f25',
+          fontSize: 'clamp(11px, 1vw, 12px)', fontWeight: 700, color: '#3d1f25',
           letterSpacing: '0.5px', marginBottom: '12px',
         }}>
           Min Rating
@@ -129,7 +132,7 @@ export default function FilterSidebar({
           {[4, 3, 2, 1].map(r => (
             <label key={r} style={{
               display: 'flex', alignItems: 'center', gap: '9px',
-              cursor: 'pointer', fontSize: '13px',
+              cursor: 'pointer', fontSize: 'clamp(12px, 1.1vw, 13px)',
             }}>
               <motion.div
                 whileTap={{ scale: 0.82 }}
@@ -149,7 +152,7 @@ export default function FilterSidebar({
                   }} />
                 )}
               </motion.div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '3px', flexWrap: 'wrap' }}>
                 {[...Array(r)].map((_, i) => (
                   <Star key={i} size={11} fill="#f5a623" color="#f5a623" />
                 ))}
@@ -170,7 +173,7 @@ export default function FilterSidebar({
           width: '100%',
           background: 'linear-gradient(135deg, #b76e79, #c2748a)',
           color: '#fff', border: 'none', borderRadius: '50px',
-          padding: '12px', fontSize: '13px', fontWeight: 700,
+          padding: 'clamp(10px, 1.2vw, 12px)', fontSize: 'clamp(12px, 1.1vw, 13px)', fontWeight: 700,
           cursor: 'pointer', letterSpacing: '0.5px',
         }}
       >

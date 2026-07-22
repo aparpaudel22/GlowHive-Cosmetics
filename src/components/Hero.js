@@ -38,7 +38,10 @@ export default function Hero() {
         borderRadius: '50%',
         background: 'radial-gradient(circle, rgba(183,110,121,0.12), transparent 70%)',
         pointerEvents: 'none',
-      }} />
+        display: 'none',
+      }}
+      className="bg-circle"
+      />
       <div style={{
         position: 'absolute', bottom: '-60px', left: '-60px',
         width: 'clamp(120px, 20vw, 300px)',
@@ -46,7 +49,10 @@ export default function Hero() {
         borderRadius: '50%',
         background: 'radial-gradient(circle, rgba(194,116,138,0.10), transparent 70%)',
         pointerEvents: 'none',
-      }} />
+        display: 'none',
+      }}
+      className="bg-circle"
+      />
 
       <div style={{
         maxWidth: '1280px',
@@ -54,10 +60,12 @@ export default function Hero() {
         padding: 'clamp(30px, 5vh, 60px) clamp(16px, 3vw, 28px)',
         width: '100%',
         display: 'grid',
-        gridTemplateColumns: '1fr 1fr',
+        gridTemplateColumns: '1fr',
         alignItems: 'center',
         gap: 'clamp(24px, 4vh, 48px)',
-      }}>
+      }}
+      className="hero-grid"
+      >
 
         {/* LEFT — Text */}
         <AnimatePresence mode="wait">
@@ -67,6 +75,7 @@ export default function Hero() {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: 40 }}
             transition={{ duration: 0.5, ease: 'easeOut' }}
+            className="hero-text"
           >
             {/* Tag */}
             <motion.div
@@ -74,10 +83,10 @@ export default function Hero() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
               style={{
-                display: 'inline-flex', alignItems: 'center', gap: '6px',
+                display: 'inline-flex', alignItems: 'center', gap: 'clamp(4px, 0.6vw, 6px)',
                 background: '#fff', border: '1px solid #fde8ec',
-                borderRadius: '50px', padding: 'clamp(4px, 0.8vw, 6px) clamp(12px, 2vw, 16px)',
-                fontSize: 'clamp(10px, 1.2vw, 12px)',
+                borderRadius: '50px', padding: 'clamp(4px, 0.6vw, 6px) clamp(10px, 1.5vw, 16px)',
+                fontSize: 'clamp(9px, 1.2vw, 12px)',
                 fontWeight: 700, color: '#b76e79',
                 letterSpacing: '0.5px', marginBottom: 'clamp(12px, 2vh, 24px)',
                 boxShadow: '0 2px 12px rgba(183,110,121,0.12)',
@@ -92,7 +101,7 @@ export default function Hero() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.15 }}
               style={{
-                fontSize: 'clamp(28px, 5vw, 64px)',
+                fontSize: 'clamp(24px, 5vw, 64px)',
                 fontWeight: 800,
                 fontFamily: "'Playfair Display', Georgia, serif",
                 color: '#3d1f25',
@@ -107,7 +116,7 @@ export default function Hero() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
               style={{
-                fontSize: 'clamp(28px, 5vw, 64px)',
+                fontSize: 'clamp(24px, 5vw, 64px)',
                 fontWeight: 800,
                 fontFamily: "'Playfair Display', Georgia, serif",
                 background: 'linear-gradient(135deg, #b76e79, #c2748a)',
@@ -131,7 +140,7 @@ export default function Hero() {
                 color: '#8c6468',
                 lineHeight: 1.75,
                 marginBottom: 'clamp(20px, 3vh, 36px)',
-                maxWidth: '440px',
+                maxWidth: 'clamp(100%, 80%, 440px)',
               }}
             >
               {slide.subtitle}
@@ -142,7 +151,7 @@ export default function Hero() {
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
-              style={{ display: 'flex', gap: 'clamp(10px, 1.5vw, 14px)', flexWrap: 'wrap' }}
+              style={{ display: 'flex', gap: 'clamp(8px, 1.5vw, 14px)', flexWrap: 'wrap' }}
             >
               <Link href={slide.ctaLink} style={{ textDecoration: 'none' }}>
                 <motion.div
@@ -155,7 +164,7 @@ export default function Hero() {
                     display: 'inline-flex', alignItems: 'center', gap: '6px',
                     background: 'linear-gradient(135deg, #b76e79, #c2748a)',
                     color: '#fff',
-                    padding: 'clamp(10px, 1.5vw, 14px) clamp(20px, 3vw, 32px)',
+                    padding: 'clamp(10px, 1.5vw, 14px) clamp(18px, 3vw, 32px)',
                     borderRadius: '50px',
                     fontSize: 'clamp(13px, 1.5vw, 15px)',
                     fontWeight: 700,
@@ -164,7 +173,7 @@ export default function Hero() {
                   }}
                 >
                   {slide.cta}
-                  <ArrowRight size={16} />
+                  <ArrowRight size={14} />
                 </motion.div>
               </Link>
 
@@ -178,7 +187,7 @@ export default function Hero() {
                   style={{
                     display: 'inline-flex', alignItems: 'center', gap: '6px',
                     background: '#fff', color: '#3d1f25',
-                    padding: 'clamp(10px, 1.5vw, 14px) clamp(20px, 3vw, 32px)',
+                    padding: 'clamp(10px, 1.5vw, 14px) clamp(18px, 3vw, 32px)',
                     borderRadius: '50px',
                     fontSize: 'clamp(13px, 1.5vw, 15px)',
                     fontWeight: 600,
@@ -192,7 +201,7 @@ export default function Hero() {
             </motion.div>
 
             {/* Dots */}
-            <div style={{ display: 'flex', gap: '8px', marginTop: 'clamp(24px, 4vh, 36px)' }}>
+            <div style={{ display: 'flex', gap: 'clamp(6px, 0.8vw, 8px)', marginTop: 'clamp(24px, 4vh, 36px)' }}>
               {heroSlides.map((_, i) => (
                 <motion.button
                   key={i}
@@ -222,13 +231,14 @@ export default function Hero() {
               justifyContent: 'center',
               alignItems: 'center',
             }}
+            className="hero-image"
           >
             <motion.div
               whileHover={{ rotate: 2, scale: 1.04 }}
               transition={{ type: 'spring', stiffness: 200 }}
               style={{
-                width: 'clamp(280px, 35vw, 420px)',
-                height: 'clamp(280px, 35vw, 420px)',
+                width: 'clamp(220px, 35vw, 420px)',
+                height: 'clamp(220px, 35vw, 420px)',
                 borderRadius: '50%',
                 background: 'rgba(255,255,255,0.6)',
                 border: '2px solid rgba(183,110,121,0.15)',
@@ -246,8 +256,8 @@ export default function Hero() {
               >
                 <div
                   style={{
-                    width: 'clamp(200px, 25vw, 320px)',
-                    height: 'clamp(200px, 25vw, 320px)',
+                    width: 'clamp(160px, 25vw, 320px)',
+                    height: 'clamp(160px, 25vw, 320px)',
                     borderRadius: '50%',
                     overflow: "hidden",
                     border: "4px solid white",
@@ -262,7 +272,7 @@ export default function Hero() {
                 </div>
               </motion.div>
               
-              {/* Floating badges - hidden on small tablets */}
+              {/* Floating badges */}
               <motion.div
                 animate={{ y: [-6, 6, -6] }}
                 transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
@@ -294,12 +304,12 @@ export default function Hero() {
 
               {/* Center product visual */}
               <div style={{
-                width: 'clamp(160px, 20vw, 260px)',
-                height: 'clamp(160px, 20vw, 260px)',
+                width: 'clamp(130px, 20vw, 260px)',
+                height: 'clamp(130px, 20vw, 260px)',
                 borderRadius: '50%',
                 background: 'linear-gradient(135deg, #fde8ec, #fdf0f3, #fff)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 'clamp(60px, 8vw, 100px)',
+                fontSize: 'clamp(50px, 8vw, 100px)',
                 boxShadow: 'inset 0 4px 32px rgba(183,110,121,0.1)',
               }}>
                 {slide.emoji}
@@ -309,10 +319,10 @@ export default function Hero() {
         </AnimatePresence>
       </div>
 
-      {/* Prev / Next arrows */}
+      {/* Prev / Next arrows - hidden on mobile */}
       {[
-        { fn: prev, icon: <ChevronLeft size={20} />, side: 'left', pos: 'clamp(8px, 1vw, 24px)' },
-        { fn: next, icon: <ChevronRight size={20} />, side: 'right', pos: 'clamp(8px, 1vw, 24px)' },
+        { fn: prev, icon: <ChevronLeft size={16} />, side: 'left', pos: 'clamp(8px, 1vw, 24px)' },
+        { fn: next, icon: <ChevronRight size={16} />, side: 'right', pos: 'clamp(8px, 1vw, 24px)' },
       ].map((btn, i) => (
         <motion.button
           key={i}
@@ -325,14 +335,15 @@ export default function Hero() {
             top: '50%', transform: 'translateY(-50%)',
             background: '#fff', border: '1px solid #fde8ec',
             borderRadius: '50%',
-            width: 'clamp(36px, 4vw, 44px)',
-            height: 'clamp(36px, 4vw, 44px)',
+            width: 'clamp(32px, 4vw, 44px)',
+            height: 'clamp(32px, 4vw, 44px)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             cursor: 'pointer', color: '#3d1f25',
             boxShadow: '0 4px 16px rgba(183,110,121,0.14)',
             transition: 'background 0.2s, color 0.2s',
             zIndex: 10,
           }}
+          className="hero-arrow"
         >
           {btn.icon}
         </motion.button>
@@ -340,15 +351,38 @@ export default function Hero() {
 
       {/* Responsive styles */}
       <style jsx>{`
-        @media (max-width: 768px) {
+        @media (min-width: 768px) {
           .hero-grid {
-            grid-template-columns: 1fr !important;
+            grid-template-columns: 1fr 1fr !important;
           }
           .hero-text {
             order: 1;
           }
           .hero-image {
             order: 2;
+          }
+          .bg-circle {
+            display: block !important;
+          }
+          .hero-arrow {
+            display: flex !important;
+          }
+        }
+        @media (max-width: 767px) {
+          .hero-grid {
+            grid-template-columns: 1fr !important;
+          }
+          .hero-text {
+            order: 2;
+          }
+          .hero-image {
+            order: 1;
+          }
+          .bg-circle {
+            display: none !important;
+          }
+          .hero-arrow {
+            display: none !important;
           }
         }
       `}</style>

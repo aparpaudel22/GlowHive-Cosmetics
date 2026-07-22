@@ -118,7 +118,7 @@ export const products = [
     reviewCount: 42,
     gradient: 'from-pink-200 to-rose-100',
     emoji: '💋',
-    image:'Lipgloss1.jpg',
+    image:'Silklip.jpg',
     isNew: true,
     isBestSeller: false,
     inStock: true,

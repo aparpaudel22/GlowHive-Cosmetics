@@ -91,10 +91,6 @@ const NEPAL_CITIES = {
   'Udayapur': { province: 'Province 1', postalCode: '56300' }
 };
 
-// ── Get all city names sorted alphabetically ──
-const CITIES = Object.keys(NEPAL_CITIES).sort();
-
-// ── Get unique provinces from the data ──
 const PROVINCES = [...new Set(Object.values(NEPAL_CITIES).map(c => c.province))].sort();
 
 const PAYMENT_METHODS = [
@@ -121,14 +117,17 @@ const PAYMENT_METHODS = [
 ];
 
 const labelStyle = {
-  display: 'block', fontSize: '12px', fontWeight: 700,
+  display: 'block', fontSize: 'clamp(11px, 1vw, 12px)', fontWeight: 700,
   color: '#3d1f25', marginBottom: '6px', textTransform: 'uppercase',
   letterSpacing: '0.5px',
 };
 const inp = (err) => ({
-  width: '100%', padding: '11px 14px', fontFamily: 'inherit',
+  width: '100%', padding: 'clamp(10px, 1.2vw, 11px) clamp(12px, 1.5vw, 14px)',
+  fontFamily: 'inherit',
   border: `1.5px solid ${err ? '#f87171' : '#fde8ec'}`,
-  borderRadius: '12px', fontSize: '14px', outline: 'none',
+  borderRadius: 'clamp(10px, 1.2vw, 12px)',
+  fontSize: 'clamp(13px, 1.2vw, 14px)',
+  outline: 'none',
   background: '#fff', color: '#3d1f25', transition: 'border 0.2s',
 });
 
@@ -156,34 +155,31 @@ export default function CheckoutPage() {
   };
   const { user, isAuthenticated, hydrated } = useAuth();
 
-  const [step,            setStep]            = useState(1);
-  const [savedProfile,    setSavedProfile]    = useState(null);
-  const [savedAddresses,  setSavedAddresses]  = useState([]);
+  const [step, setStep] = useState(1);
+  const [savedProfile, setSavedProfile] = useState(null);
+  const [savedAddresses, setSavedAddresses] = useState([]);
   const [selectedAddrIdx, setSelectedAddrIdx] = useState(0);
-  const [editingProfile,  setEditingProfile]  = useState(false);
-  const [addingAddress,   setAddingAddress]   = useState(false);
-  const [profile,         setProfile]         = useState(BLANK_PROFILE);
-  const [addrForm,        setAddrForm]        = useState(BLANK_ADDRESS);
-  const [profileErrors,   setProfileErrors]   = useState({});
-  const [addrErrors,      setAddrErrors]      = useState({});
-  const [selectedMethod,  setSelectedMethod]  = useState(null);
-  const [placing,         setPlacing]         = useState(false);
+  const [editingProfile, setEditingProfile] = useState(false);
+  const [addingAddress, setAddingAddress] = useState(false);
+  const [profile, setProfile] = useState(BLANK_PROFILE);
+  const [addrForm, setAddrForm] = useState(BLANK_ADDRESS);
+  const [profileErrors, setProfileErrors] = useState({});
+  const [addrErrors, setAddrErrors] = useState({});
+  const [selectedMethod, setSelectedMethod] = useState(null);
+  const [placing, setPlacing] = useState(false);
   const [citiesByProvince, setCitiesByProvince] = useState([]);
-  const [isLoading,       setIsLoading]       = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // ── Get selected items for checkout ──
   const checkoutItems = getSelectedItems?.() || [];
   const subtotal = getSelectedTotal?.() || 0;
   const itemCount = getSelectedCount?.() || 0;
 
-  // ── Get cities for selected province ──
   useEffect(() => {
     if (addrForm.province) {
       const cities = Object.keys(NEPAL_CITIES)
         .filter(city => NEPAL_CITIES[city].province === addrForm.province)
         .sort();
       setCitiesByProvince(cities);
-      
       if (addrForm.city && !cities.includes(addrForm.city)) {
         setAddrForm(prev => ({ ...prev, city: '', postalCode: '' }));
       }
@@ -192,7 +188,6 @@ export default function CheckoutPage() {
     }
   }, [addrForm.province]);
 
-  // ── Auto-fill postal code when city is selected ──
   useEffect(() => {
     if (addrForm.city && NEPAL_CITIES[addrForm.city]) {
       const cityData = NEPAL_CITIES[addrForm.city];
@@ -208,28 +203,24 @@ export default function CheckoutPage() {
     }
   }, [addrForm.city]);
 
-  // ── Load personal details & addresses on mount ──
   useEffect(() => {
     const loadData = async () => {
       if (!hydrated) {
         setIsLoading(true);
         return;
       }
-      
       if (!isAuthenticated) {
         router.replace('/account?from=checkout');
         return;
       }
 
       try {
-        // ── FIRST: Get user data from users list ──
         let userData = null;
         try {
           const users = JSON.parse(localStorage.getItem('glowhive_users') || '[]');
           userData = users.find(u => u.email?.toLowerCase() === user?.email?.toLowerCase());
         } catch (_) {}
 
-        // ── SECOND: Load saved profile ──
         let savedP = null;
         try {
           const savedProfileStr = localStorage.getItem('glowhive_profile');
@@ -238,7 +229,6 @@ export default function CheckoutPage() {
           }
         } catch (_) {}
 
-        // ── Build profile data ──
         let profileData = { ...BLANK_PROFILE };
         
         if (savedP) {
@@ -278,13 +268,11 @@ export default function CheckoutPage() {
         const hasPhone = profileData.phone && profileData.phone.replace(/\D/g, '').length >= 10;
         setEditingProfile(!hasPhone);
 
-        // ── THIRD: Load saved addresses ──
         let loadedAddresses = [];
         try {
           const savedA = localStorage.getItem('glowhive_addresses');
           if (savedA) {
             loadedAddresses = JSON.parse(savedA);
-            // Ensure it's an array
             if (!Array.isArray(loadedAddresses)) {
               loadedAddresses = [];
             }
@@ -293,7 +281,6 @@ export default function CheckoutPage() {
           loadedAddresses = [];
         }
 
-        // ── If no addresses found, try to load from orders ──
         if (loadedAddresses.length === 0) {
           try {
             const orders = JSON.parse(localStorage.getItem('glowhive_orders') || '[]');
@@ -301,14 +288,12 @@ export default function CheckoutPage() {
               const lastAddress = orders[0].address;
               if (lastAddress.address && lastAddress.city) {
                 loadedAddresses = [lastAddress];
-                // Save to localStorage
                 localStorage.setItem('glowhive_addresses', JSON.stringify(loadedAddresses));
               }
             }
           } catch (_) {}
         }
 
-        // ── Set addresses ──
         if (loadedAddresses.length > 0) {
           setSavedAddresses(loadedAddresses);
           setAddrForm(loadedAddresses[0]);
@@ -335,30 +320,28 @@ export default function CheckoutPage() {
     loadData();
   }, [hydrated, isAuthenticated, user, router]);
 
-  // ── Guards ──
   if (!hydrated || isLoading) {
     return (
       <div style={{ minHeight: '100vh', background: '#fff8f5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <p style={{ color: '#b76e79', fontWeight: 600, fontSize: '15px' }}>Loading…</p>
+        <p style={{ color: '#b76e79', fontWeight: 600, fontSize: 'clamp(14px, 1.3vw, 15px)' }}>Loading…</p>
       </div>
     );
   }
   if (!isAuthenticated) {
     return (
       <div style={{ minHeight: '100vh', background: '#fff8f5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <p style={{ color: '#b76e79', fontWeight: 600, fontSize: '15px' }}>Redirecting to login…</p>
+        <p style={{ color: '#b76e79', fontWeight: 600, fontSize: 'clamp(14px, 1.3vw, 15px)' }}>Redirecting to login…</p>
       </div>
     );
   }
 
-  // ── Check if cart is empty or no items selected ──
   if (cartItems.length === 0) {
     return (
-      <div style={{ minHeight: '100vh', background: '#fff8f5', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 20px' }}>
-        <div style={{ fontSize: '64px', marginBottom: '20px' }}>🛒</div>
-        <h2 style={{ fontSize: '24px', fontWeight: 800, color: '#3d1f25', fontFamily: "'Playfair Display', Georgia, serif", marginBottom: '10px' }}>Your cart is empty</h2>
-        <p style={{ fontSize: '14px', color: '#8c6468', marginBottom: '24px' }}>Looks like you haven't added any items to your cart yet.</p>
-        <Link href="/products" style={{ padding: '12px 32px', background: 'linear-gradient(135deg, #b76e79, #c2748a)', color: '#fff', border: 'none', borderRadius: '50px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', textDecoration: 'none' }}>
+      <div style={{ minHeight: '100vh', background: '#fff8f5', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 'clamp(30px, 5vh, 40px) clamp(16px, 3vw, 20px)' }}>
+        <div style={{ fontSize: 'clamp(48px, 6vw, 64px)', marginBottom: '20px' }}>🛒</div>
+        <h2 style={{ fontSize: 'clamp(20px, 2.5vw, 24px)', fontWeight: 800, color: '#3d1f25', fontFamily: "'Playfair Display', Georgia, serif", marginBottom: '10px' }}>Your cart is empty</h2>
+        <p style={{ fontSize: 'clamp(13px, 1.2vw, 14px)', color: '#8c6468', marginBottom: '24px' }}>Looks like you haven't added any items to your cart yet.</p>
+        <Link href="/products" style={{ padding: 'clamp(10px, 1.5vh, 12px) clamp(24px, 3vw, 32px)', background: 'linear-gradient(135deg, #b76e79, #c2748a)', color: '#fff', border: 'none', borderRadius: '50px', fontSize: 'clamp(13px, 1.3vw, 14px)', fontWeight: 700, cursor: 'pointer', textDecoration: 'none' }}>
           Start Shopping
         </Link>
       </div>
@@ -367,11 +350,11 @@ export default function CheckoutPage() {
 
   if (checkoutItems.length === 0) {
     return (
-      <div style={{ minHeight: '100vh', background: '#fff8f5', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 20px' }}>
-        <div style={{ fontSize: '64px', marginBottom: '20px' }}>📦</div>
-        <h2 style={{ fontSize: '24px', fontWeight: 800, color: '#3d1f25', fontFamily: "'Playfair Display', Georgia, serif", marginBottom: '10px' }}>No items selected</h2>
-        <p style={{ fontSize: '14px', color: '#8c6468', marginBottom: '24px' }}>Please select items from your cart to proceed with checkout.</p>
-        <Link href="/cart" style={{ padding: '12px 32px', background: 'linear-gradient(135deg, #b76e79, #c2748a)', color: '#fff', border: 'none', borderRadius: '50px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', textDecoration: 'none' }}>
+      <div style={{ minHeight: '100vh', background: '#fff8f5', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 'clamp(30px, 5vh, 40px) clamp(16px, 3vw, 20px)' }}>
+        <div style={{ fontSize: 'clamp(48px, 6vw, 64px)', marginBottom: '20px' }}>📦</div>
+        <h2 style={{ fontSize: 'clamp(20px, 2.5vw, 24px)', fontWeight: 800, color: '#3d1f25', fontFamily: "'Playfair Display', Georgia, serif", marginBottom: '10px' }}>No items selected</h2>
+        <p style={{ fontSize: 'clamp(13px, 1.2vw, 14px)', color: '#8c6468', marginBottom: '24px' }}>Please select items from your cart to proceed with checkout.</p>
+        <Link href="/cart" style={{ padding: 'clamp(10px, 1.5vh, 12px) clamp(24px, 3vw, 32px)', background: 'linear-gradient(135deg, #b76e79, #c2748a)', color: '#fff', border: 'none', borderRadius: '50px', fontSize: 'clamp(13px, 1.3vw, 14px)', fontWeight: 700, cursor: 'pointer', textDecoration: 'none' }}>
           Go to Cart
         </Link>
       </div>
@@ -379,7 +362,7 @@ export default function CheckoutPage() {
   }
 
   const shipping = addrForm.city === 'Kathmandu' ? 0 : 150;
-  const total    = subtotal + shipping;
+  const total = subtotal + shipping;
 
   const updateProfile = (k, v) => {
     setProfile(p => ({ ...(p ?? BLANK_PROFILE), [k]: v }));
@@ -393,24 +376,23 @@ export default function CheckoutPage() {
   const validateProfile = () => {
     const e = {};
     if (!profile.firstName?.trim()) e.firstName = 'Required';
-    if (!profile.lastName?.trim())  e.lastName  = 'Required';
-    if (!profile.email?.trim())     e.email     = 'Required';
+    if (!profile.lastName?.trim()) e.lastName = 'Required';
+    if (!profile.email?.trim()) e.email = 'Required';
     else if (!/\S+@\S+\.\S+/.test(profile.email)) e.email = 'Invalid email';
-    if (!profile.phone?.trim())     e.phone     = 'Phone number is required';
+    if (!profile.phone?.trim()) e.phone = 'Phone number is required';
     else if (profile.phone.replace(/\D/g, '').length < 10) e.phone = 'Must be 10 digits';
     setProfileErrors(e);
     return !Object.keys(e).length;
   };
   const validateAddr = () => {
     const e = {};
-    if (!addrForm.address?.trim()) e.address  = 'Required';
-    if (!addrForm.city)            e.city     = 'Required';
-    if (!addrForm.province)        e.province = 'Required';
+    if (!addrForm.address?.trim()) e.address = 'Required';
+    if (!addrForm.city) e.city = 'Required';
+    if (!addrForm.province) e.province = 'Required';
     setAddrErrors(e);
     return !Object.keys(e).length;
   };
 
-  // ── Save address to localStorage (keeps ALL addresses) ──
   const saveAddressToStorage = (address) => {
     try {
       let addrs = [];
@@ -421,18 +403,13 @@ export default function CheckoutPage() {
           addrs = [];
         }
       }
-      
-      // Check if address already exists
       const exists = addrs.some(a => 
         a.address === address.address && 
         a.city === address.city && 
         a.province === address.province
       );
-      
       if (!exists) {
-        // Add new address at the beginning
         addrs = [address, ...addrs];
-        // Keep only last 5 addresses
         if (addrs.length > 5) {
           addrs = addrs.slice(0, 5);
         }
@@ -456,7 +433,7 @@ export default function CheckoutPage() {
     }
 
     const profileOk = editingProfile ? validateProfile() : true;
-    const addrOk    = addingAddress  ? validateAddr()    : true;
+    const addrOk = addingAddress ? validateAddr() : true;
     if (!profileOk || !addrOk) return;
 
     const finalProfile = editingProfile ? profile : (savedProfile ?? profile);
@@ -468,14 +445,12 @@ export default function CheckoutPage() {
     setSavedProfile(finalProfile);
     setEditingProfile(false);
 
-    // ── Save address to localStorage (keeps ALL addresses) ──
     if (addingAddress) {
       const savedAddrs = saveAddressToStorage(addrForm);
       setSavedAddresses(savedAddrs);
       setSelectedAddrIdx(0);
       setAddingAddress(false);
     } else {
-      // Make sure we have the current address selected
       const currentAddr = savedAddresses[selectedAddrIdx] || addrForm;
       setAddrForm(currentAddr);
     }
@@ -534,7 +509,6 @@ export default function CheckoutPage() {
     };
 
     try {
-      // ── Save order ──
       let existing = [];
       try {
         const existingStr = localStorage.getItem('glowhive_orders');
@@ -546,13 +520,11 @@ export default function CheckoutPage() {
       const updated = [order, ...existing];
       localStorage.setItem('glowhive_orders', JSON.stringify(updated));
       
-      // ── Backup to scoped storage ──
       if (user?.email) {
         const scopedKey = `glowhive_${encodeURIComponent(user.email)}_orders`;
         localStorage.setItem(scopedKey, JSON.stringify(updated));
       }
       
-      // ── Dispatch events ──
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new Event('ordersUpdated'));
         window.dispatchEvent(new StorageEvent('storage', {
@@ -562,12 +534,10 @@ export default function CheckoutPage() {
         }));
       }
       
-      // ─── REMOVE PURCHASED ITEMS FROM CART ───
       const purchasedIds = checkoutItems.map(item => item.id);
       if (typeof removePurchasedItems === 'function') {
         removePurchasedItems(purchasedIds);
       } else {
-        // Fallback: manually remove purchased items
         const remainingItems = cartItems.filter(item => !purchasedIds.includes(item.id));
         localStorage.setItem('glowhive_cart', JSON.stringify(remainingItems));
         const remainingSelected = selectedItems.filter(id => !purchasedIds.includes(id));
@@ -590,72 +560,107 @@ export default function CheckoutPage() {
       {/* Header */}
       <div style={{
         background: 'linear-gradient(135deg,#fdf0f3,#fff8f5)',
-        borderBottom: '1px solid #fde8ec', padding: '24px 28px',
+        borderBottom: '1px solid #fde8ec',
+        padding: 'clamp(16px, 2vh, 24px) clamp(16px, 3vw, 28px)',
       }}>
         <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
           <button onClick={() => router.back()} style={{
             display: 'flex', alignItems: 'center', gap: '6px',
             background: 'none', border: 'none', color: '#b76e79',
-            fontSize: '14px', fontWeight: 600, cursor: 'pointer', marginBottom: '12px',
+            fontSize: 'clamp(13px, 1.2vw, 14px)',
+            fontWeight: 600, cursor: 'pointer', marginBottom: '12px',
           }}>
-            <ArrowLeft size={15} /> Back
+            <ArrowLeft size={14} /> Back
           </button>
           <h1 style={{
-            fontSize: '26px', fontWeight: 800, color: '#3d1f25',
+            fontSize: 'clamp(22px, 2.8vw, 26px)',
+            fontWeight: 800, color: '#3d1f25',
             fontFamily: "'Playfair Display', Georgia, serif",
           }}>Checkout</h1>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '14px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'clamp(6px, 0.8vw, 10px)', marginTop: '14px', flexWrap: 'wrap' }}>
             {[{ n: 1, label: 'Delivery' }, { n: 2, label: 'Payment' }].map((s, i) => (
-              <div key={s.n} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div key={s.n} style={{ display: 'flex', alignItems: 'center', gap: 'clamp(4px, 0.5vw, 8px)' }}>
                 <div style={{
-                  width: '28px', height: '28px', borderRadius: '50%',
+                  width: 'clamp(24px, 2.5vw, 28px)',
+                  height: 'clamp(24px, 2.5vw, 28px)',
+                  borderRadius: '50%',
                   background: step >= s.n ? 'linear-gradient(135deg,#b76e79,#c2748a)' : '#fde8ec',
                   color: step >= s.n ? '#fff' : '#9ca3af',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: '12px', fontWeight: 800,
+                  fontSize: 'clamp(10px, 1vw, 12px)',
+                  fontWeight: 800,
                 }}>
                   {step > s.n ? '✓' : s.n}
                 </div>
-                <span style={{ fontSize: '13px', fontWeight: 600, color: step >= s.n ? '#3d1f25' : '#9ca3af' }}>
+                <span style={{ 
+                  fontSize: 'clamp(11px, 1.1vw, 13px)', 
+                  fontWeight: 600, 
+                  color: step >= s.n ? '#3d1f25' : '#9ca3af' 
+                }}>
                   {s.label}
                 </span>
                 {i === 0 && (
-                  <div style={{ width: '48px', height: '2px', borderRadius: '2px', background: step >= 2 ? '#b76e79' : '#fde8ec' }} />
+                  <div style={{ 
+                    width: 'clamp(32px, 4vw, 48px)', 
+                    height: '2px', 
+                    borderRadius: '2px', 
+                    background: step >= 2 ? '#b76e79' : '#fde8ec' 
+                  }} />
                 )}
               </div>
             ))}
           </div>
           
-          {/* Show selected items count */}
-          <p style={{ fontSize: '13px', color: '#8c6468', marginTop: '10px' }}>
+          <p style={{ fontSize: 'clamp(12px, 1.1vw, 13px)', color: '#8c6468', marginTop: '10px' }}>
             {itemCount} item{itemCount !== 1 ? 's' : ''} selected for checkout
           </p>
         </div>
       </div>
 
-      {/* Body */}
-      <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '28px' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: '28px', alignItems: 'start' }}>
+      <div style={{ 
+        maxWidth: '1100px', 
+        margin: '0 auto', 
+        padding: 'clamp(16px, 2vw, 28px)' 
+      }}>
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: '1fr',
+          gap: 'clamp(16px, 2vw, 28px)', 
+          alignItems: 'start' 
+        }}
+        className="checkout-grid"
+        >
 
-          {/* LEFT */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'clamp(16px, 2vh, 20px)' }}>
 
             {step === 1 && (
               <>
-                {/* Profile Card */}
-                <div style={{ background: '#fff', border: '1px solid #fde8ec', borderRadius: '20px', padding: '24px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#fde8ec', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <User size={17} color="#b76e79" />
+                <div style={{ 
+                  background: '#fff', 
+                  border: '1px solid #fde8ec', 
+                  borderRadius: 'clamp(16px, 1.8vw, 20px)', 
+                  padding: 'clamp(16px, 2vw, 24px)' 
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', flexWrap: 'wrap', gap: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 'clamp(8px, 1vw, 10px)' }}>
+                      <div style={{ 
+                        width: 'clamp(32px, 3.5vw, 36px)', 
+                        height: 'clamp(32px, 3.5vw, 36px)', 
+                        borderRadius: '50%', 
+                        background: '#fde8ec', 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        justifyContent: 'center' 
+                      }}>
+                        <User size={16} color="#b76e79" />
                       </div>
                       <div>
-                        <h2 style={{ fontSize: '16px', fontWeight: 800, color: '#3d1f25', margin: 0 }}>
+                        <h2 style={{ fontSize: 'clamp(14px, 1.6vw, 16px)', fontWeight: 800, color: '#3d1f25', margin: 0 }}>
                           {savedProfile && !editingProfile ? 'Your Profile' : 'Personal Details'}
                         </h2>
                         {editingProfile && (
-                          <p style={{ fontSize: '11px', color: '#b76e79', margin: '2px 0 0', fontWeight: 600 }}>
+                          <p style={{ fontSize: 'clamp(10px, 1vw, 11px)', color: '#b76e79', margin: '2px 0 0', fontWeight: 600 }}>
                             Please fill in your details to continue.
                           </p>
                         )}
@@ -665,8 +670,10 @@ export default function CheckoutPage() {
                       <button onClick={() => setEditingProfile(true)} style={{
                         display: 'flex', alignItems: 'center', gap: '5px',
                         background: '#fdf0f3', border: '1px solid #fde8ec',
-                        borderRadius: '50px', padding: '6px 14px', cursor: 'pointer',
-                        fontSize: '12px', fontWeight: 700, color: '#b76e79',
+                        borderRadius: '50px', padding: 'clamp(4px, 0.5vw, 6px) clamp(10px, 1.2vw, 14px)',
+                        cursor: 'pointer',
+                        fontSize: 'clamp(11px, 1.1vw, 12px)',
+                        fontWeight: 700, color: '#b76e79',
                       }}>
                         <Edit3 size={11} /> Edit
                       </button>
@@ -676,18 +683,18 @@ export default function CheckoutPage() {
                   {savedProfile && !editingProfile ? (
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                       {[
-                        ['Name',  `${savedProfile.firstName} ${savedProfile.lastName}`.trim()],
+                        ['Name', `${savedProfile.firstName} ${savedProfile.lastName}`.trim()],
                         ['Phone', savedProfile.phone || '—'],
                         ['Email', savedProfile.email, '1 / -1'],
                       ].map(([lbl, val, col]) => (
-                        <div key={lbl} style={{ background: '#fdf6f0', borderRadius: '10px', padding: '10px 14px', gridColumn: col }}>
-                          <div style={{ fontSize: '10px', fontWeight: 700, color: '#b76e79', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '2px' }}>{lbl}</div>
-                          <div style={{ fontSize: '14px', fontWeight: 600, color: '#3d1f25' }}>{val || '—'}</div>
+                        <div key={lbl} style={{ background: '#fdf6f0', borderRadius: '10px', padding: 'clamp(8px, 1vw, 10px) clamp(10px, 1.2vw, 14px)', gridColumn: col }}>
+                          <div style={{ fontSize: 'clamp(9px, 0.9vw, 10px)', fontWeight: 700, color: '#b76e79', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '2px' }}>{lbl}</div>
+                          <div style={{ fontSize: 'clamp(13px, 1.3vw, 14px)', fontWeight: 600, color: '#3d1f25' }}>{val || '—'}</div>
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }} className="profile-grid">
                       {[
                         { key: 'firstName', label: 'First Name *', placeholder: 'Ram', type: 'text' },
                         { key: 'lastName', label: 'Last Name *', placeholder: 'Sharma', type: 'text' },
@@ -704,7 +711,7 @@ export default function CheckoutPage() {
                             style={inp(profileErrors[f.key])}
                           />
                           {profileErrors[f.key] && (
-                            <p style={{ fontSize: '11px', color: '#f87171', marginTop: '4px', fontWeight: 600 }}>
+                            <p style={{ fontSize: 'clamp(10px, 0.9vw, 11px)', color: '#f87171', marginTop: '4px', fontWeight: 600 }}>
                               {profileErrors[f.key]}
                             </p>
                           )}
@@ -714,21 +721,34 @@ export default function CheckoutPage() {
                   )}
                 </div>
 
-                {/* Delivery Address */}
-                <div style={{ background: '#fff', border: '1px solid #fde8ec', borderRadius: '20px', padding: '24px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#fde8ec', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <MapPin size={17} color="#b76e79" />
+                <div style={{ 
+                  background: '#fff', 
+                  border: '1px solid #fde8ec', 
+                  borderRadius: 'clamp(16px, 1.8vw, 20px)', 
+                  padding: 'clamp(16px, 2vw, 24px)' 
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', flexWrap: 'wrap', gap: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 'clamp(8px, 1vw, 10px)' }}>
+                      <div style={{ 
+                        width: 'clamp(32px, 3.5vw, 36px)', 
+                        height: 'clamp(32px, 3.5vw, 36px)', 
+                        borderRadius: '50%', 
+                        background: '#fde8ec', 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        justifyContent: 'center' 
+                      }}>
+                        <MapPin size={16} color="#b76e79" />
                       </div>
-                      <h2 style={{ fontSize: '16px', fontWeight: 800, color: '#3d1f25' }}>Delivery Location</h2>
+                      <h2 style={{ fontSize: 'clamp(14px, 1.6vw, 16px)', fontWeight: 800, color: '#3d1f25' }}>Delivery Location</h2>
                     </div>
                     {savedAddresses.length > 0 && !addingAddress && (
                       <button onClick={() => setAddingAddress(true)} style={{
                         display: 'flex', alignItems: 'center', gap: '5px',
                         background: 'linear-gradient(135deg,#b76e79,#c2748a)',
-                        border: 'none', borderRadius: '50px', padding: '7px 14px',
-                        cursor: 'pointer', fontSize: '12px', fontWeight: 700, color: '#fff',
+                        border: 'none', borderRadius: '50px', padding: 'clamp(5px, 0.6vw, 7px) clamp(10px, 1.2vw, 14px)',
+                        cursor: 'pointer', fontSize: 'clamp(11px, 1.1vw, 12px)',
+                        fontWeight: 700, color: '#fff',
                       }}>
                         <Plus size={11} /> New Address
                       </button>
@@ -736,19 +756,20 @@ export default function CheckoutPage() {
                   </div>
 
                   {savedAddresses.length > 0 && !addingAddress && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '10px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '10px' }} className="address-selector">
                       {savedAddresses.map((addr, i) => (
                         <motion.div key={i} whileHover={{ y: -2 }}
                           onClick={() => { setSelectedAddrIdx(i); setAddrForm(addr); }}
                           style={{
                             border: `2px solid ${selectedAddrIdx === i ? '#b76e79' : '#fde8ec'}`,
-                            borderRadius: '14px', padding: '14px 16px', cursor: 'pointer',
+                            borderRadius: '14px', padding: 'clamp(12px, 1.2vw, 14px) clamp(14px, 1.5vw, 16px)',
+                            cursor: 'pointer',
                             background: selectedAddrIdx === i ? '#fef5f7' : '#fff',
                             transition: 'all 0.2s', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
                           }}>
                           <div>
-                            <div style={{ fontSize: '14px', fontWeight: 700, color: '#3d1f25', marginBottom: '3px' }}>{addr.address}</div>
-                            <div style={{ fontSize: '12px', color: '#8c6468' }}>{addr.city}, {addr.province} {addr.postalCode && `– ${addr.postalCode}`}</div>
+                            <div style={{ fontSize: 'clamp(13px, 1.3vw, 14px)', fontWeight: 700, color: '#3d1f25', marginBottom: '3px' }}>{addr.address}</div>
+                            <div style={{ fontSize: 'clamp(11px, 1.1vw, 12px)', color: '#8c6468' }}>{addr.city}, {addr.province} {addr.postalCode && `– ${addr.postalCode}`}</div>
                           </div>
                           <div style={{
                             width: '20px', height: '20px', borderRadius: '50%', flexShrink: 0, marginTop: '2px',
@@ -771,16 +792,16 @@ export default function CheckoutPage() {
                         {savedAddresses.length > 0 && (
                           <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'flex-end' }}>
                             <button onClick={() => setAddingAddress(false)}
-                              style={{ background: 'none', border: 'none', color: '#8c6468', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}>
+                              style={{ background: 'none', border: 'none', color: '#8c6468', fontSize: 'clamp(11px, 1.1vw, 12px)', fontWeight: 600, cursor: 'pointer' }}>
                               ✕ Cancel
                             </button>
                           </div>
                         )}
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }} className="address-grid">
                           <div style={{ gridColumn: '1/-1' }}>
                             <label style={labelStyle}>Street Address *</label>
                             <input value={addrForm.address} onChange={e => updateAddr('address', e.target.value)} placeholder="Tole, Ward No., Street" style={inp(addrErrors.address)} />
-                            {addrErrors.address && <p style={{ fontSize: '11px', color: '#f87171', marginTop: '4px' }}>{addrErrors.address}</p>}
+                            {addrErrors.address && <p style={{ fontSize: 'clamp(10px, 0.9vw, 11px)', color: '#f87171', marginTop: '4px' }}>{addrErrors.address}</p>}
                           </div>
                           <div>
                             <label style={labelStyle}>Province *</label>
@@ -795,7 +816,7 @@ export default function CheckoutPage() {
                               <option value="">Select province</option>
                               {PROVINCES.map(p => <option key={p} value={p}>{p}</option>)}
                             </select>
-                            {addrErrors.province && <p style={{ fontSize: '11px', color: '#f87171', marginTop: '4px' }}>{addrErrors.province}</p>}
+                            {addrErrors.province && <p style={{ fontSize: 'clamp(10px, 0.9vw, 11px)', color: '#f87171', marginTop: '4px' }}>{addrErrors.province}</p>}
                           </div>
                           <div>
                             <label style={labelStyle}>City *</label>
@@ -808,7 +829,7 @@ export default function CheckoutPage() {
                               <option value="">{addrForm.province ? 'Select city' : 'Select province first'}</option>
                               {citiesByProvince.map(c => <option key={c} value={c}>{c}</option>)}
                             </select>
-                            {addrErrors.city && <p style={{ fontSize: '11px', color: '#f87171', marginTop: '4px' }}>{addrErrors.city}</p>}
+                            {addrErrors.city && <p style={{ fontSize: 'clamp(10px, 0.9vw, 11px)', color: '#f87171', marginTop: '4px' }}>{addrErrors.city}</p>}
                           </div>
                           <div>
                             <label style={labelStyle}>Postal Code</label>
@@ -819,7 +840,7 @@ export default function CheckoutPage() {
                               style={{ ...inp(), background: '#fdf6f0' }}
                               readOnly
                             />
-                            <p style={{ fontSize: '10px', color: '#8c6468', marginTop: '4px' }}>
+                            <p style={{ fontSize: 'clamp(9px, 0.8vw, 10px)', color: '#8c6468', marginTop: '4px' }}>
                               Postal code is auto-filled based on the selected city.
                             </p>
                           </div>
@@ -834,9 +855,10 @@ export default function CheckoutPage() {
                   whileTap={{ scale: 0.97 }} onClick={handleNext}
                   style={{
                     background: 'linear-gradient(135deg,#b76e79,#c2748a)',
-                    color: '#fff', width: '100%', padding: '15px',
+                    color: '#fff', width: '100%', padding: 'clamp(14px, 1.5vh, 15px)',
                     borderRadius: '14px', border: 'none', fontWeight: 800,
-                    fontSize: '15px', cursor: 'pointer',
+                    fontSize: 'clamp(14px, 1.3vw, 15px)',
+                    cursor: 'pointer',
                   }}>
                   Continue to Payment →
                 </motion.button>
@@ -844,12 +866,25 @@ export default function CheckoutPage() {
             )}
 
             {step === 2 && (
-              <div style={{ background: '#fff', border: '1px solid #fde8ec', borderRadius: '20px', padding: '28px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '24px' }}>
-                  <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#fde8ec', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <CreditCard size={17} color="#b76e79" />
+              <div style={{ 
+                background: '#fff', 
+                border: '1px solid #fde8ec', 
+                borderRadius: 'clamp(16px, 1.8vw, 20px)', 
+                padding: 'clamp(20px, 2.5vw, 28px)' 
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 'clamp(8px, 1vw, 10px)', marginBottom: '24px' }}>
+                  <div style={{ 
+                    width: 'clamp(32px, 3.5vw, 36px)', 
+                    height: 'clamp(32px, 3.5vw, 36px)', 
+                    borderRadius: '50%', 
+                    background: '#fde8ec', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center' 
+                  }}>
+                    <CreditCard size={16} color="#b76e79" />
                   </div>
-                  <h2 style={{ fontSize: '16px', fontWeight: 800, color: '#3d1f25' }}>Payment Method</h2>
+                  <h2 style={{ fontSize: 'clamp(14px, 1.6vw, 16px)', fontWeight: 800, color: '#3d1f25' }}>Payment Method</h2>
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -858,16 +893,27 @@ export default function CheckoutPage() {
                       onClick={() => setSelectedMethod(m)}
                       style={{
                         border: `2px solid ${selectedMethod?.id === m.id ? '#b76e79' : '#fde8ec'}`,
-                        borderRadius: '14px', padding: '16px', cursor: 'pointer',
+                        borderRadius: '14px', padding: 'clamp(14px, 1.5vw, 16px)',
+                        cursor: 'pointer',
                         background: selectedMethod?.id === m.id ? '#fef5f7' : '#fff',
-                        display: 'flex', alignItems: 'center', gap: '14px', transition: 'all 0.2s',
+                        display: 'flex', alignItems: 'center', gap: 'clamp(10px, 1.2vw, 14px)',
+                        transition: 'all 0.2s',
                       }}>
-                      <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: '#fde8ec', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <div style={{ 
+                        width: 'clamp(38px, 4vw, 44px)', 
+                        height: 'clamp(38px, 4vw, 44px)', 
+                        borderRadius: '12px', 
+                        background: '#fde8ec', 
+                        flexShrink: 0, 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        justifyContent: 'center' 
+                      }}>
                         {m.icon}
                       </div>
                       <div style={{ flex: 1 }}>
-                        <div style={{ fontWeight: 700, color: '#3d1f25', fontSize: '14px' }}>{m.name}</div>
-                        <div style={{ fontSize: '12px', color: '#8c6468', marginTop: '2px' }}>{m.desc}</div>
+                        <div style={{ fontWeight: 700, color: '#3d1f25', fontSize: 'clamp(13px, 1.3vw, 14px)' }}>{m.name}</div>
+                        <div style={{ fontSize: 'clamp(11px, 1.1vw, 12px)', color: '#8c6468', marginTop: '2px' }}>{m.desc}</div>
                       </div>
                       <div style={{
                         width: '20px', height: '20px', borderRadius: '50%',
@@ -881,9 +927,17 @@ export default function CheckoutPage() {
                   ))}
                 </div>
 
-                <div style={{ marginTop: '20px', background: '#fdf6f0', borderRadius: '12px', padding: '14px 16px', display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
-                  <Truck size={16} color="#b76e79" style={{ flexShrink: 0, marginTop: '2px' }} />
-                  <p style={{ fontSize: '12px', color: '#5a3a40', lineHeight: 1.6 }}>
+                <div style={{ 
+                  marginTop: '20px', 
+                  background: '#fdf6f0', 
+                  borderRadius: '12px', 
+                  padding: 'clamp(12px, 1.2vw, 14px) clamp(14px, 1.5vw, 16px)', 
+                  display: 'flex', 
+                  gap: '10px', 
+                  alignItems: 'flex-start' 
+                }}>
+                  <Truck size={15} color="#b76e79" style={{ flexShrink: 0, marginTop: '2px' }} />
+                  <p style={{ fontSize: 'clamp(11px, 1.1vw, 12px)', color: '#5a3a40', lineHeight: 1.6 }}>
                     Your order will be delivered within <strong>3–5 business days</strong>.
                     {addrForm.city === 'Kathmandu' ? ' Free shipping applies! 🎉' : ' A shipping charge of Rs. 150 applies.'}
                   </p>
@@ -892,7 +946,14 @@ export default function CheckoutPage() {
                 <div style={{ display: 'flex', gap: '12px', marginTop: '24px' }}>
                   <motion.button whileHover={{ background: '#fde8ec' }} whileTap={{ scale: 0.97 }}
                     onClick={() => setStep(1)}
-                    style={{ background: '#fff', color: '#b76e79', border: '1.5px solid #b76e79', padding: '13px 20px', borderRadius: '12px', fontWeight: 700, cursor: 'pointer', flex: 1, fontSize: '14px' }}>
+                    style={{ 
+                      background: '#fff', color: '#b76e79', 
+                      border: '1.5px solid #b76e79', 
+                      padding: 'clamp(12px, 1.2vw, 13px) clamp(16px, 1.5vw, 20px)', 
+                      borderRadius: '12px', 
+                      fontWeight: 700, cursor: 'pointer', 
+                      flex: 1, fontSize: 'clamp(13px, 1.3vw, 14px)' 
+                    }}>
                     ← Back
                   </motion.button>
                   <motion.button
@@ -900,9 +961,11 @@ export default function CheckoutPage() {
                     whileTap={{ scale: 0.96 }} onClick={handlePlaceOrder} disabled={placing}
                     style={{
                       background: 'linear-gradient(135deg,#b76e79,#c2748a)',
-                      color: '#fff', border: 'none', padding: '13px 20px',
-                      borderRadius: '12px', fontWeight: 800, cursor: placing ? 'wait' : 'pointer',
-                      flex: 2, fontSize: '15px',
+                      color: '#fff', border: 'none',
+                      padding: 'clamp(12px, 1.2vw, 13px) clamp(16px, 1.5vw, 20px)',
+                      borderRadius: '12px', fontWeight: 800,
+                      cursor: placing ? 'wait' : 'pointer',
+                      flex: 2, fontSize: 'clamp(14px, 1.4vw, 15px)',
                     }}>
                     {placing ? 'Placing Order…' : 'Place Order 🛍️'}
                   </motion.button>
@@ -911,20 +974,28 @@ export default function CheckoutPage() {
             )}
           </div>
 
-          {/* RIGHT — Order Summary */}
-          <div style={{ background: '#fff', border: '1px solid #fde8ec', borderRadius: '20px', padding: '24px', position: 'sticky', top: '24px' }}>
+          <div style={{ 
+            background: '#fff', 
+            border: '1px solid #fde8ec', 
+            borderRadius: 'clamp(16px, 1.8vw, 20px)', 
+            padding: 'clamp(16px, 2vw, 24px)', 
+            position: 'sticky', 
+            top: 'clamp(80px, 10vh, 90px)' 
+          }}
+          className="order-summary-sticky"
+          >
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '18px' }}>
-              <Truck size={17} color="#b76e79" />
-              <h3 style={{ fontSize: '15px', fontWeight: 800, color: '#3d1f25' }}>Order Summary</h3>
-              <span style={{ fontSize: '11px', color: '#b76e79', fontWeight: 600, marginLeft: 'auto' }}>
+              <Truck size={16} color="#b76e79" />
+              <h3 style={{ fontSize: 'clamp(14px, 1.4vw, 15px)', fontWeight: 800, color: '#3d1f25' }}>Order Summary</h3>
+              <span style={{ fontSize: 'clamp(10px, 1vw, 11px)', color: '#b76e79', fontWeight: 600, marginLeft: 'auto' }}>
                 {itemCount} item{itemCount !== 1 ? 's' : ''}
               </span>
             </div>
 
             <div style={{ maxHeight: '260px', overflowY: 'auto', marginBottom: '14px' }}>
               {checkoutItems.map(item => (
-                <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px', fontSize: '13px' }}>
-                  <span style={{ color: '#8c6468', maxWidth: '160px', lineHeight: 1.4 }}>
+                <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px', fontSize: 'clamp(12px, 1.2vw, 13px)' }}>
+                  <span style={{ color: '#8c6468', maxWidth: 'clamp(120px, 40%, 160px)', lineHeight: 1.4 }}>
                     {item.name} <span style={{ fontWeight: 700 }}>× {item.quantity}</span>
                   </span>
                   <span style={{ fontWeight: 700, color: '#3d1f25', flexShrink: 0 }}>
@@ -939,20 +1010,20 @@ export default function CheckoutPage() {
                 ['Subtotal', `Rs. ${subtotal.toLocaleString()}`],
                 ['Shipping', shipping === 0 ? 'FREE' : `Rs. ${shipping}`],
               ].map(([lbl, val]) => (
-                <div key={lbl} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '13px' }}>
+                <div key={lbl} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: 'clamp(12px, 1.2vw, 13px)' }}>
                   <span style={{ color: '#8c6468' }}>{lbl}</span>
                   <span style={{ fontWeight: 600, color: lbl === 'Shipping' && shipping === 0 ? '#22c55e' : '#3d1f25' }}>{val}</span>
                 </div>
               ))}
-              <div style={{ borderTop: '2px solid #fde8ec', marginTop: '10px', paddingTop: '10px', display: 'flex', justifyContent: 'space-between', fontWeight: 800, fontSize: '17px', color: '#3d1f25' }}>
+              <div style={{ borderTop: '2px solid #fde8ec', marginTop: '10px', paddingTop: '10px', display: 'flex', justifyContent: 'space-between', fontWeight: 800, fontSize: 'clamp(16px, 1.6vw, 17px)', color: '#3d1f25' }}>
                 <span>Total</span>
                 <span>Rs. {total.toLocaleString()}</span>
               </div>
             </div>
 
             {(addrForm.city || savedAddresses[selectedAddrIdx]?.city) && (
-              <div style={{ marginTop: '14px', background: '#fdf6f0', borderRadius: '10px', padding: '10px 12px', fontSize: '12px', color: '#5a3a40', lineHeight: 1.6 }}>
-                <div style={{ fontWeight: 700, color: '#b76e79', marginBottom: '3px', fontSize: '10px', letterSpacing: '1px', textTransform: 'uppercase' }}>Delivering to</div>
+              <div style={{ marginTop: '14px', background: '#fdf6f0', borderRadius: '10px', padding: 'clamp(10px, 1vw, 12px) clamp(10px, 1.2vw, 12px)', fontSize: 'clamp(11px, 1.1vw, 12px)', color: '#5a3a40', lineHeight: 1.6 }}>
+                <div style={{ fontWeight: 700, color: '#b76e79', marginBottom: '3px', fontSize: 'clamp(9px, 0.8vw, 10px)', letterSpacing: '1px', textTransform: 'uppercase' }}>Delivering to</div>
                 📍 {(addingAddress ? addrForm : savedAddresses[selectedAddrIdx])?.address},{' '}
                 {(addingAddress ? addrForm : savedAddresses[selectedAddrIdx])?.city},{' '}
                 {(addingAddress ? addrForm : savedAddresses[selectedAddrIdx])?.province}
@@ -965,6 +1036,36 @@ export default function CheckoutPage() {
 
         </div>
       </div>
+
+      <style jsx>{`
+        @media (min-width: 768px) {
+          .checkout-grid {
+            grid-template-columns: 1fr 340px !important;
+          }
+          .order-summary-sticky {
+            position: sticky !important;
+          }
+        }
+        @media (max-width: 767px) {
+          .checkout-grid {
+            grid-template-columns: 1fr !important;
+          }
+          .order-summary-sticky {
+            position: static !important;
+          }
+          .profile-grid {
+            grid-template-columns: 1fr !important;
+          }
+          .address-grid {
+            grid-template-columns: 1fr !important;
+          }
+        }
+        @media (max-width: 480px) {
+          .checkout-grid {
+            gap: 16px !important;
+          }
+        }
+      `}</style>
     </div>
   );
 }

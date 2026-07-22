@@ -61,8 +61,8 @@ function Field({ icon: Icon, label, action, type = 'text', ...inputProps }) {
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-        <label style={{ fontSize: '13px', fontWeight: 600, color: '#3d1f25' }}>{label}</label>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px', flexWrap: 'wrap', gap: '4px' }}>
+        <label style={{ fontSize: 'clamp(12px, 1.1vw, 13px)', fontWeight: 600, color: '#3d1f25' }}>{label}</label>
         {action}
       </div>
       <div style={{ position: 'relative' }}>
@@ -145,9 +145,11 @@ function ForgotPasswordModal({ onClose }) {
         display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px',
       }}>
         <div style={{
-          background: '#fff', borderRadius: '24px', padding: '32px',
+          background: '#fff', borderRadius: '24px', padding: 'clamp(24px, 4vw, 32px)',
           width: 'min(420px, 96vw)', boxShadow: '0 32px 80px rgba(61,31,37,0.24)',
           position: 'relative',
+          maxHeight: '90vh',
+          overflowY: 'auto',
         }}>
           <button onClick={onClose} style={{
             position: 'absolute', top: '16px', right: '16px',
@@ -168,10 +170,10 @@ function ForgotPasswordModal({ onClose }) {
           {step === 1 && (
             <form onSubmit={findAccount} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
               <div>
-                <h2 style={{ fontSize: '18px', fontWeight: 800, color: '#3d1f25', fontFamily: "'Playfair Display', Georgia, serif", marginBottom: '6px' }}>
+                <h2 style={{ fontSize: 'clamp(16px, 2vw, 18px)', fontWeight: 800, color: '#3d1f25', fontFamily: "'Playfair Display', Georgia, serif", marginBottom: '6px' }}>
                   Forgot Password?
                 </h2>
-                <p style={{ fontSize: '13px', color: '#8c6468', lineHeight: 1.6, margin: 0 }}>
+                <p style={{ fontSize: 'clamp(12px, 1.1vw, 13px)', color: '#8c6468', lineHeight: 1.6, margin: 0 }}>
                   Enter your registered email and we'll let you set a new password.
                 </p>
               </div>
@@ -185,7 +187,7 @@ function ForgotPasswordModal({ onClose }) {
               <button type="submit" disabled={loading} style={{
                 background: 'linear-gradient(135deg,#b76e79,#c2748a)', color: '#fff',
                 border: 'none', borderRadius: '14px', padding: '14px',
-                fontSize: '14px', fontWeight: 700, cursor: 'pointer', opacity: loading ? 0.7 : 1,
+                fontSize: 'clamp(13px, 1.1vw, 14px)', fontWeight: 700, cursor: 'pointer', opacity: loading ? 0.7 : 1,
               }}>
                 {loading ? 'Looking up account…' : 'Continue →'}
               </button>
@@ -195,10 +197,10 @@ function ForgotPasswordModal({ onClose }) {
           {step === 2 && (
             <form onSubmit={resetPassword} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
               <div>
-                <h2 style={{ fontSize: '18px', fontWeight: 800, color: '#3d1f25', fontFamily: "'Playfair Display', Georgia, serif", marginBottom: '6px' }}>
+                <h2 style={{ fontSize: 'clamp(16px, 2vw, 18px)', fontWeight: 800, color: '#3d1f25', fontFamily: "'Playfair Display', Georgia, serif", marginBottom: '6px' }}>
                   Set New Password
                 </h2>
-                <p style={{ fontSize: '13px', color: '#8c6468', lineHeight: 1.6, margin: 0 }}>
+                <p style={{ fontSize: 'clamp(12px, 1.1vw, 13px)', color: '#8c6468', lineHeight: 1.6, margin: 0 }}>
                   Account: <strong style={{ color: '#3d1f25' }}>{email}</strong>
                 </p>
               </div>
@@ -219,7 +221,7 @@ function ForgotPasswordModal({ onClose }) {
               <button type="submit" disabled={loading} style={{
                 background: 'linear-gradient(135deg,#b76e79,#c2748a)', color: '#fff',
                 border: 'none', borderRadius: '14px', padding: '14px',
-                fontSize: '14px', fontWeight: 700, cursor: 'pointer', opacity: loading ? 0.7 : 1,
+                fontSize: 'clamp(13px, 1.1vw, 14px)', fontWeight: 700, cursor: 'pointer', opacity: loading ? 0.7 : 1,
               }}>
                 {loading ? 'Saving…' : 'Reset Password →'}
               </button>
@@ -229,16 +231,16 @@ function ForgotPasswordModal({ onClose }) {
           {step === 3 && (
             <div style={{ textAlign: 'center' }}>
               <div style={{ fontSize: '48px', marginBottom: '14px' }}>🎉</div>
-              <h2 style={{ fontSize: '18px', fontWeight: 800, color: '#3d1f25', fontFamily: "'Playfair Display', Georgia, serif", marginBottom: '8px' }}>
+              <h2 style={{ fontSize: 'clamp(16px, 2vw, 18px)', fontWeight: 800, color: '#3d1f25', fontFamily: "'Playfair Display', Georgia, serif", marginBottom: '8px' }}>
                 Password Reset!
               </h2>
-              <p style={{ fontSize: '13px', color: '#8c6468', lineHeight: 1.6, marginBottom: '22px' }}>
+              <p style={{ fontSize: 'clamp(12px, 1.1vw, 13px)', color: '#8c6468', lineHeight: 1.6, marginBottom: '22px' }}>
                 Your password has been updated. You can now sign in with your new password.
               </p>
               <button onClick={onClose} style={{
                 background: 'linear-gradient(135deg,#3d1f25,#5a3a40)', color: '#fff',
                 border: 'none', borderRadius: '14px', padding: '13px 28px',
-                fontSize: '14px', fontWeight: 700, cursor: 'pointer', width: '100%',
+                fontSize: 'clamp(13px, 1.1vw, 14px)', fontWeight: 700, cursor: 'pointer', width: '100%',
               }}>
                 Back to Sign In
               </button>
@@ -269,7 +271,7 @@ function TermsModal({ onClose }) {
         padding: '20px',
       }}>
         <div style={{
-          background: '#fff', borderRadius: '24px', padding: '32px',
+          background: '#fff', borderRadius: '24px', padding: 'clamp(24px, 4vw, 32px)',
           width: 'min(700px, 96vw)', 
           maxHeight: '90vh',
           boxShadow: '0 32px 80px rgba(61,31,37,0.3)',
@@ -291,16 +293,17 @@ function TermsModal({ onClose }) {
           </button>
 
           <div style={{ flex: 1, overflowY: 'auto' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
               <div style={{
                 width: '48px', height: '48px', borderRadius: '50%',
                 background: '#fdf0f3',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
+                flexShrink: 0,
               }}>
                 <Scale size={24} color="#b76e79" />
               </div>
               <h2 style={{
-                fontSize: '24px', fontWeight: 800, color: '#3d1f25',
+                fontSize: 'clamp(20px, 3vw, 24px)', fontWeight: 800, color: '#3d1f25',
                 fontFamily: "'Playfair Display', Georgia, serif",
                 margin: 0,
               }}>
@@ -309,7 +312,7 @@ function TermsModal({ onClose }) {
             </div>
 
             <div style={{ 
-              fontSize: '14px', 
+              fontSize: 'clamp(13px, 1.1vw, 14px)', 
               color: '#5a3a40', 
               lineHeight: 1.9,
               maxHeight: 'calc(90vh - 200px)',
@@ -320,70 +323,70 @@ function TermsModal({ onClose }) {
                 <strong>Welcome to GlowHive!</strong> By using our website and services, you agree to the following terms and conditions.
               </p>
 
-              <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#3d1f25', marginTop: '20px', marginBottom: '8px' }}>
+              <h3 style={{ fontSize: 'clamp(15px, 1.3vw, 16px)', fontWeight: 700, color: '#3d1f25', marginTop: '20px', marginBottom: '8px' }}>
                 1. Account Registration
               </h3>
               <p style={{ marginBottom: '12px' }}>
                 To access certain features, you may need to create an account. You agree to provide accurate information and maintain the security of your account. You must be at least 16 years old to use our services.
               </p>
 
-              <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#3d1f25', marginTop: '16px', marginBottom: '8px' }}>
+              <h3 style={{ fontSize: 'clamp(15px, 1.3vw, 16px)', fontWeight: 700, color: '#3d1f25', marginTop: '16px', marginBottom: '8px' }}>
                 2. Orders and Pricing
               </h3>
               <p style={{ marginBottom: '12px' }}>
                 All orders are subject to acceptance and availability. We reserve the right to refuse or cancel orders. Prices are subject to change without notice.
               </p>
 
-              <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#3d1f25', marginTop: '16px', marginBottom: '8px' }}>
+              <h3 style={{ fontSize: 'clamp(15px, 1.3vw, 16px)', fontWeight: 700, color: '#3d1f25', marginTop: '16px', marginBottom: '8px' }}>
                 3. Payment Terms
               </h3>
               <p style={{ marginBottom: '12px' }}>
                 We accept Cash on Delivery, eSewa, Khalti, and Bank Transfer. By providing payment information, you authorize us to charge the total amount of your order.
               </p>
 
-              <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#3d1f25', marginTop: '16px', marginBottom: '8px' }}>
+              <h3 style={{ fontSize: 'clamp(15px, 1.3vw, 16px)', fontWeight: 700, color: '#3d1f25', marginTop: '16px', marginBottom: '8px' }}>
                 4. Shipping and Delivery
               </h3>
               <p style={{ marginBottom: '12px' }}>
                 We ship within Nepal. Delivery times are estimates and not guaranteed. Risk of loss passes to you upon delivery to the shipping carrier.
               </p>
 
-              <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#3d1f25', marginTop: '16px', marginBottom: '8px' }}>
+              <h3 style={{ fontSize: 'clamp(15px, 1.3vw, 16px)', fontWeight: 700, color: '#3d1f25', marginTop: '16px', marginBottom: '8px' }}>
                 5. Returns and Refunds
               </h3>
               <p style={{ marginBottom: '12px' }}>
                 You may return items within 30 days of delivery if unused and in original packaging. Refunds are processed within 3-5 business days.
               </p>
 
-              <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#3d1f25', marginTop: '16px', marginBottom: '8px' }}>
+              <h3 style={{ fontSize: 'clamp(15px, 1.3vw, 16px)', fontWeight: 700, color: '#3d1f25', marginTop: '16px', marginBottom: '8px' }}>
                 6. Intellectual Property
               </h3>
               <p style={{ marginBottom: '12px' }}>
                 All content on our website is the property of GlowHive and is protected by intellectual property laws. You may not use our content without permission.
               </p>
 
-              <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#3d1f25', marginTop: '16px', marginBottom: '8px' }}>
+              <h3 style={{ fontSize: 'clamp(15px, 1.3vw, 16px)', fontWeight: 700, color: '#3d1f25', marginTop: '16px', marginBottom: '8px' }}>
                 7. User-Generated Content
               </h3>
               <p style={{ marginBottom: '12px' }}>
                 By submitting content, you grant us a non-exclusive, royalty-free license to use, reproduce, and distribute such content.
               </p>
 
-              <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#3d1f25', marginTop: '16px', marginBottom: '8px' }}>
+              <h3 style={{ fontSize: 'clamp(15px, 1.3vw, 16px)', fontWeight: 700, color: '#3d1f25', marginTop: '16px', marginBottom: '8px' }}>
                 8. Privacy and Data Protection
               </h3>
               <p style={{ marginBottom: '12px' }}>
                 Your privacy is important to us. We collect and use your personal information as described in our Privacy Policy.
               </p>
 
-              <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#3d1f25', marginTop: '16px', marginBottom: '8px' }}>
+              <h3 style={{ fontSize: 'clamp(15px, 1.3vw, 16px)', fontWeight: 700, color: '#3d1f25', marginTop: '16px', marginBottom: '8px' }}>
                 9. Limitations of Liability
               </h3>
               <p style={{ marginBottom: '12px' }}>
                 GlowHive shall not be liable for any indirect, incidental, or consequential damages arising from the use of our website.
               </p>
 
-              <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#3d1f25', marginTop: '16px', marginBottom: '8px' }}>
+              <h3 style={{ fontSize: 'clamp(15px, 1.3vw, 16px)', fontWeight: 700, color: '#3d1f25', marginTop: '16px', marginBottom: '8px' }}>
                 10. Governing Law
               </h3>
               <p style={{ marginBottom: '12px' }}>
@@ -423,7 +426,7 @@ function TermsModal({ onClose }) {
                   color: '#fff',
                   border: 'none',
                   borderRadius: '50px',
-                  fontSize: '14px',
+                  fontSize: 'clamp(13px, 1.1vw, 14px)',
                   fontWeight: 700,
                   cursor: 'pointer',
                   transition: 'all 0.2s',
@@ -459,7 +462,7 @@ function GoogleButton() {
     return (
       <button onClick={handleDemoGoogle} disabled={demoLoading} style={{
         width: '100%', border: '1.5px solid #fde8ec', background: '#fff',
-        padding: '13px', borderRadius: '14px', fontSize: '14px', fontWeight: 600,
+        padding: '13px', borderRadius: '14px', fontSize: 'clamp(13px, 1.1vw, 14px)', fontWeight: 600,
         color: '#3d1f25', cursor: 'pointer', display: 'flex', alignItems: 'center',
         justifyContent: 'center', gap: '10px', opacity: demoLoading ? 0.7 : 1,
       }}>
@@ -479,20 +482,23 @@ function GoogleButton() {
 
   return (
     <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
-      <div style={{ display: 'flex', justifyContent: 'center' }}>
-        <GoogleLogin
-          width="100%" shape="pill"
-          onSuccess={(credentialResponse) => {
-            try {
-              const profile = jwtDecode(credentialResponse.credential);
-              loginWithGoogle({ name: profile.name, email: profile.email, picture: profile.picture });
-              toast.success(`Welcome, ${profile.given_name || profile.name}! 💗`);
-            } catch {
-              toast.error('Could not read your Google profile.');
-            }
-          }}
-          onError={() => toast.error('Google sign-in failed. Try again.')}
-        />
+      <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
+        <div style={{ width: '100%', maxWidth: '100%', overflow: 'hidden' }}>
+          <GoogleLogin
+            width="100%"
+            shape="pill"
+            onSuccess={(credentialResponse) => {
+              try {
+                const profile = jwtDecode(credentialResponse.credential);
+                loginWithGoogle({ name: profile.name, email: profile.email, picture: profile.picture });
+                toast.success(`Welcome, ${profile.given_name || profile.name}! 💗`);
+              } catch {
+                toast.error('Could not read your Google profile.');
+              }
+            }}
+            onError={() => toast.error('Google sign-in failed. Try again.')}
+          />
+        </div>
       </div>
     </GoogleOAuthProvider>
   );
@@ -534,10 +540,7 @@ export default function AuthForm({ redirectMessage }) {
       const reader = new FileReader();
       reader.onload = async (ev) => {
         const base64 = ev.target.result;
-        
-        // Compress the image
         const compressed = await compressImage(base64);
-        
         setRegData(d => ({ ...d, avatar: compressed }));
         setAvatarPreview(compressed);
         toast.success('Photo uploaded successfully!');
@@ -644,14 +647,14 @@ export default function AuthForm({ redirectMessage }) {
 
       <div style={{
         minHeight: '100vh', background: 'linear-gradient(135deg,#fdf0f3,#fff8f5 45%,#fdf6f0)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 20px',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 'clamp(24px, 4vw, 40px) clamp(16px, 3vw, 20px)',
       }}>
         <div style={{ maxWidth: '440px', width: '100%' }}>
 
           {redirectMessage && (
             <div style={{
               background: '#fef9ec', border: '1px solid #fde68a', borderRadius: '14px',
-              padding: '12px 16px', marginBottom: '16px', fontSize: '13px',
+              padding: '12px 16px', marginBottom: '16px', fontSize: 'clamp(12px, 1.1vw, 13px)',
               color: '#92400e', fontWeight: 600, textAlign: 'center',
             }}>
               🔒 {redirectMessage}
@@ -664,7 +667,7 @@ export default function AuthForm({ redirectMessage }) {
             <div style={{ display: 'flex', borderBottom: '1px solid #fde8ec' }}>
               {['login', 'register'].map(t => (
                 <button key={t} onClick={() => setTab(t)} style={{
-                  flex: 1, padding: '18px', fontSize: '13px', fontWeight: 700,
+                  flex: 1, padding: 'clamp(14px, 2vw, 18px)', fontSize: 'clamp(12px, 1.1vw, 13px)', fontWeight: 700,
                   letterSpacing: '0.5px', textTransform: 'uppercase', cursor: 'pointer',
                   border: 'none', background: tab === t ? '#fff' : '#fdf6f0',
                   color: tab === t ? '#3d1f25' : '#9ca3af',
@@ -675,7 +678,7 @@ export default function AuthForm({ redirectMessage }) {
               ))}
             </div>
 
-            <div style={{ padding: '32px' }}>
+            <div style={{ padding: 'clamp(20px, 4vw, 32px)' }}>
               {/* ─── Logo Section ─── */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '26px' }}>
                 <div style={{ 
@@ -705,10 +708,10 @@ export default function AuthForm({ redirectMessage }) {
                   />
                 </div>
                 <div>
-                  <p style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: '20px', fontWeight: 700, color: '#3d1f25', margin: 0 }}>
+                  <p style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: 'clamp(18px, 2.5vw, 20px)', fontWeight: 700, color: '#3d1f25', margin: 0 }}>
                     GlowHive
                   </p>
-                  <p style={{ fontSize: '13px', color: '#8c6468', margin: 0 }}>
+                  <p style={{ fontSize: 'clamp(12px, 1.1vw, 13px)', color: '#8c6468', margin: 0 }}>
                     {tab === 'login' ? 'Welcome back! Sign in to continue.' : 'Join GlowHive for exclusive offers.'}
                   </p>
                 </div>
@@ -728,7 +731,7 @@ export default function AuthForm({ redirectMessage }) {
                     action={
                       <span
                         onClick={() => setShowForgot(true)}
-                        style={{ fontSize: '12px', color: '#b76e79', cursor: 'pointer', fontWeight: 600 }}
+                        style={{ fontSize: 'clamp(11px, 1vw, 12px)', color: '#b76e79', cursor: 'pointer', fontWeight: 600 }}
                       >
                         Forgot password?
                       </span>
@@ -736,7 +739,7 @@ export default function AuthForm({ redirectMessage }) {
                   />
                   <button type="submit" disabled={loading} style={{
                     background: '#3d1f25', color: '#fff', border: 'none', borderRadius: '14px',
-                    padding: '14px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', opacity: loading ? 0.75 : 1,
+                    padding: '14px', fontSize: 'clamp(13px, 1.1vw, 14px)', fontWeight: 700, cursor: 'pointer', opacity: loading ? 0.75 : 1,
                   }}>
                     {loading ? 'Signing in…' : 'Sign In →'}
                   </button>
@@ -746,7 +749,7 @@ export default function AuthForm({ redirectMessage }) {
                     <div style={{ flex: 1, height: '1px', background: '#fde8ec' }} />
                   </div>
                   <GoogleButton />
-                  <p style={{ textAlign: 'center', fontSize: '13px', color: '#8c6468', marginTop: '6px', margin: 0 }}>
+                  <p style={{ textAlign: 'center', fontSize: 'clamp(12px, 1.1vw, 13px)', color: '#8c6468', marginTop: '6px', margin: 0 }}>
                     Don&apos;t have an account?{' '}
                     <span onClick={() => setTab('register')} style={{ color: '#b76e79', fontWeight: 700, cursor: 'pointer' }}>Sign up →</span>
                   </p>
@@ -755,10 +758,10 @@ export default function AuthForm({ redirectMessage }) {
                 <form onSubmit={handleRegister} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
                   {/* Profile Photo Upload - OPTIONAL with compression */}
                   <div>
-                    <label style={{ fontSize: '13px', fontWeight: 600, color: '#3d1f25', display: 'block', marginBottom: '6px' }}>
+                    <label style={{ fontSize: 'clamp(12px, 1.1vw, 13px)', fontWeight: 600, color: '#3d1f25', display: 'block', marginBottom: '6px' }}>
                       Profile Photo <span style={{ color: '#c9a3a9', fontWeight: 400 }}>(Optional)</span>
                     </label>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
                       <div style={{
                         width: '64px', height: '64px', borderRadius: '50%',
                         background: avatarPreview ? 'transparent' : '#fdf6f0',
@@ -792,7 +795,7 @@ export default function AuthForm({ redirectMessage }) {
                         )}
                       </div>
 
-                      <div style={{ flex: 1 }}>
+                      <div style={{ flex: 1, minWidth: '140px' }}>
                         <input
                           ref={fileRef}
                           type="file"
@@ -806,7 +809,7 @@ export default function AuthForm({ redirectMessage }) {
                           style={{
                             padding: '10px 16px', background: '#fdf6f0',
                             border: '1.5px solid #fde8ec', borderRadius: '10px',
-                            cursor: 'pointer', fontSize: '13px', fontWeight: 600,
+                            cursor: 'pointer', fontSize: 'clamp(12px, 1.1vw, 13px)', fontWeight: 600,
                             color: '#b76e79', display: 'flex', alignItems: 'center',
                             gap: '8px', width: '100%', justifyContent: 'center',
                             transition: 'all 0.2s',
@@ -854,17 +857,18 @@ export default function AuthForm({ redirectMessage }) {
                     display: 'flex', 
                     alignItems: 'center', 
                     gap: '10px', 
-                    fontSize: '13px', 
+                    fontSize: 'clamp(12px, 1.1vw, 13px)', 
                     color: '#8c6468', 
-                    cursor: 'pointer' 
+                    cursor: 'pointer',
+                    flexWrap: 'wrap',
                   }}>
                     <input 
                       type="checkbox" 
                       checked={regData.agree}
                       onChange={e => setRegData(d => ({ ...d, agree: e.target.checked }))}
-                      style={{ width: '16px', height: '16px', accentColor: '#b76e79' }} 
+                      style={{ width: '16px', height: '16px', accentColor: '#b76e79', flexShrink: 0 }} 
                     />
-                    I agree to{' '}
+                    <span>I agree to</span>
                     <span
                       onClick={(e) => {
                         e.preventDefault();
@@ -887,11 +891,11 @@ export default function AuthForm({ redirectMessage }) {
                   
                   <button type="submit" disabled={loading} style={{
                     background: '#b76e79', color: '#fff', border: 'none', borderRadius: '14px',
-                    padding: '14px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', opacity: loading ? 0.75 : 1,
+                    padding: '14px', fontSize: 'clamp(13px, 1.1vw, 14px)', fontWeight: 700, cursor: 'pointer', opacity: loading ? 0.75 : 1,
                   }}>
                     {loading ? 'Creating account…' : 'Create Account'}
                   </button>
-                  <p style={{ textAlign: 'center', fontSize: '13px', color: '#8c6468', margin: 0 }}>
+                  <p style={{ textAlign: 'center', fontSize: 'clamp(12px, 1.1vw, 13px)', color: '#8c6468', margin: 0 }}>
                     Already have an account?{' '}
                     <span onClick={() => setTab('login')} style={{ color: '#b76e79', fontWeight: 700, cursor: 'pointer' }}>Sign in →</span>
                   </p>
@@ -900,7 +904,7 @@ export default function AuthForm({ redirectMessage }) {
             </div>
           </div>
 
-          <p style={{ textAlign: 'center', fontSize: '12px', color: '#c9a3a9', marginTop: '24px' }}>
+          <p style={{ textAlign: 'center', fontSize: 'clamp(11px, 1vw, 12px)', color: '#c9a3a9', marginTop: '24px' }}>
             © 2026 GlowHive • Made with ❤️ for your GLOW.
           </p>
         </div>

@@ -36,6 +36,9 @@ function WishlistCard({ product, addToCart, removeFromWishlist }) {
         overflow: 'hidden',
         position: 'relative',
         transition: 'transform 0.25s, box-shadow 0.25s',
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
       }}
       onMouseEnter={e => {
         e.currentTarget.style.transform = 'translateY(-6px)';
@@ -46,12 +49,12 @@ function WishlistCard({ product, addToCart, removeFromWishlist }) {
         e.currentTarget.style.boxShadow = 'none';
       }}
     >
-      <Link href={`/products/${product.id}`} style={{ textDecoration: 'none' }}>
-        <div style={{ position: 'relative', height: '200px', background: '#fdf6f0', overflow: 'hidden' }}>
+      <Link href={`/products/${product.id}`} style={{ textDecoration: 'none', display: 'block' }}>
+        <div style={{ position: 'relative', paddingBottom: '100%', background: '#fdf6f0', overflow: 'hidden' }}>
           <img
             src={product.image}
             alt={product.name}
-            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+            style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
           />
           {discount && (
             <div style={{
@@ -83,7 +86,7 @@ function WishlistCard({ product, addToCart, removeFromWishlist }) {
         <X size={15} />
       </button>
 
-      <div style={{ padding: '16px' }}>
+      <div style={{ padding: '16px', flex: 1, display: 'flex', flexDirection: 'column' }}>
         <p style={{
           fontSize: '11px', color: '#b76e79', fontWeight: 600,
           textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '6px',
@@ -92,12 +95,12 @@ function WishlistCard({ product, addToCart, removeFromWishlist }) {
         </p>
 
         <Link href={`/products/${product.id}`} style={{ textDecoration: 'none' }}>
-          <p style={{ fontSize: '15px', fontWeight: 700, color: '#3d1f25', marginBottom: '8px', lineHeight: 1.35 }}>
+          <p style={{ fontSize: 'clamp(14px, 1.2vw, 15px)', fontWeight: 700, color: '#3d1f25', marginBottom: '8px', lineHeight: 1.35 }}>
             {product.name}
           </p>
         </Link>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '12px', flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', gap: '2px' }}>
             {[...Array(5)].map((_, i) => (
               <Star
@@ -112,8 +115,8 @@ function WishlistCard({ product, addToCart, removeFromWishlist }) {
           </span>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
-          <span style={{ fontSize: '17px', fontWeight: 800, color: '#3d1f25' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px', flexWrap: 'wrap' }}>
+          <span style={{ fontSize: 'clamp(15px, 1.3vw, 17px)', fontWeight: 800, color: '#3d1f25' }}>
             Rs. {product.price.toLocaleString()}
           </span>
           {product.originalPrice > product.price && (
@@ -137,9 +140,10 @@ function WishlistCard({ product, addToCart, removeFromWishlist }) {
               width: '100%',
               background: added ? '#22c55e' : 'linear-gradient(135deg, #b76e79, #c2748a)',
               color: '#fff', border: 'none', borderRadius: '50px',
-              padding: '12px 16px', fontSize: '13px', fontWeight: 700,
+              padding: 'clamp(10px, 1.2vw, 12px) 16px', fontSize: 'clamp(12px, 1.1vw, 13px)', fontWeight: 700,
               cursor: 'pointer', display: 'flex', alignItems: 'center',
               justifyContent: 'center', gap: '8px', transition: 'background 0.2s',
+              marginTop: 'auto',
             }}
           >
             <ShoppingBag size={15} />
@@ -150,9 +154,10 @@ function WishlistCard({ product, addToCart, removeFromWishlist }) {
             style={{
               width: '100%', background: '#fff', color: '#d32f2f',
               border: '1.5px solid #d32f2f', borderRadius: '50px',
-              padding: '12px 16px', fontSize: '13px', fontWeight: 700,
+              padding: 'clamp(10px, 1.2vw, 12px) 16px', fontSize: 'clamp(12px, 1.1vw, 13px)', fontWeight: 700,
               cursor: 'pointer', display: 'flex', alignItems: 'center',
               justifyContent: 'center', gap: '8px',
+              marginTop: 'auto',
             }}
           >
             <BellRing size={14} /> Notify Me
@@ -177,7 +182,7 @@ export default function WishlistPage() {
   if (wishlistProducts.length === 0) {
     return (
       <div style={{ minHeight: '100vh', background: '#fff8f5' }}>
-        <div style={{ textAlign: 'center', padding: '100px 28px' }}>
+        <div style={{ textAlign: 'center', padding: 'clamp(60px, 12vw, 100px) clamp(16px, 3vw, 28px)' }}>
           <div style={{
             width: '96px', height: '96px', borderRadius: '50%',
             background: '#fde8ec', margin: '0 auto 24px',
@@ -185,16 +190,17 @@ export default function WishlistPage() {
           }}>
             <Heart size={40} color="#b76e79" />
           </div>
-          <h2 style={{ fontSize: '28px', fontWeight: 800, color: '#3d1f25', fontFamily: "'Playfair Display', Georgia, serif", marginBottom: '10px' }}>
+          <h2 style={{ fontSize: 'clamp(22px, 4vw, 28px)', fontWeight: 800, color: '#3d1f25', fontFamily: "'Playfair Display', Georgia, serif", marginBottom: '10px' }}>
             Your wishlist is empty
           </h2>
-          <p style={{ color: '#9ca3af', marginBottom: '28px', fontSize: '15px' }}>
+          <p style={{ color: '#9ca3af', marginBottom: '28px', fontSize: 'clamp(14px, 1.2vw, 15px)' }}>
             Save the products you love and find them here anytime.
           </p>
           <Link href="/products" style={{
             background: '#b76e79', color: '#fff',
-            padding: '14px 32px', borderRadius: '12px',
-            textDecoration: 'none', fontWeight: 700, fontSize: '15px',
+            padding: 'clamp(12px, 1.5vw, 14px) clamp(24px, 4vw, 32px)',
+            borderRadius: '12px', textDecoration: 'none', fontWeight: 700, 
+            fontSize: 'clamp(14px, 1.2vw, 15px)',
             display: 'inline-block',
           }}>
             Start Shopping
@@ -209,17 +215,17 @@ export default function WishlistPage() {
   return (
     <div style={{ minHeight: '100vh', background: '#fff8f5' }}>
       {/* Header */}
-      <div style={{ background: 'linear-gradient(135deg, #fdf0f3, #fff8f5)', borderBottom: '1px solid #fde8ec', padding: '32px 28px' }}>
+      <div style={{ background: 'linear-gradient(135deg, #fdf0f3, #fff8f5)', borderBottom: '1px solid #fde8ec', padding: 'clamp(24px, 4vw, 32px) clamp(16px, 3vw, 28px)' }}>
         <div style={{
           maxWidth: '1280px', margin: '0 auto',
           display: 'flex', justifyContent: 'space-between', alignItems: 'center',
           flexWrap: 'wrap', gap: '16px',
         }}>
           <div>
-            <h1 style={{ fontSize: '32px', fontWeight: 800, color: '#3d1f25', fontFamily: "'Playfair Display', Georgia, serif" }}>
+            <h1 style={{ fontSize: 'clamp(24px, 4vw, 32px)', fontWeight: 800, color: '#3d1f25', fontFamily: "'Playfair Display', Georgia, serif" }}>
               My Wishlist
             </h1>
-            <p style={{ fontSize: '14px', color: '#8c6468', marginTop: '4px' }}>
+            <p style={{ fontSize: 'clamp(13px, 1.1vw, 14px)', color: '#8c6468', marginTop: '4px' }}>
               {wishlistProducts.length} saved {wishlistProducts.length === 1 ? 'item' : 'items'}
             </p>
           </div>
@@ -229,7 +235,8 @@ export default function WishlistPage() {
               onClick={() => navigator.share ? navigator.share({ title: 'My GlowHive Wishlist', url: window.location.href }) : null}
               style={{
                 background: 'transparent', border: '1.5px solid #3d1f25', color: '#3d1f25',
-                borderRadius: '10px', padding: '11px 22px', fontSize: '13px', fontWeight: 700,
+                borderRadius: '10px', padding: 'clamp(9px, 1vw, 11px) clamp(16px, 2vw, 22px)', 
+                fontSize: 'clamp(12px, 1.1vw, 13px)', fontWeight: 700,
                 cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px',
               }}>
               <Share2 size={14} /> Share Wishlist
@@ -238,7 +245,8 @@ export default function WishlistPage() {
               onClick={handleAddAll}
               style={{
                 background: '#b76e79', border: 'none', color: '#fff',
-                borderRadius: '10px', padding: '11px 22px', fontSize: '13px', fontWeight: 700,
+                borderRadius: '10px', padding: 'clamp(9px, 1vw, 11px) clamp(16px, 2vw, 22px)', 
+                fontSize: 'clamp(12px, 1.1vw, 13px)', fontWeight: 700,
                 cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px',
               }}>
               <ShoppingBag size={14} /> Add All To Cart
@@ -248,11 +256,11 @@ export default function WishlistPage() {
       </div>
 
       {/* Grid */}
-      <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '40px 28px' }}>
+      <div style={{ maxWidth: '1280px', margin: '0 auto', padding: 'clamp(24px, 4vw, 40px) clamp(16px, 3vw, 28px)' }}>
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))',
-          gap: '22px',
+          gridTemplateColumns: window.innerWidth < 480 ? '1fr' : window.innerWidth < 640 ? 'repeat(2, 1fr)' : window.innerWidth < 1024 ? 'repeat(3, 1fr)' : 'repeat(4, 1fr)',
+          gap: 'clamp(16px, 2vw, 22px)',
         }}>
           {wishlistProducts.map(product => (
             <WishlistCard

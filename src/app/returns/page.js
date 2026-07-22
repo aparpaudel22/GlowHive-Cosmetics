@@ -48,7 +48,6 @@ export default function ReturnsPage() {
   const [returnNotes, setReturnNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  // Load returns from localStorage
   useEffect(() => {
     try {
       const saved = JSON.parse(localStorage.getItem('glowhive_returns') || '[]');
@@ -56,12 +55,10 @@ export default function ReturnsPage() {
     } catch (_) {}
   }, []);
 
-  // Load orders for the return modal
   const [orders, setOrders] = useState([]);
   useEffect(() => {
     try {
       const saved = JSON.parse(localStorage.getItem('glowhive_orders') || '[]');
-      // Only show delivered orders that can be returned (within 30 days)
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
       
@@ -110,7 +107,7 @@ export default function ReturnsPage() {
       status: 'pending',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-      returnMethod: 'pickup', // or 'dropoff'
+      returnMethod: 'pickup',
       refundAmount: selectedOrder.total,
       trackingNumber: null,
     };
@@ -119,7 +116,6 @@ export default function ReturnsPage() {
     setReturns(updatedReturns);
     localStorage.setItem('glowhive_returns', JSON.stringify(updatedReturns));
 
-    // Update the order status to 'return_requested'
     const updatedOrders = orders.map(o => {
       if (o.id === selectedOrder.id) {
         return { ...o, status: 'return_requested' };
@@ -137,12 +133,10 @@ export default function ReturnsPage() {
     ? returns 
     : returns.filter(r => r.status === filterStatus);
 
-  // Get status style for a return
   const getStatusStyle = (status) => {
     return RETURN_STATUS_STYLE[status] || RETURN_STATUS_STYLE.pending;
   };
 
-  // Get days since order
   const getDaysSince = (date) => {
     const diff = Math.floor((new Date() - new Date(date)) / (1000 * 60 * 60 * 24));
     return diff;
@@ -155,7 +149,8 @@ export default function ReturnsPage() {
         {/* Hero */}
         <div style={{
           background: 'linear-gradient(135deg, #3d1f25 0%, #b76e79 60%, #e8a4b0 100%)',
-          padding: '60px 28px', textAlign: 'center',
+          padding: 'clamp(40px, 8vw, 60px) clamp(16px, 4vw, 28px)',
+          textAlign: 'center',
           position: 'relative', overflow: 'hidden',
         }}>
           <div style={{ position: 'absolute', top: '-40px', right: '-40px', width: '200px', height: '200px', borderRadius: '50%', background: 'rgba(255,255,255,0.05)' }} />
@@ -169,23 +164,35 @@ export default function ReturnsPage() {
               </span>
               <RefreshCw size={18} color="rgba(255,255,255,0.8)" />
             </div>
-            <h1 style={{ fontSize: '44px', fontWeight: 800, color: '#fff', fontFamily: "'Playfair Display', Georgia, serif", marginBottom: '12px' }}>
+            <h1 style={{ 
+              fontSize: 'clamp(28px, 6vw, 44px)', 
+              fontWeight: 800, color: '#fff', 
+              fontFamily: "'Playfair Display', Georgia, serif", 
+              marginBottom: '12px' 
+            }}>
               My Returns
             </h1>
-            <p style={{ fontSize: '16px', color: 'rgba(255,255,255,0.75)', maxWidth: '480px', margin: '0 auto' }}>
+            <p style={{ fontSize: 'clamp(14px, 2vw, 16px)', color: 'rgba(255,255,255,0.75)', maxWidth: '480px', margin: '0 auto' }}>
               Track and manage your return requests. We're here to help!
             </p>
 
             {/* Stats row */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '32px', marginTop: '28px', flexWrap: 'wrap' }}>
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              gap: 'clamp(16px, 4vw, 32px)', 
+              marginTop: '28px', 
+              flexWrap: 'wrap' 
+            }}>
               {[
                 { value: returns.length, label: 'Total Returns' },
                 { value: returns.filter(r => r.status === 'pending' || r.status === 'processing').length, label: 'Active Returns' },
                 { value: returns.filter(r => r.status === 'completed').length, label: 'Refunded' },
               ].map((s, i) => (
                 <div key={i} style={{ textAlign: 'center' }}>
-                  <div style={{ fontSize: '28px', fontWeight: 900, color: '#fff', lineHeight: 1 }}>{s.value}</div>
-                  <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.7)', fontWeight: 600, marginTop: '4px', letterSpacing: '1px', textTransform: 'uppercase' }}>{s.label}</div>
+                  <div style={{ fontSize: 'clamp(22px, 4vw, 28px)', fontWeight: 900, color: '#fff', lineHeight: 1 }}>{s.value}</div>
+                  <div style={{ fontSize: 'clamp(10px, 1.2vw, 11px)', color: 'rgba(255,255,255,0.7)', fontWeight: 600, marginTop: '4px', letterSpacing: '1px', textTransform: 'uppercase' }}>{s.label}</div>
                 </div>
               ))}
             </div>
@@ -207,17 +214,25 @@ export default function ReturnsPage() {
             </motion.div>
           </Link>
 
-          {/* Filter tabs */}
-          <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', padding: '8px 0 16px', scrollbarWidth: 'none' }}>
+          {/* Filter tabs - Responsive scroll */}
+          <div style={{ 
+            display: 'flex', 
+            gap: '8px', 
+            overflowX: 'auto', 
+            padding: '8px 0 16px', 
+            scrollbarWidth: 'none',
+            WebkitOverflowScrolling: 'touch',
+          }}>
             {RETURN_FILTERS.map(f => (
               <button key={f.key} onClick={() => setFilterStatus(f.key)}
                 style={{ 
                   whiteSpace: 'nowrap', padding: '8px 16px', borderRadius: '50px', 
-                  fontSize: '12px', fontWeight: 700, cursor: 'pointer', 
+                  fontSize: 'clamp(11px, 1.2vw, 12px)', fontWeight: 700, cursor: 'pointer', 
                   border: `1.5px solid ${filterStatus === f.key ? '#b76e79' : '#fde8ec'}`, 
                   background: filterStatus === f.key ? '#b76e79' : '#fff', 
                   color: filterStatus === f.key ? '#fff' : '#3d1f25', 
-                  transition: 'all 0.2s' 
+                  transition: 'all 0.2s',
+                  flexShrink: 0,
                 }}>
                 {f.label}
               </button>
@@ -233,7 +248,7 @@ export default function ReturnsPage() {
               padding: '16px 20px',
               marginBottom: '20px',
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px', flexWrap: 'wrap' }}>
                 <RefreshCw size={18} color="#b76e79" />
                 <span style={{ fontSize: '14px', fontWeight: 700, color: '#3d1f25' }}>
                   Eligible for Return
@@ -284,7 +299,7 @@ export default function ReturnsPage() {
 
           {/* Empty state */}
           {filtered.length === 0 && (
-            <div style={{ textAlign: 'center', padding: '60px 20px' }}>
+            <div style={{ textAlign: 'center', padding: 'clamp(40px, 8vw, 60px) 20px' }}>
               <div style={{ fontSize: '48px', marginBottom: '14px' }}>🔄</div>
               <p style={{ fontSize: '16px', fontWeight: 700, color: '#3d1f25', marginBottom: '8px' }}>
                 No return requests yet
@@ -332,13 +347,13 @@ export default function ReturnsPage() {
                     }}
                   >
                     {/* Card header */}
-                    <div style={{ padding: '18px 20px' }}>
+                    <div style={{ padding: 'clamp(14px, 2.5vw, 18px) clamp(14px, 2.5vw, 20px)' }}>
                       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px', marginBottom: '12px' }}>
-                        <div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '4px' }}>
-                            <span style={{ fontSize: '13px', fontWeight: 800, color: '#3d1f25' }}>{returnItem.id}</span>
+                            <span style={{ fontSize: 'clamp(11px, 1.2vw, 13px)', fontWeight: 800, color: '#3d1f25' }}>{returnItem.id}</span>
                             <span style={{ 
-                              fontSize: '11px', fontWeight: 700, 
+                              fontSize: 'clamp(10px, 1vw, 11px)', fontWeight: 700, 
                               background: st.bg, color: st.color, 
                               padding: '3px 10px', borderRadius: '50px', 
                               border: `1px solid ${st.color}33` 
@@ -346,7 +361,7 @@ export default function ReturnsPage() {
                               {st.icon} {st.label}
                             </span>
                           </div>
-                          <div style={{ fontSize: '12px', color: '#8c6468' }}>
+                          <div style={{ fontSize: 'clamp(11px, 1.1vw, 12px)', color: '#8c6468', wordBreak: 'break-word' }}>
                             {new Date(returnItem.createdAt).toLocaleDateString('en-NP', { month: 'long', day: 'numeric', year: 'numeric' })}
                             {' · '}{returnItem.items?.length} {returnItem.items?.length === 1 ? 'item' : 'items'}
                             {' · '}<strong style={{ color: '#3d1f25' }}>Rs. {returnItem.refundAmount?.toLocaleString()}</strong>
@@ -387,7 +402,7 @@ export default function ReturnsPage() {
                         {returnItem.items?.slice(0, 3).map((item, i) => (
                           <div key={i} style={{ 
                             background: '#fdf6f0', borderRadius: '10px', 
-                            padding: '6px 10px', fontSize: '11px', 
+                            padding: '6px 10px', fontSize: 'clamp(10px, 1vw, 11px)', 
                             color: '#5a3a40', fontWeight: 600 
                           }}>
                             {item.name} ×{item.quantity}
@@ -401,7 +416,7 @@ export default function ReturnsPage() {
                       </div>
 
                       {/* Action buttons */}
-                      <div style={{ display: 'flex', gap: '8px' }}>
+                      <div style={{ display: 'flex', gap: '8px', flexDirection: window.innerWidth < 480 ? 'column' : 'row' }}>
                         <Link href={`/orders`}
                           style={{ 
                             flex: 1, textAlign: 'center', fontSize: '12px', 
@@ -414,7 +429,6 @@ export default function ReturnsPage() {
                         {returnItem.status === 'rejected' && (
                           <button
                             onClick={() => {
-                              // Re-open return request
                               const updatedReturns = returns.map(r => {
                                 if (r.id === returnItem.id) {
                                   return { ...r, status: 'pending', updatedAt: new Date().toISOString() };
@@ -453,7 +467,7 @@ export default function ReturnsPage() {
                           transition={{ duration: 0.25 }}
                           style={{ overflow: 'hidden' }}
                         >
-                          <div style={{ borderTop: '1px solid #fde8ec', padding: '18px 20px', background: '#fdf8f5' }}>
+                          <div style={{ borderTop: '1px solid #fde8ec', padding: 'clamp(14px, 2.5vw, 18px) clamp(14px, 2.5vw, 20px)', background: '#fdf8f5' }}>
                             
                             {/* Return Status Timeline */}
                             <div style={{ marginBottom: '16px' }}>
@@ -482,7 +496,7 @@ export default function ReturnsPage() {
                                       {step.done ? <CheckCircle size={14} color="#fff" /> : <Clock size={14} color="#9ca3af" />}
                                     </div>
                                     <div style={{ flex: 1 }}>
-                                      <div style={{ fontSize: '13px', fontWeight: step.done ? 700 : 400, color: step.done ? '#15803d' : '#9ca3af' }}>
+                                      <div style={{ fontSize: 'clamp(12px, 1.1vw, 13px)', fontWeight: step.done ? 700 : 400, color: step.done ? '#15803d' : '#9ca3af' }}>
                                         {step.label}
                                       </div>
                                       {step.time && step.done && (
@@ -499,7 +513,7 @@ export default function ReturnsPage() {
                             {/* Return Details */}
                             <div style={{ 
                               display: 'grid', 
-                              gridTemplateColumns: '1fr 1fr', 
+                              gridTemplateColumns: window.innerWidth < 480 ? '1fr' : '1fr 1fr', 
                               gap: '10px',
                               marginBottom: '12px',
                             }}>
@@ -539,7 +553,7 @@ export default function ReturnsPage() {
                             )}
 
                             {/* Support buttons */}
-                            <div style={{ display: 'flex', gap: '8px' }}>
+                            <div style={{ display: 'flex', gap: '8px', flexDirection: window.innerWidth < 480 ? 'column' : 'row' }}>
                               <a href="tel:+9779841234567" style={{ 
                                 flex: 1, display: 'flex', alignItems: 'center', 
                                 justifyContent: 'center', gap: '6px', fontSize: '12px', 
@@ -573,7 +587,7 @@ export default function ReturnsPage() {
         </div>
 
         {/* ══════════════════════════════════
-            RETURN REQUEST MODAL
+            RETURN REQUEST MODAL - Responsive
         ══════════════════════════════════ */}
         <AnimatePresence>
           {showReturnModal && selectedOrder && (
@@ -602,7 +616,7 @@ export default function ReturnsPage() {
                   exit={{ scale: 0.88, opacity: 0, y: 20 }}
                   transition={{ type: 'spring', stiffness: 280, damping: 26 }}
                   style={{ 
-                    background: '#fff', borderRadius: '24px', padding: '28px', 
+                    background: '#fff', borderRadius: '24px', padding: 'clamp(20px, 4vw, 28px)', 
                     width: 'min(460px, 92vw)', 
                     boxShadow: '0 32px 80px rgba(61,31,37,0.28)', 
                     maxHeight: '90vh', overflowY: 'auto', 
@@ -618,13 +632,13 @@ export default function ReturnsPage() {
                       <RefreshCw size={28} color="#b76e79" />
                     </div>
                     <h2 style={{ 
-                      fontSize: '18px', fontWeight: 800, color: '#3d1f25', 
+                      fontSize: 'clamp(16px, 2.5vw, 18px)', fontWeight: 800, color: '#3d1f25', 
                       fontFamily: "'Playfair Display', Georgia, serif", 
                       marginBottom: '8px' 
                     }}>
                       Request a Return
                     </h2>
-                    <p style={{ fontSize: '13px', color: '#8c6468', lineHeight: 1.65, margin: 0 }}>
+                    <p style={{ fontSize: 'clamp(12px, 1.2vw, 13px)', color: '#8c6468', lineHeight: 1.65, margin: 0 }}>
                       {selectedOrder.id} — {new Date(selectedOrder.date).toLocaleDateString('en-NP', { month: 'long', day: 'numeric', year: 'numeric' })}
                     </p>
                   </div>
@@ -638,7 +652,7 @@ export default function ReturnsPage() {
                       Order Summary
                     </div>
                     {selectedOrder.items?.slice(0, 3).map(item => (
-                      <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '4px' }}>
+                      <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 'clamp(12px, 1.1vw, 13px)', marginBottom: '4px' }}>
                         <span style={{ color: '#5a3a40' }}>{item.name} ×{item.quantity}</span>
                         <span style={{ fontWeight: 700, color: '#3d1f25' }}>Rs. {(item.price * item.quantity).toLocaleString()}</span>
                       </div>
@@ -684,7 +698,7 @@ export default function ReturnsPage() {
                             {returnReason === reason && <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#fff' }} />}
                           </div>
                           <span style={{ 
-                            fontSize: '13px', 
+                            fontSize: 'clamp(12px, 1.1vw, 13px)', 
                             fontWeight: returnReason === reason ? 700 : 500, 
                             color: '#3d1f25' 
                           }}>
@@ -745,7 +759,7 @@ export default function ReturnsPage() {
                     </p>
                   </div>
 
-                  <div style={{ display: 'flex', gap: '10px' }}>
+                  <div style={{ display: 'flex', gap: '10px', flexDirection: window.innerWidth < 400 ? 'column' : 'row' }}>
                     <motion.button 
                       whileTap={{ scale: 0.97 }} 
                       onClick={closeReturnModal}
@@ -814,10 +828,13 @@ export default function ReturnsPage() {
       </div>
       <Footer />
 
-      {/* Add spin animation */}
       <style jsx>{`
         @keyframes spin {
           to { transform: rotate(360deg); }
+        }
+        /* Hide scrollbar for mobile */
+        ::-webkit-scrollbar {
+          display: none;
         }
       `}</style>
     </>

@@ -21,7 +21,6 @@ const inp = {
   color: '#1a0a0f', transition: 'border 0.2s',
 };
 
-// ─── Compress Image Helper ───
 const compressImage = (base64String) => {
   return new Promise((resolve) => {
     try {
@@ -29,29 +28,22 @@ const compressImage = (base64String) => {
       img.src = base64String;
       img.onload = () => {
         const canvas = document.createElement('canvas');
-        const MAX_SIZE = 150; // Max width/height in pixels
-        
+        const MAX_SIZE = 150;
         let width = img.width;
         let height = img.height;
-        
         if (width > MAX_SIZE || height > MAX_SIZE) {
           const ratio = Math.min(MAX_SIZE / width, MAX_SIZE / height);
           width = Math.round(width * ratio);
           height = Math.round(height * ratio);
         }
-        
         canvas.width = width;
         canvas.height = height;
         const ctx = canvas.getContext('2d');
         ctx.drawImage(img, 0, 0, width, height);
-        
-        // Compress to JPEG with 70% quality
         const compressed = canvas.toDataURL('image/jpeg', 0.7);
         resolve(compressed);
       };
-      img.onerror = () => {
-        resolve(base64String);
-      };
+      img.onerror = () => resolve(base64String);
     } catch (e) {
       resolve(base64String);
     }
@@ -68,17 +60,15 @@ export default function AccountPage() {
   const [profile,        setProfile]        = useState(BLANK_PROFILE);
   const [editingProfile, setEditingProfile] = useState(false);
   const [saving,         setSaving]         = useState(false);
-  const [avatar,         setAvatar]         = useState(null);   // base64 string
+  const [avatar,         setAvatar]         = useState(null);
   const [ordersOpen,     setOrdersOpen]     = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [deleting, setDeleting] = useState(false);
 
-  // ── Load profile + avatar ──
   useEffect(() => {
     if (!hydrated || !isAuthenticated) return;
     try {
-      // Load profile
       const saved = localStorage.getItem('glowhive_profile');
       if (saved) {
         const p = JSON.parse(saved);
@@ -96,19 +86,16 @@ export default function AccountPage() {
         });
       }
       
-      // Load avatar - check multiple sources
       const av = localStorage.getItem('glowhive_avatar');
       if (av && av.length < 400000) {
         setAvatar(av);
       } else if (user?.picture && typeof user.picture === 'string' && user.picture.length < 400000) {
         setAvatar(user.picture);
       } else if (user?.email) {
-        // Check if avatar exists in scoped storage
         try {
           const scopedAvatar = localStorage.getItem(`glowhive_${encodeURIComponent(user.email)}_avatar`);
           if (scopedAvatar && scopedAvatar.length < 400000) {
             setAvatar(scopedAvatar);
-            // Also set it in generic storage for future use
             try {
               localStorage.setItem('glowhive_avatar', scopedAvatar);
             } catch (_) {}
@@ -118,7 +105,6 @@ export default function AccountPage() {
     } catch (_) {}
   }, [hydrated, isAuthenticated, user]);
 
-  // ── Redirect after login ──
   useEffect(() => {
     if (hydrated && isAuthenticated && from === 'checkout') router.replace('/checkout');
   }, [hydrated, isAuthenticated, from]);
@@ -133,56 +119,39 @@ export default function AccountPage() {
     <AuthForm redirectMessage={from === 'checkout' ? 'Please sign in to complete your purchase.' : null} />
   );
 
-  // ── Photo upload with compression and size limit ──
   const handlePhotoChange = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    
     if (file.size > 3 * 1024 * 1024) { 
       toast.error('Photo must be under 3 MB.'); 
       return; 
     }
-    
     try {
       const reader = new FileReader();
       reader.onload = async (ev) => {
         const base64 = ev.target.result;
-        
-        // Compress the image to reduce size
         let compressed = base64;
         try {
           compressed = await compressImage(base64);
         } catch (_) {
           compressed = base64;
         }
-        
-        // Check if compressed image is still too large
         if (compressed.length > 300000) {
           toast.error('Image is still too large after compression. Please try a smaller image.');
           return;
         }
-        
         setAvatar(compressed);
-        
-        // Save to generic storage
         try {
           localStorage.setItem('glowhive_avatar', compressed);
         } catch (_) {
           toast.error('Failed to save avatar. Image too large.');
           return;
         }
-        
-        // Save to scoped storage
         if (user?.email) {
           try {
             localStorage.setItem(`glowhive_${encodeURIComponent(user.email)}_avatar`, compressed);
-          } catch (_) {
-            // Scoped storage failed, but generic worked
-            console.warn('Failed to save to scoped storage');
-          }
+          } catch (_) {}
         }
-        
-        // Update in users list
         try {
           const users = JSON.parse(localStorage.getItem('glowhive_users') || '[]');
           const updatedUsers = users.map(u => {
@@ -193,7 +162,6 @@ export default function AccountPage() {
           });
           localStorage.setItem('glowhive_users', JSON.stringify(updatedUsers));
         } catch (_) {}
-        
         toast.success('Profile photo updated!');
       };
       reader.readAsDataURL(file);
@@ -202,7 +170,6 @@ export default function AccountPage() {
     }
   };
 
-  // ── Save personal details ──
   const handleSaveProfile = () => {
     if (!avatar) { toast.error('Please add a profile photo first.'); return; }
     if (!profile.firstName.trim()) { toast.error('First name is required.'); return; }
@@ -219,12 +186,8 @@ export default function AccountPage() {
         email:     user.email,
       };
       localStorage.setItem('glowhive_profile', JSON.stringify(updatedProfile));
-      
-      // Also save in scoped storage
       if (user?.email) {
         localStorage.setItem(`glowhive_${encodeURIComponent(user.email)}_profile`, JSON.stringify(updatedProfile));
-        
-        // Update in users list
         const users = JSON.parse(localStorage.getItem('glowhive_users') || '[]');
         const updatedUsers = users.map(u => {
           if (u.email === user.email) {
@@ -238,22 +201,18 @@ export default function AccountPage() {
         });
         localStorage.setItem('glowhive_users', JSON.stringify(updatedUsers));
       }
-      
       toast.success('Profile saved!');
       setEditingProfile(false);
     } catch (_) { toast.error('Failed to save.'); }
     setSaving(false);
   };
 
-  // ── Handle Account Deletion ──
   const handleDeleteAccount = async () => {
     if (deleteConfirmText !== 'DELETE') {
       toast.error('Please type "DELETE" to confirm.');
       return;
     }
-
     setDeleting(true);
-
     try {
       await deleteAccount();
       setShowDeleteModal(false);
@@ -271,7 +230,6 @@ export default function AccountPage() {
   const handleLogout = () => { logout(); router.push('/'); };
   const isProfileComplete = profile.firstName && profile.phone;
 
-  // ── Order sub-links ──
   const orderSubLinks = [
     { icon: <Truck size={14} color="#f43f68" />,      label: 'To Ship',    desc: 'Being prepared',        href: '/orders',           bg: '#fef1f4' },
     { icon: <CreditCard size={14} color="#c9a87c" />, label: 'To Pay',     desc: 'Cash on delivery',      href: '/orders/to-pay',    bg: '#fdf8ef' },
@@ -285,31 +243,56 @@ export default function AccountPage() {
   ];
 
   return (
-    <div style={{ minHeight: '100vh', background: '#fdf8f4', padding: '48px 20px', fontFamily: "'Inter', sans-serif" }}>
-      <div style={{ maxWidth: '560px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+    <div style={{ 
+      minHeight: '100vh', 
+      background: '#fdf8f4', 
+      padding: 'clamp(24px, 4vh, 48px) clamp(16px, 3vw, 20px)',
+      fontFamily: "'Inter', sans-serif" 
+    }}>
+      <div style={{ 
+        maxWidth: 'clamp(400px, 60vw, 560px)', 
+        margin: '0 auto', 
+        display: 'flex', 
+        flexDirection: 'column', 
+        gap: 'clamp(12px, 2vh, 16px)' 
+      }}>
 
-        {/* ═══ ACCOUNT CARD ═══ */}
         <motion.div
           initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}
-          style={{ background: '#fff', borderRadius: '24px', border: '1px solid #f9e4ea', boxShadow: '0 30px 60px rgba(244,63,104,0.08)', overflow: 'hidden' }}
+          style={{ 
+            background: '#fff', 
+            borderRadius: 'clamp(20px, 2.5vw, 24px)', 
+            border: '1px solid #f9e4ea', 
+            boxShadow: '0 30px 60px rgba(244,63,104,0.08)', 
+            overflow: 'hidden' 
+          }}
         >
-          {/* Banner + Avatar */}
-          <div style={{ background: 'linear-gradient(135deg,#f43f68,#e11d50,#c9a87c)', height: '90px', position: 'relative' }}>
-            {/* Hidden file input */}
+          <div style={{ 
+            background: 'linear-gradient(135deg,#f43f68,#e11d50,#c9a87c)', 
+            height: 'clamp(70px, 10vh, 90px)', 
+            position: 'relative' 
+          }}>
             <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handlePhotoChange} />
 
-            {/* Avatar circle — click to upload */}
             <motion.div
               whileHover={{ scale: 1.05 }}
               onClick={() => fileRef.current?.click()}
               title="Click to change photo"
               style={{
-                position: 'absolute', bottom: '-38px', left: '32px',
-                width: '76px', height: '76px', borderRadius: '50%',
-                background: '#fff', border: '4px solid #fff',
+                position: 'absolute', 
+                bottom: '-38px', 
+                left: 'clamp(16px, 3vw, 32px)',
+                width: 'clamp(60px, 8vw, 76px)',
+                height: 'clamp(60px, 8vw, 76px)',
+                borderRadius: '50%',
+                background: '#fff', 
+                border: '4px solid #fff',
                 boxShadow: '0 4px 20px rgba(244,63,104,0.20)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                cursor: 'pointer', overflow: 'hidden',
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center',
+                cursor: 'pointer', 
+                overflow: 'hidden',
               }}
             >
               {avatar && avatar.length < 400000 ? (
@@ -318,10 +301,9 @@ export default function AccountPage() {
                 <img src={user.picture} alt={user.name || 'User'} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
               ) : (
                 <div style={{ width: '100%', height: '100%', borderRadius: '50%', background: '#f9e4ea', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <User size={30} color="#f43f68" />
+                  <User size={26} color="#f43f68" />
                 </div>
               )}
-              {/* Camera overlay on hover */}
               <div style={{
                 position: 'absolute', inset: 0, borderRadius: '50%',
                 background: 'rgba(244,63,104,0.55)',
@@ -331,18 +313,19 @@ export default function AccountPage() {
                 onMouseEnter={e => e.currentTarget.style.opacity = 1}
                 onMouseLeave={e => e.currentTarget.style.opacity = 0}
               >
-                <Camera size={20} color="#fff" />
+                <Camera size={18} color="#fff" />
               </div>
             </motion.div>
 
-            {/* Change photo label */}
             <button
               onClick={() => fileRef.current?.click()}
               style={{
-                position: 'absolute', bottom: '10px', right: '16px',
+                position: 'absolute', bottom: '10px', right: 'clamp(12px, 2vw, 16px)',
                 background: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(8px)',
                 border: '1px solid rgba(255,255,255,0.35)', borderRadius: '50px',
-                padding: '4px 12px', fontSize: '11px', fontWeight: 700,
+                padding: 'clamp(3px, 0.5vw, 4px) clamp(8px, 1vw, 12px)',
+                fontSize: 'clamp(10px, 1vw, 11px)',
+                fontWeight: 700,
                 color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px',
               }}
             >
@@ -350,70 +333,87 @@ export default function AccountPage() {
             </button>
           </div>
 
-          <div style={{ padding: '52px 32px 32px' }}>
+          <div style={{ 
+            padding: 'clamp(40px, 5vh, 52px) clamp(20px, 3vw, 32px) 32px' 
+          }}>
 
-            {/* No-photo warning */}
             <AnimatePresence>
               {!avatar && (
                 <motion.div
                   initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
                   style={{
                     background: '#fff8f0', border: '1.5px solid #fcd98a',
-                    borderRadius: '12px', padding: '11px 14px', marginBottom: '16px',
-                    fontSize: '13px', color: '#92400e', fontWeight: 600,
+                    borderRadius: '12px', padding: 'clamp(10px, 1.5vh, 11px) clamp(12px, 1.5vw, 14px)',
+                    marginBottom: 'clamp(12px, 1.5vh, 16px)',
+                    fontSize: 'clamp(12px, 1.2vw, 13px)',
+                    color: '#92400e', fontWeight: 600,
                     display: 'flex', alignItems: 'center', gap: '8px',
                   }}
                 >
-                  <Camera size={15} color="#f59e0b" style={{ flexShrink: 0 }} />
+                  <Camera size={14} color="#f59e0b" style={{ flexShrink: 0 }} />
                   Profile photo is required — tap the avatar to add one.
                 </motion.div>
               )}
             </AnimatePresence>
 
-            {/* Name + badge */}
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '6px' }}>
               <div>
-                <h1 style={{ fontSize: '22px', fontWeight: 800, color: '#1a0a0f', fontFamily: "'Playfair Display', Georgia, serif", marginBottom: '4px' }}>
+                <h1 style={{ 
+                  fontSize: 'clamp(20px, 2.5vw, 22px)', 
+                  fontWeight: 800, 
+                  color: '#1a0a0f', 
+                  fontFamily: "'Playfair Display', Georgia, serif", 
+                  marginBottom: '4px' 
+                }}>
                   {user?.name || 'Welcome!'}
                 </h1>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                   <Mail size={13} color="#888" />
-                  <p style={{ fontSize: '13px', color: '#888' }}>{user?.email || ''}</p>
+                  <p style={{ fontSize: 'clamp(12px, 1.2vw, 13px)', color: '#888' }}>{user?.email || ''}</p>
                 </div>
-                {/* Display phone number if available */}
                 {(profile.phone || user?.phone) && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '4px' }}>
                     <Phone size={13} color="#888" />
-                    <p style={{ fontSize: '13px', color: '#888' }}>{profile.phone || user?.phone || ''}</p>
+                    <p style={{ fontSize: 'clamp(12px, 1.2vw, 13px)', color: '#888' }}>{profile.phone || user?.phone || ''}</p>
                   </div>
                 )}
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#fef1f4', borderRadius: '50px', padding: '6px 12px' }}>
                 <Gem size={13} color="#f43f68" />
-                <span style={{ fontSize: '11px', fontWeight: 700, color: '#f43f68', letterSpacing: '0.5px' }}>MEMBER</span>
+                <span style={{ fontSize: 'clamp(10px, 1vw, 11px)', fontWeight: 700, color: '#f43f68', letterSpacing: '0.5px' }}>MEMBER</span>
               </div>
             </div>
 
-            <div style={{ height: '1px', background: '#f9e4ea', margin: '24px 0' }} />
+            <div style={{ height: '1px', background: '#f9e4ea', margin: 'clamp(16px, 2vh, 24px) 0' }} />
 
-            {/* ═══ PERSONAL DETAILS CARD ═══ */}
-            <div style={{ marginBottom: '24px' }}>
+            <div style={{ marginBottom: 'clamp(16px, 2vh, 24px)' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <div style={{ width: '38px', height: '38px', borderRadius: '50%', background: '#f9e4ea', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Phone size={17} color="#f43f68" />
+                <div style={{ display: 'flex', alignItems: 'center', gap: 'clamp(8px, 1vw, 10px)' }}>
+                  <div style={{ 
+                    width: 'clamp(34px, 4vw, 38px)', 
+                    height: 'clamp(34px, 4vw, 38px)', 
+                    borderRadius: '50%', 
+                    background: '#f9e4ea', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center' 
+                  }}>
+                    <Phone size={16} color="#f43f68" />
                   </div>
                   <div>
-                    <h2 style={{ fontSize: '16px', fontWeight: 800, color: '#1a0a0f' }}>Personal Details</h2>
-                    
+                    <h2 style={{ fontSize: 'clamp(14px, 1.6vw, 16px)', fontWeight: 800, color: '#1a0a0f', margin: 0 }}>
+                      Personal Details
+                    </h2>
                   </div>
                 </div>
                 {!editingProfile && (
                   <button onClick={() => setEditingProfile(true)} style={{
                     display: 'flex', alignItems: 'center', gap: '5px',
                     background: '#fef1f4', border: '1px solid #f9e4ea',
-                    borderRadius: '50px', padding: '6px 14px', cursor: 'pointer',
-                    fontSize: '12px', fontWeight: 700, color: '#f43f68',
+                    borderRadius: '50px', padding: 'clamp(4px, 0.5vw, 6px) clamp(10px, 1.2vw, 14px)',
+                    cursor: 'pointer',
+                    fontSize: 'clamp(11px, 1.2vw, 12px)',
+                    fontWeight: 700, color: '#f43f68',
                   }}>
                     <Edit3 size={11} /> Edit
                   </button>
@@ -421,7 +421,13 @@ export default function AccountPage() {
               </div>
 
               {!isProfileComplete && !editingProfile && (
-                <div style={{ background: '#fff8f0', border: '1px solid #fcd98a', borderRadius: '12px', padding: '11px 14px', marginBottom: '16px', fontSize: '13px', color: '#92400e', fontWeight: 600 }}>
+                <div style={{ 
+                  background: '#fff8f0', border: '1px solid #fcd98a', 
+                  borderRadius: '12px', padding: 'clamp(10px, 1.5vh, 11px) clamp(12px, 1.5vw, 14px)', 
+                  marginBottom: '16px', 
+                  fontSize: 'clamp(12px, 1.2vw, 13px)', 
+                  color: '#92400e', fontWeight: 600 
+                }}>
                   ⚠️ Add your phone number so checkout can be pre-filled.
                 </div>
               )}
@@ -436,7 +442,7 @@ export default function AccountPage() {
                         { key: 'lastName',  label: 'Last Name',    placeholder: 'Sharma'  },
                       ].map(f => (
                         <div key={f.key}>
-                          <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#1a0a0f', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{f.label}</label>
+                          <label style={{ display: 'block', fontSize: 'clamp(10px, 1vw, 11px)', fontWeight: 700, color: '#1a0a0f', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{f.label}</label>
                           <input
                             value={profile[f.key]}
                             onChange={e => setProfile(p => ({ ...p, [f.key]: e.target.value }))}
@@ -449,7 +455,7 @@ export default function AccountPage() {
                       ))}
                     </div>
                     <div>
-                      <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#1a0a0f', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Phone Number *</label>
+                      <label style={{ display: 'block', fontSize: 'clamp(10px, 1vw, 11px)', fontWeight: 700, color: '#1a0a0f', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Phone Number *</label>
                       <div style={{ position: 'relative' }}>
                         <input
                           type="tel" value={profile.phone}
@@ -483,9 +489,9 @@ export default function AccountPage() {
                       ['Phone',      profile.phone     || '—', '1/-1'],
                       ['Email',      user?.email       || '—', '1/-1'],
                     ].map(([lbl, val, col]) => (
-                      <div key={lbl} style={{ background: '#fdf8f4', borderRadius: '10px', padding: '10px 14px', gridColumn: col }}>
-                        <div style={{ fontSize: '10px', fontWeight: 700, color: '#f43f68', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '2px' }}>{lbl}</div>
-                        <div style={{ fontSize: '14px', fontWeight: 600, color: val === '—' ? '#ccc' : '#1a0a0f' }}>{val}</div>
+                      <div key={lbl} style={{ background: '#fdf8f4', borderRadius: '10px', padding: 'clamp(8px, 1vw, 10px) clamp(10px, 1.2vw, 14px)', gridColumn: col }}>
+                        <div style={{ fontSize: 'clamp(9px, 1vw, 10px)', fontWeight: 700, color: '#f43f68', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '2px' }}>{lbl}</div>
+                        <div style={{ fontSize: 'clamp(13px, 1.3vw, 14px)', fontWeight: 600, color: val === '—' ? '#ccc' : '#1a0a0f' }}>{val}</div>
                       </div>
                     ))}
                   </motion.div>
@@ -495,26 +501,34 @@ export default function AccountPage() {
 
             <div style={{ height: '1px', background: '#f9e4ea', margin: '0 0 24px 0' }} />
 
-            {/* ── My Orders (expandable) ── */}
             <div style={{ marginBottom: '8px' }}>
               <motion.button
                 whileTap={{ scale: 0.98 }}
                 onClick={() => setOrdersOpen(o => !o)}
                 style={{
-                  display: 'flex', alignItems: 'center', gap: '14px',
-                  padding: '14px 16px',
+                  display: 'flex', alignItems: 'center', gap: 'clamp(12px, 1.5vw, 14px)',
+                  padding: 'clamp(12px, 1.5vh, 14px) clamp(14px, 1.5vw, 16px)',
                   borderRadius: ordersOpen ? '14px 14px 0 0' : '14px',
                   border: '1px solid #f9e4ea',
                   background: ordersOpen ? '#fef1f4' : '#fdf8f4',
                   cursor: 'pointer', textAlign: 'left', width: '100%', transition: 'all 0.2s',
                 }}
               >
-                <div style={{ width: '38px', height: '38px', borderRadius: '50%', background: '#f9e4ea', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Package size={20} color="#f43f68" />
+                <div style={{ 
+                  width: 'clamp(34px, 4vw, 38px)', 
+                  height: 'clamp(34px, 4vw, 38px)', 
+                  borderRadius: '50%', 
+                  background: '#f9e4ea', 
+                  flexShrink: 0, 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center' 
+                }}>
+                  <Package size={19} color="#f43f68" />
                 </div>
-                <span style={{ fontSize: '14px', fontWeight: 700, color: '#1a0a0f', flex: 1 }}>My Orders</span>
+                <span style={{ fontSize: 'clamp(13px, 1.4vw, 14px)', fontWeight: 700, color: '#1a0a0f', flex: 1 }}>My Orders</span>
                 <motion.span animate={{ rotate: ordersOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
-                  <ChevronDown size={18} color="#f43f68" />
+                  <ChevronDown size={17} color="#f43f68" />
                 </motion.span>
               </motion.button>
 
@@ -534,20 +548,30 @@ export default function AccountPage() {
                           whileTap={{ scale: 0.97 }}
                           onClick={() => router.push(sub.href)}
                           style={{
-                            display: 'flex', alignItems: 'center', gap: '12px',
-                            padding: '11px 14px', borderRadius: '10px',
+                            display: 'flex', alignItems: 'center', gap: 'clamp(10px, 1.2vw, 12px)',
+                            padding: 'clamp(10px, 1.2vw, 11px) clamp(12px, 1.5vw, 14px)',
+                            borderRadius: '10px',
                             border: 'none', background: 'transparent',
                             cursor: 'pointer', width: '100%', textAlign: 'left', transition: 'all 0.18s',
                           }}
                         >
-                          <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: sub.bg, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <div style={{ 
+                            width: 'clamp(28px, 3vw, 32px)', 
+                            height: 'clamp(28px, 3vw, 32px)', 
+                            borderRadius: '50%', 
+                            background: sub.bg, 
+                            flexShrink: 0, 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            justifyContent: 'center' 
+                          }}>
                             {sub.icon}
                           </div>
                           <div style={{ flex: 1 }}>
-                            <div style={{ fontSize: '13px', fontWeight: 700, color: '#1a0a0f' }}>{sub.label}</div>
-                            <div style={{ fontSize: '11px', color: '#888', marginTop: '1px' }}>{sub.desc}</div>
+                            <div style={{ fontSize: 'clamp(12px, 1.3vw, 13px)', fontWeight: 700, color: '#1a0a0f' }}>{sub.label}</div>
+                            <div style={{ fontSize: 'clamp(10px, 1vw, 11px)', color: '#888', marginTop: '1px' }}>{sub.desc}</div>
                           </div>
-                          <ArrowRight size={14} color="#ccc" />
+                          <ArrowRight size={13} color="#ccc" />
                         </motion.button>
                       ))}
                     </div>
@@ -556,7 +580,6 @@ export default function AccountPage() {
               </AnimatePresence>
             </div>
 
-            {/* Other links */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {otherLinks.map(link => (
                 <motion.button
@@ -564,63 +587,70 @@ export default function AccountPage() {
                   whileHover={{ x: 4, background: '#fef1f4' }} whileTap={{ scale: 0.98 }}
                   onClick={() => router.push(link.href)}
                   style={{
-                    display: 'flex', alignItems: 'center', gap: '14px',
-                    padding: '14px 16px', borderRadius: '14px',
+                    display: 'flex', alignItems: 'center', gap: 'clamp(12px, 1.5vw, 14px)',
+                    padding: 'clamp(12px, 1.5vh, 14px) clamp(14px, 1.5vw, 16px)',
+                    borderRadius: '14px',
                     border: '1px solid #f9e4ea', background: '#fdf8f4',
                     cursor: 'pointer', textAlign: 'left', width: '100%', transition: 'all 0.2s',
                   }}
                 >
-                  <div style={{ width: '38px', height: '38px', borderRadius: '50%', background: '#f9e4ea', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <div style={{ 
+                    width: 'clamp(34px, 4vw, 38px)', 
+                    height: 'clamp(34px, 4vw, 38px)', 
+                    borderRadius: '50%', 
+                    background: '#f9e4ea', 
+                    flexShrink: 0, 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center' 
+                  }}>
                     {link.icon}
                   </div>
-                  <span style={{ fontSize: '14px', fontWeight: 600, color: '#1a0a0f' }}>{link.label}</span>
-                  <span style={{ marginLeft: 'auto', color: '#f43f68', fontSize: '16px' }}>→</span>
+                  <span style={{ fontSize: 'clamp(13px, 1.4vw, 14px)', fontWeight: 600, color: '#1a0a0f' }}>{link.label}</span>
+                  <span style={{ marginLeft: 'auto', color: '#f43f68', fontSize: 'clamp(14px, 1.6vw, 16px)' }}>→</span>
                 </motion.button>
               ))}
             </div>
 
             <div style={{ height: '1px', background: '#f9e4ea', margin: '24px 0' }} />
 
-            {/* Delete Account Button */}
             <motion.button
               whileHover={{ scale: 1.02, background: '#fff0f3' }}
               whileTap={{ scale: 0.97 }}
               onClick={() => setShowDeleteModal(true)}
               style={{
-                width: '100%', padding: '13px', background: '#fff',
+                width: '100%', padding: 'clamp(12px, 1.5vh, 13px)', background: '#fff',
                 border: '1.5px solid #fde2e2', borderRadius: '14px', cursor: 'pointer',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-                fontSize: '14px', fontWeight: 700, color: '#e11d50', transition: 'all 0.2s',
+                fontSize: 'clamp(13px, 1.4vw, 14px)', fontWeight: 700, color: '#e11d50', transition: 'all 0.2s',
               }}
             >
-              <Trash2 size={16} /> Delete Account
+              <Trash2 size={15} /> Delete Account
             </motion.button>
 
             <div style={{ height: '1px', background: '#f9e4ea', margin: '16px 0' }} />
 
-            {/* Sign out */}
             <motion.button
               whileHover={{ scale: 1.02, background: '#fff0f3' }}
               whileTap={{ scale: 0.97 }}
               onClick={handleLogout}
               style={{
-                width: '100%', padding: '13px', background: '#fff',
+                width: '100%', padding: 'clamp(12px, 1.5vh, 13px)', background: '#fff',
                 border: '1.5px solid #f9e4ea', borderRadius: '14px', cursor: 'pointer',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-                fontSize: '14px', fontWeight: 700, color: '#888', transition: 'all 0.2s',
+                fontSize: 'clamp(13px, 1.4vw, 14px)', fontWeight: 700, color: '#888', transition: 'all 0.2s',
               }}
             >
-              <LogOut size={16} /> Sign Out
+              <LogOut size={15} /> Sign Out
             </motion.button>
           </div>
         </motion.div>
 
-        <p style={{ textAlign: 'center', fontSize: '12px', color: '#ccc' }}>
+        <p style={{ textAlign: 'center', fontSize: 'clamp(11px, 1vw, 12px)', color: '#ccc' }}>
           © 2026 GlowHive • Made with ❤️ for your GLOW.
         </p>
       </div>
 
-      {/* ═══ DELETE ACCOUNT CONFIRMATION MODAL ═══ */}
       <AnimatePresence>
         {showDeleteModal && (
           <motion.div
@@ -643,16 +673,17 @@ export default function AccountPage() {
               style={{
                 background: '#fff',
                 borderRadius: '24px',
-                maxWidth: '440px',
+                maxWidth: 'clamp(340px, 90vw, 440px)',
                 width: '100%',
-                padding: '32px',
+                padding: 'clamp(24px, 3vw, 32px)',
                 boxShadow: '0 40px 80px rgba(0,0,0,0.2)',
               }}
               onClick={(e) => e.stopPropagation()}
             >
               <div style={{ textAlign: 'center', marginBottom: '24px' }}>
                 <div style={{
-                  width: '64px', height: '64px',
+                  width: 'clamp(56px, 6vw, 64px)',
+                  height: 'clamp(56px, 6vw, 64px)',
                   borderRadius: '50%',
                   background: '#fef1f4',
                   display: 'flex',
@@ -660,19 +691,25 @@ export default function AccountPage() {
                   justifyContent: 'center',
                   margin: '0 auto 16px',
                 }}>
-                  <AlertTriangle size={32} color="#e11d50" />
+                  <AlertTriangle size={30} color="#e11d50" />
                 </div>
-                <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#1a0a0f', fontFamily: "'Playfair Display', Georgia, serif", marginBottom: '8px' }}>
+                <h2 style={{ 
+                  fontSize: 'clamp(18px, 2vw, 20px)', 
+                  fontWeight: 800, 
+                  color: '#1a0a0f', 
+                  fontFamily: "'Playfair Display', Georgia, serif", 
+                  marginBottom: '8px' 
+                }}>
                   Delete Account?
                 </h2>
-                <p style={{ fontSize: '14px', color: '#666', lineHeight: 1.6 }}>
+                <p style={{ fontSize: 'clamp(13px, 1.3vw, 14px)', color: '#666', lineHeight: 1.6 }}>
                   This action is <strong style={{ color: '#e11d50' }}>permanent</strong> and cannot be undone. 
                   All your data including orders, wishlist, and profile information will be deleted.
                 </p>
               </div>
 
               <div style={{ background: '#fdf8f4', borderRadius: '12px', padding: '16px', marginBottom: '24px' }}>
-                <p style={{ fontSize: '13px', color: '#666', marginBottom: '10px' }}>
+                <p style={{ fontSize: 'clamp(12px, 1.2vw, 13px)', color: '#666', marginBottom: '10px' }}>
                   Please type <strong style={{ color: '#e11d50' }}>DELETE</strong> to confirm:
                 </p>
                 <input
@@ -682,10 +719,10 @@ export default function AccountPage() {
                   placeholder="Type DELETE here"
                   style={{
                     width: '100%',
-                    padding: '11px 14px',
+                    padding: 'clamp(10px, 1.2vw, 11px) clamp(12px, 1.5vw, 14px)',
                     border: '1.5px solid #f9e4ea',
                     borderRadius: '12px',
-                    fontSize: '14px',
+                    fontSize: 'clamp(13px, 1.3vw, 14px)',
                     outline: 'none',
                     background: '#fff',
                     color: '#1a0a0f',
@@ -710,14 +747,14 @@ export default function AccountPage() {
                   disabled={deleting}
                   style={{
                     flex: 1,
-                    padding: '13px',
+                    padding: 'clamp(12px, 1.2vw, 13px)',
                     background: '#fdf8f4',
                     border: '1.5px solid #f9e4ea',
                     borderRadius: '12px',
                     cursor: deleting ? 'not-allowed' : 'pointer',
                     fontWeight: 700,
                     color: '#888',
-                    fontSize: '14px',
+                    fontSize: 'clamp(13px, 1.3vw, 14px)',
                     transition: 'all 0.2s',
                     opacity: deleting ? 0.6 : 1,
                   }}
@@ -731,14 +768,14 @@ export default function AccountPage() {
                   disabled={deleting || deleteConfirmText !== 'DELETE'}
                   style={{
                     flex: 2,
-                    padding: '13px',
+                    padding: 'clamp(12px, 1.2vw, 13px)',
                     background: deleteConfirmText === 'DELETE' ? 'linear-gradient(135deg,#e11d50,#c0392b)' : '#f9e4ea',
                     border: 'none',
                     borderRadius: '12px',
                     cursor: (deleting || deleteConfirmText !== 'DELETE') ? 'not-allowed' : 'pointer',
                     fontWeight: 700,
                     color: deleteConfirmText === 'DELETE' ? '#fff' : '#aaa',
-                    fontSize: '14px',
+                    fontSize: 'clamp(13px, 1.3vw, 14px)',
                     transition: 'all 0.2s',
                     display: 'flex',
                     alignItems: 'center',
@@ -760,7 +797,7 @@ export default function AccountPage() {
                     </>
                   ) : (
                     <>
-                      <Trash2 size={16} /> Delete Permanently
+                      <Trash2 size={15} /> Delete Permanently
                     </>
                   )}
                 </motion.button>
@@ -770,7 +807,6 @@ export default function AccountPage() {
         )}
       </AnimatePresence>
 
-      {/* Add spin animation for loading state */}
       <style jsx>{`
         @keyframes spin {
           to { transform: rotate(360deg); }

@@ -23,6 +23,14 @@ import { useChatbot } from '@/context/ChatbotContext';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
 
+// Helper function for responsive sizes (can't use clamp() in JS)
+const responsiveSize = (min, preferred, max) => {
+  if (typeof window === 'undefined') return preferred;
+  const vw = window.innerWidth;
+  const size = Math.max(min, Math.min(max, vw * (preferred / 100)));
+  return Math.round(size);
+};
+
 export default function Chatbot() {
   const { 
     isOpen, 
@@ -41,6 +49,11 @@ export default function Chatbot() {
   const [unreadCount, setUnreadCount] = useState(0);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
+
+  // Get responsive icon sizes - use fixed values to avoid issues
+  const iconSize = 20;
+  const smallIconSize = 16;
+  const largeIconSize = 24;
 
   useEffect(() => {
     if (messagesEndRef.current) {
@@ -103,8 +116,8 @@ export default function Chatbot() {
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '12px',
-            padding: '10px',
+            gap: 'clamp(8px, 1vw, 12px)',
+            padding: 'clamp(8px, 1vw, 10px)',
             background: '#fff',
             borderRadius: '12px',
             border: '1px solid #fde8ec',
@@ -113,8 +126,8 @@ export default function Chatbot() {
           }}
         >
           <div style={{
-            width: '60px',
-            height: '60px',
+            width: 'clamp(50px, 6vw, 60px)',
+            height: 'clamp(50px, 6vw, 60px)',
             borderRadius: '8px',
             overflow: 'hidden',
             background: '#fdf6f0',
@@ -129,7 +142,7 @@ export default function Chatbot() {
           
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{
-              fontSize: '13px',
+              fontSize: 'clamp(12px, 1.2vw, 13px)',
               fontWeight: 700,
               color: '#3d1f25',
               display: '-webkit-box',
@@ -143,12 +156,12 @@ export default function Chatbot() {
             <div style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '8px',
-              marginTop: '3px',
+              gap: 'clamp(4px, 0.5vw, 8px)',
+              marginTop: '2px',
               flexWrap: 'wrap',
             }}>
               <span style={{
-                fontSize: '15px',
+                fontSize: 'clamp(13px, 1.3vw, 15px)',
                 fontWeight: 800,
                 color: '#b76e79',
                 lineHeight: 1.2,
@@ -158,7 +171,7 @@ export default function Chatbot() {
               
               {product.originalPrice && product.originalPrice > product.price && (
                 <span style={{
-                  fontSize: '12px',
+                  fontSize: 'clamp(10px, 1vw, 12px)',
                   color: '#aaa',
                   textDecoration: 'line-through',
                   lineHeight: 1.2,
@@ -169,11 +182,11 @@ export default function Chatbot() {
               
               {discount > 0 && (
                 <span style={{
-                  fontSize: '10px',
+                  fontSize: 'clamp(8px, 0.8vw, 10px)',
                   fontWeight: 700,
                   color: '#fff',
                   background: '#22c55e',
-                  padding: '2px 8px',
+                  padding: '2px 6px',
                   borderRadius: '10px',
                   lineHeight: 1.4,
                 }}>
@@ -183,19 +196,19 @@ export default function Chatbot() {
             </div>
             
             <div style={{
-              fontSize: '10px',
+              fontSize: 'clamp(9px, 0.9vw, 10px)',
               color: '#8c6468',
-              marginTop: '2px',
+              marginTop: '1px',
             }}>
               ⭐ {product.rating || '4.5'} • {product.category}
             </div>
           </div>
           
           <div style={{
-            padding: '6px 10px',
+            padding: 'clamp(4px, 0.5vw, 6px) clamp(8px, 0.8vw, 10px)',
             background: '#fdf0f3',
             borderRadius: '20px',
-            fontSize: '10px',
+            fontSize: 'clamp(9px, 0.9vw, 10px)',
             fontWeight: 700,
             color: '#b76e79',
             whiteSpace: 'nowrap',
@@ -220,13 +233,13 @@ export default function Chatbot() {
       }}>
         <div style={{
           maxWidth: '92%',
-          padding: '10px 14px',
+          padding: 'clamp(8px, 1vw, 10px) clamp(10px, 1.2vw, 14px)',
           borderRadius: msg.sender === 'user' ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
           background: msg.sender === 'user' ? '#b76e79' : '#fff',
           color: msg.sender === 'user' ? '#fff' : '#3d1f25',
           border: msg.sender === 'bot' ? '1px solid #fde8ec' : 'none',
           boxShadow: msg.sender === 'bot' ? '0 2px 8px rgba(183,110,121,0.08)' : '0 2px 8px rgba(183,110,121,0.15)',
-          fontSize: '14px',
+          fontSize: 'clamp(13px, 1.2vw, 14px)',
           lineHeight: 1.6,
           wordBreak: 'break-word',
           width: '100%',
@@ -234,7 +247,7 @@ export default function Chatbot() {
           <div style={{ whiteSpace: 'pre-wrap' }}>
             {msg.text.split('\n').map((line, i) => {
               if (line.startsWith('**') && line.endsWith('**')) {
-                return <div key={i} style={{ fontWeight: 700, fontSize: '15px', marginBottom: '4px' }}>{line.slice(2, -2)}</div>;
+                return <div key={i} style={{ fontWeight: 700, fontSize: 'clamp(14px, 1.3vw, 15px)', marginBottom: '4px' }}>{line.slice(2, -2)}</div>;
               }
               if (line.startsWith('•') || line.startsWith('-')) {
                 return <div key={i} style={{ paddingLeft: '12px', marginBottom: '2px' }}>{line}</div>;
@@ -257,7 +270,7 @@ export default function Chatbot() {
           )}
           
           <div style={{
-            fontSize: '9px',
+            fontSize: 'clamp(8px, 0.8vw, 9px)',
             color: msg.sender === 'user' ? 'rgba(255,255,255,0.6)' : '#aaa',
             marginTop: '6px',
             textAlign: 'right',
@@ -271,7 +284,7 @@ export default function Chatbot() {
 
   return (
     <>
-      {/* Floating Chat Button - Increased z-index */}
+      {/* Floating Chat Button */}
       <motion.button
         initial={{ scale: 0 }}
         animate={{ scale: 1 }}
@@ -279,17 +292,17 @@ export default function Chatbot() {
         onClick={handleToggle}
         style={{
           position: 'fixed',
-          bottom: '24px',
-          right: '24px',
-          width: '60px',
-          height: '60px',
+          bottom: 'clamp(16px, 3vh, 24px)',
+          right: 'clamp(16px, 3vw, 24px)',
+          width: 'clamp(50px, 6vw, 60px)',
+          height: 'clamp(50px, 6vw, 60px)',
           borderRadius: '50%',
           background: 'linear-gradient(135deg, #b76e79, #c2748a)',
           color: '#fff',
           border: 'none',
           cursor: 'pointer',
           boxShadow: '0 8px 32px rgba(183,110,121,0.4)',
-          zIndex: 10000, /* Increased z-index to be above navbar */
+          zIndex: 10000,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -299,10 +312,10 @@ export default function Chatbot() {
         whileTap={{ scale: 0.92 }}
       >
         {isOpen ? (
-          <X size={28} />
+          <X size={24} />
         ) : (
           <>
-            <MessageCircle size={28} />
+            <MessageCircle size={24} />
             {unreadCount > 0 && (
               <motion.span
                 initial={{ scale: 0 }}
@@ -313,10 +326,10 @@ export default function Chatbot() {
                   right: '-4px',
                   background: '#ef4444',
                   color: '#fff',
-                  fontSize: '11px',
+                  fontSize: 'clamp(10px, 1vw, 11px)',
                   fontWeight: 700,
-                  width: '22px',
-                  height: '22px',
+                  width: 'clamp(20px, 2.5vw, 22px)',
+                  height: 'clamp(20px, 2.5vw, 22px)',
                   borderRadius: '50%',
                   display: 'flex',
                   alignItems: 'center',
@@ -339,7 +352,7 @@ export default function Chatbot() {
         }} />
       </motion.button>
 
-      {/* Chat Window - Increased z-index */}
+      {/* Chat Window */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -348,21 +361,22 @@ export default function Chatbot() {
               opacity: 1, 
               y: 0, 
               scale: 1,
-              height: isMinimized ? 'auto' : 'clamp(480px, 60vh, 600px)',
+              height: isMinimized ? 'auto' : 'clamp(400px, 60vh, 600px)',
             }}
             exit={{ opacity: 0, y: 20, scale: 0.9 }}
             transition={{ type: 'spring', stiffness: 300, damping: 25 }}
             style={{
               position: 'fixed',
-              bottom: '96px',
-              right: '24px',
-              width: 'clamp(340px, 25vw, 420px)',
+              bottom: 'clamp(76px, 10vh, 96px)',
+              right: 'clamp(16px, 3vw, 24px)',
+              width: 'clamp(320px, 25vw, 420px)',
+              maxWidth: 'calc(100vw - 32px)',
               background: '#fff',
               borderRadius: '20px',
               boxShadow: '0 20px 80px rgba(61,31,37,0.25)',
               border: '1px solid #fde8ec',
               overflow: 'hidden',
-              zIndex: 10001, /* Increased z-index to be above everything */
+              zIndex: 10001,
               display: 'flex',
               flexDirection: 'column',
             }}
@@ -370,17 +384,17 @@ export default function Chatbot() {
             {/* Header */}
             <div style={{
               background: 'linear-gradient(135deg, #3d1f25, #b76e79)',
-              padding: '16px 20px',
+              padding: 'clamp(12px, 1.5vh, 16px) clamp(16px, 2vw, 20px)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
               flexShrink: 0,
               borderBottom: '1px solid rgba(255,255,255,0.1)',
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 'clamp(8px, 1vw, 10px)' }}>
                 <div style={{
-                  width: '36px',
-                  height: '36px',
+                  width: 'clamp(30px, 3.5vw, 36px)',
+                  height: 'clamp(30px, 3.5vw, 36px)',
                   borderRadius: '50%',
                   background: 'rgba(255,255,255,0.15)',
                   display: 'flex',
@@ -391,7 +405,7 @@ export default function Chatbot() {
                 </div>
                 <div>
                   <div style={{
-                    fontSize: '15px',
+                    fontSize: 'clamp(13px, 1.3vw, 15px)',
                     fontWeight: 700,
                     color: '#fff',
                     fontFamily: "'Playfair Display', Georgia, serif",
@@ -399,7 +413,7 @@ export default function Chatbot() {
                     GlowHive Assistant
                   </div>
                   <div style={{
-                    fontSize: '11px',
+                    fontSize: 'clamp(10px, 1vw, 11px)',
                     color: 'rgba(255,255,255,0.7)',
                     display: 'flex',
                     alignItems: 'center',
@@ -425,7 +439,7 @@ export default function Chatbot() {
                     background: 'rgba(255,255,255,0.1)',
                     border: 'none',
                     borderRadius: '8px',
-                    padding: '6px',
+                    padding: 'clamp(4px, 0.5vw, 6px)',
                     cursor: 'pointer',
                     color: '#fff',
                     display: 'flex',
@@ -443,7 +457,7 @@ export default function Chatbot() {
                     background: 'rgba(255,255,255,0.1)',
                     border: 'none',
                     borderRadius: '8px',
-                    padding: '6px',
+                    padding: 'clamp(4px, 0.5vw, 6px)',
                     cursor: 'pointer',
                     color: '#fff',
                     display: 'flex',
@@ -462,13 +476,13 @@ export default function Chatbot() {
                 <div style={{
                   flex: 1,
                   overflowY: 'auto',
-                  padding: '16px 20px',
+                  padding: 'clamp(12px, 1.5vh, 16px) clamp(16px, 2vw, 20px)',
                   background: '#fdf8f5',
                   display: 'flex',
                   flexDirection: 'column',
                   gap: '8px',
-                  maxHeight: 'clamp(320px, 40vh, 440px)',
-                  minHeight: '200px',
+                  maxHeight: 'clamp(280px, 40vh, 440px)',
+                  minHeight: 'clamp(160px, 20vh, 200px)',
                 }}>
                   {messages.map((msg, index) => (
                     <div key={msg.id || index}>
@@ -483,7 +497,7 @@ export default function Chatbot() {
                       style={{ display: 'flex', justifyContent: 'flex-start' }}
                     >
                       <div style={{
-                        padding: '12px 16px',
+                        padding: 'clamp(10px, 1.2vw, 12px) clamp(12px, 1.5vw, 16px)',
                         borderRadius: '16px 16px 16px 4px',
                         background: '#fff',
                         border: '1px solid #fde8ec',
@@ -524,11 +538,11 @@ export default function Chatbot() {
 
                 {/* Input */}
                 <form onSubmit={handleSend} style={{
-                  padding: '12px 16px',
+                  padding: 'clamp(10px, 1.5vh, 12px) clamp(12px, 2vw, 16px)',
                   borderTop: '1px solid #fde8ec',
                   background: '#fff',
                   display: 'flex',
-                  gap: '8px',
+                  gap: 'clamp(6px, 0.8vw, 8px)',
                   alignItems: 'flex-end',
                   flexShrink: 0,
                 }}>
@@ -542,7 +556,7 @@ export default function Chatbot() {
                       border: 'none',
                       cursor: 'pointer',
                       color: '#aaa',
-                      padding: '8px',
+                      padding: 'clamp(6px, 0.8vw, 8px)',
                       borderRadius: '8px',
                       transition: 'color 0.2s',
                     }}
@@ -559,17 +573,17 @@ export default function Chatbot() {
                     rows={1}
                     style={{
                       flex: 1,
-                      padding: '10px 14px',
+                      padding: 'clamp(8px, 1vw, 10px) clamp(12px, 1.5vw, 14px)',
                       borderRadius: '12px',
                       border: '1.5px solid #fde8ec',
-                      fontSize: '14px',
+                      fontSize: 'clamp(13px, 1.2vw, 14px)',
                       outline: 'none',
                       resize: 'none',
                       fontFamily: 'inherit',
                       background: '#fdf8f5',
                       color: '#3d1f25',
                       transition: 'border-color 0.2s',
-                      minHeight: '44px',
+                      minHeight: 'clamp(40px, 5vh, 44px)',
                       maxHeight: '100px',
                     }}
                     onFocus={(e) => e.target.style.borderColor = '#b76e79'}
@@ -585,7 +599,7 @@ export default function Chatbot() {
                     whileTap={{ scale: 0.9 }}
                     disabled={!input.trim()}
                     style={{
-                      padding: '10px 16px',
+                      padding: 'clamp(8px, 1vw, 10px) clamp(14px, 1.5vw, 16px)',
                       borderRadius: '12px',
                       background: input.trim() ? 'linear-gradient(135deg, #b76e79, #c2748a)' : '#fde8ec',
                       color: input.trim() ? '#fff' : '#aaa',
@@ -595,7 +609,7 @@ export default function Chatbot() {
                       alignItems: 'center',
                       justifyContent: 'center',
                       transition: 'all 0.2s',
-                      height: '44px',
+                      height: 'clamp(40px, 5vh, 44px)',
                       flexShrink: 0,
                     }}
                   >
@@ -608,7 +622,7 @@ export default function Chatbot() {
             {/* Minimized state */}
             {isMinimized && (
               <div style={{
-                padding: '12px 16px',
+                padding: 'clamp(10px, 1.5vh, 12px) clamp(14px, 2vw, 16px)',
                 background: '#fdf8f5',
                 borderTop: '1px solid #fde8ec',
                 cursor: 'pointer',
@@ -618,7 +632,14 @@ export default function Chatbot() {
               }}
               onClick={maximizeChat}
               >
-                <span style={{ fontSize: '13px', color: '#8c6468' }}>
+                <span style={{ 
+                  fontSize: 'clamp(12px, 1.2vw, 13px)', 
+                  color: '#8c6468',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                  maxWidth: '70%',
+                }}>
                   {messages.length > 0 ? messages[messages.length - 1].text.slice(0, 50) + '...' : 'Start a conversation'}
                 </span>
                 <ChevronUp size={16} color="#b76e79" />
@@ -632,6 +653,14 @@ export default function Chatbot() {
         @keyframes bounce {
           0%, 80%, 100% { transform: scale(0); }
           40% { transform: scale(1); }
+        }
+        @media (max-width: 480px) {
+          .chatbot-window {
+            width: calc(100vw - 32px) !important;
+            bottom: 80px !important;
+            right: 16px !important;
+            max-height: 80vh !important;
+          }
         }
       `}</style>
     </>

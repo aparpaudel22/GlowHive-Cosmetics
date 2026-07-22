@@ -153,7 +153,7 @@ export default function CookiesPage() {
         {/* ─── Hero Section ─── */}
         <div style={{
           background: 'linear-gradient(135deg, #3d1f25 0%, #b76e79 60%, #e8a4b0 100%)',
-          padding: '60px 28px 50px',
+          padding: 'clamp(40px, 8vw, 60px) clamp(16px, 4vw, 28px) clamp(40px, 6vw, 50px)',
           textAlign: 'center',
           position: 'relative',
           overflow: 'hidden',
@@ -170,7 +170,7 @@ export default function CookiesPage() {
               <Cookie size={18} color="rgba(255,255,255,0.8)" />
             </div>
             <h1 style={{
-              fontSize: '44px',
+              fontSize: 'clamp(28px, 6vw, 44px)',
               fontWeight: 800,
               color: '#fff',
               fontFamily: "'Playfair Display', Georgia, serif",
@@ -179,7 +179,7 @@ export default function CookiesPage() {
               Cookies Policy
             </h1>
             <p style={{
-              fontSize: '16px',
+              fontSize: 'clamp(14px, 2vw, 16px)',
               color: 'rgba(255,255,255,0.75)',
               maxWidth: '520px',
               margin: '0 auto',
@@ -220,11 +220,11 @@ export default function CookiesPage() {
         </div>
 
         {/* ─── Main Content ─── */}
-        <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '32px 20px 60px' }}>
+        <div style={{ maxWidth: '1100px', margin: '0 auto', padding: 'clamp(24px, 4vw, 32px) clamp(16px, 3vw, 20px) 60px' }}>
 
           <div style={{
             display: 'grid',
-            gridTemplateColumns: '260px 1fr',
+            gridTemplateColumns: window.innerWidth < 768 ? '1fr' : '260px 1fr',
             gap: '32px',
           }}>
 
@@ -234,7 +234,7 @@ export default function CookiesPage() {
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.4 }}
               style={{
-                position: 'sticky',
+                position: window.innerWidth < 768 ? 'relative' : 'sticky',
                 top: '24px',
                 alignSelf: 'start',
               }}
@@ -266,7 +266,7 @@ export default function CookiesPage() {
                         display: 'block',
                         padding: '8px 12px',
                         borderRadius: '8px',
-                        fontSize: '13px',
+                        fontSize: 'clamp(12px, 1.1vw, 13px)',
                         fontWeight: 500,
                         color: '#5a3a40',
                         textDecoration: 'none',
@@ -298,6 +298,7 @@ export default function CookiesPage() {
                     gap: '8px',
                     fontSize: '12px',
                     color: '#8c6468',
+                    flexWrap: 'wrap',
                   }}>
                     <Mail size={14} color="#b76e79" />
                     support@glowhive.com
@@ -309,6 +310,7 @@ export default function CookiesPage() {
                     fontSize: '12px',
                     color: '#8c6468',
                     marginTop: '4px',
+                    flexWrap: 'wrap',
                   }}>
                     <Phone size={14} color="#b76e79" />
                     +977 984-1234567
@@ -344,9 +346,10 @@ export default function CookiesPage() {
                       display: 'flex',
                       alignItems: 'center',
                       gap: '12px',
-                      padding: '16px 20px',
+                      padding: 'clamp(14px, 2.5vw, 16px) clamp(14px, 2.5vw, 20px)',
                       background: '#fdf8f5',
                       borderBottom: '1px solid #fde8ec',
+                      flexWrap: 'wrap',
                     }}>
                       <div style={{
                         width: '36px',
@@ -361,7 +364,7 @@ export default function CookiesPage() {
                         {section.icon}
                       </div>
                       <h2 style={{
-                        fontSize: '18px',
+                        fontSize: 'clamp(16px, 2vw, 18px)',
                         fontWeight: 800,
                         color: '#3d1f25',
                         fontFamily: "'Playfair Display', Georgia, serif",
@@ -370,9 +373,9 @@ export default function CookiesPage() {
                         {section.title}
                       </h2>
                     </div>
-                    <div style={{ padding: '20px' }}>
+                    <div style={{ padding: 'clamp(16px, 3vw, 20px)' }}>
                       <div style={{
-                        fontSize: '14px',
+                        fontSize: 'clamp(13px, 1.1vw, 14px)',
                         color: '#5a3a40',
                         lineHeight: 1.9,
                         whiteSpace: 'pre-line',
@@ -394,7 +397,7 @@ export default function CookiesPage() {
                   background: 'linear-gradient(135deg, #fdf0f3, #fff8f5)',
                   borderRadius: '16px',
                   border: '1px solid #fde8ec',
-                  padding: '24px',
+                  padding: 'clamp(20px, 3vw, 24px)',
                   textAlign: 'center',
                 }}
               >
@@ -404,10 +407,11 @@ export default function CookiesPage() {
                   justifyContent: 'center',
                   gap: '8px',
                   marginBottom: '8px',
+                  flexWrap: 'wrap',
                 }}>
                   <Shield size={20} color="#b76e79" />
                   <span style={{
-                    fontSize: '14px',
+                    fontSize: 'clamp(13px, 1.2vw, 14px)',
                     fontWeight: 700,
                     color: '#3d1f25',
                   }}>
@@ -415,7 +419,7 @@ export default function CookiesPage() {
                   </span>
                 </div>
                 <p style={{
-                  fontSize: '13px',
+                  fontSize: 'clamp(12px, 1.1vw, 13px)',
                   color: '#8c6468',
                   maxWidth: '500px',
                   margin: '0 auto',

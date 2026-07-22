@@ -13,7 +13,6 @@ export default function ContactPage() {
   const router = useRouter();
 
   useEffect(() => {
-    // Open the chatbot when the page loads
     toggleChat();
   }, []);
 
@@ -23,7 +22,7 @@ export default function ContactPage() {
         {/* Hero Section */}
         <div style={{
           background: 'linear-gradient(135deg, #3d1f25 0%, #b76e79 60%, #e8a4b0 100%)',
-          padding: '60px 28px 50px',
+          padding: 'clamp(40px, 8vw, 60px) clamp(16px, 4vw, 28px) clamp(40px, 6vw, 50px)',
           textAlign: 'center',
           position: 'relative',
           overflow: 'hidden',
@@ -43,7 +42,7 @@ export default function ContactPage() {
               <MessageCircle size={18} color="rgba(255,255,255,0.8)" />
             </div>
             <h1 style={{
-              fontSize: '44px',
+              fontSize: 'clamp(28px, 6vw, 44px)',
               fontWeight: 800,
               color: '#fff',
               fontFamily: "'Playfair Display', Georgia, serif",
@@ -52,7 +51,7 @@ export default function ContactPage() {
               How Can We Help?
             </h1>
             <p style={{
-              fontSize: '16px',
+              fontSize: 'clamp(14px, 2vw, 16px)',
               color: 'rgba(255,255,255,0.75)',
               maxWidth: '520px',
               margin: '0 auto',
@@ -64,7 +63,7 @@ export default function ContactPage() {
         </div>
 
         {/* Main Content */}
-        <div style={{ maxWidth: '600px', margin: '0 auto', padding: '40px 20px 60px' }}>
+        <div style={{ maxWidth: '600px', margin: '0 auto', padding: 'clamp(24px, 4vw, 40px) clamp(16px, 3vw, 20px) 60px' }}>
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -73,7 +72,7 @@ export default function ContactPage() {
               background: '#fff',
               borderRadius: '20px',
               border: '1px solid #fde8ec',
-              padding: '32px',
+              padding: 'clamp(24px, 4vw, 32px)',
               textAlign: 'center',
             }}
           >
@@ -91,7 +90,7 @@ export default function ContactPage() {
             </div>
             
             <h2 style={{
-              fontSize: '22px',
+              fontSize: 'clamp(18px, 2.5vw, 22px)',
               fontWeight: 800,
               color: '#3d1f25',
               fontFamily: "'Playfair Display', Georgia, serif",
@@ -101,7 +100,7 @@ export default function ContactPage() {
             </h2>
             
             <p style={{
-              fontSize: '14px',
+              fontSize: 'clamp(13px, 1.1vw, 14px)',
               color: '#8c6468',
               lineHeight: 1.7,
               marginBottom: '24px',
@@ -114,12 +113,12 @@ export default function ContactPage() {
               whileTap={{ scale: 0.95 }}
               onClick={toggleChat}
               style={{
-                padding: '14px 40px',
+                padding: 'clamp(12px, 1.5vw, 14px) clamp(24px, 4vw, 40px)',
                 background: 'linear-gradient(135deg, #b76e79, #c2748a)',
                 color: '#fff',
                 border: 'none',
                 borderRadius: '50px',
-                fontSize: '16px',
+                fontSize: 'clamp(14px, 1.2vw, 16px)',
                 fontWeight: 700,
                 cursor: 'pointer',
                 display: 'inline-flex',
@@ -138,7 +137,7 @@ export default function ContactPage() {
               paddingTop: '24px',
               borderTop: '1px solid #fde8ec',
               display: 'grid',
-              gridTemplateColumns: '1fr 1fr 1fr',
+              gridTemplateColumns: window.innerWidth < 480 ? '1fr' : '1fr 1fr 1fr',
               gap: '16px',
             }}>
               <div>

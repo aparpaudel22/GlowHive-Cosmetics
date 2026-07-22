@@ -70,12 +70,14 @@ export default function CategoryGrid() {
           </h2>
         </motion.div>
 
-        {/* Responsive Category Grid - 6 on desktop, 4 on tablet, 3 on mobile */}
+        {/* Responsive Category Grid */}
         <div style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(3, 1fr)',
           gap: 'clamp(10px, 1.5vw, 16px)',
-        }}>
+        }}
+        className="category-grid"
+        >
           {categories.map((cat, i) => (
             <motion.div
               key={cat.id}
@@ -134,6 +136,31 @@ export default function CategoryGrid() {
           ))}
         </div>
       </div>
+
+      {/* Responsive styles */}
+      <style jsx>{`
+        @media (min-width: 1024px) {
+          .category-grid {
+            grid-template-columns: repeat(6, 1fr) !important;
+          }
+        }
+        @media (min-width: 640px) and (max-width: 1023px) {
+          .category-grid {
+            grid-template-columns: repeat(4, 1fr) !important;
+          }
+        }
+        @media (max-width: 639px) {
+          .category-grid {
+            grid-template-columns: repeat(3, 1fr) !important;
+          }
+        }
+        @media (max-width: 420px) {
+          .category-grid {
+            grid-template-columns: repeat(2, 1fr) !important;
+            gap: 8px !important;
+          }
+        }
+      `}</style>
     </section>
   );
 }

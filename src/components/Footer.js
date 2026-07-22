@@ -60,7 +60,7 @@ function IconFacebook() {
   );
 }
 
-// ─── SOCIAL MEDIA LINKS (Update these with your actual profiles) ───
+// ─── SOCIAL MEDIA LINKS ───
 const socials = [
   { 
     Icon: IconInstagram, 
@@ -185,15 +185,19 @@ export default function Footer() {
             fontSize: 'clamp(13px, 1.2vw, 14px)',
             color: 'rgba(255,255,255,0.60)',
             lineHeight: 1.75,
-            marginBottom: '24px',
+            marginBottom: 'clamp(16px, 2vh, 24px)',
             maxWidth: 'clamp(100%, 50%, 240px)',
             marginTop: '16px',
           }}>
             Premium skincare & makeup crafted for your natural beauty. 100% cruelty-free, always.
           </p>
 
-          {/* Socials - Now opens in new tab with actual links */}
-          <div style={{ display: 'flex', gap: '10px' }}>
+          {/* Socials */}
+          <div style={{ 
+            display: 'flex', 
+            gap: 'clamp(8px, 1vw, 10px)',
+            flexWrap: 'wrap',
+          }}>
             {socials.map(({ Icon, href, label }) => (
               <a 
                 key={label} 
@@ -226,9 +230,11 @@ export default function Footer() {
         {/* Link columns - Responsive grid */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
           gap: 'clamp(24px, 3vw, 40px)',
-        }}>
+        }}
+        className="footer-links"
+        >
           {Object.entries(footerLinks).map(([title, links]) => (
             <div key={title}>
               <h4 style={{
@@ -264,6 +270,7 @@ export default function Footer() {
                           transition: 'color 0.2s',
                           fontFamily: 'inherit',
                           display: 'inline-block',
+                          textAlign: 'left',
                         }}
                         onMouseEnter={(e) => e.target.style.color = '#e8a4b0'}
                         onMouseLeave={(e) => e.target.style.color = 'rgba(255,255,255,0.60)'}
@@ -301,15 +308,30 @@ export default function Footer() {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
+        textAlign: 'center',
       }}>
         <p style={{
           fontSize: 'clamp(11px, 1vw, 12px)',
           color: 'rgba(255,255,255,0.45)',
-          textAlign: 'center',
         }}>
           © 2026 GlowHive &nbsp;|&nbsp; Made with ❤️ for your GLOW.
         </p>
       </div>
+
+      {/* Responsive styles */}
+      <style jsx>{`
+        @media (max-width: 640px) {
+          .footer-links {
+            grid-template-columns: repeat(2, 1fr) !important;
+          }
+        }
+        @media (max-width: 400px) {
+          .footer-links {
+            grid-template-columns: 1fr !important;
+            gap: 16px !important;
+          }
+        }
+      `}</style>
     </footer>
   );
 }

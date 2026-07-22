@@ -49,7 +49,7 @@ export default function ProductCard({ product, index = 0 }) {
           transition={{ type: 'spring', stiffness: 280, damping: 22 }}
           style={{
             background: '#fff',
-            borderRadius: 'clamp(16px, 2vw, 20px)',
+            borderRadius: 'clamp(14px, 2vw, 20px)',
             overflow: 'hidden',
             border: '1px solid #fde8ec',
             cursor: 'pointer',
@@ -63,11 +63,14 @@ export default function ProductCard({ product, index = 0 }) {
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 style={{
-                  position: 'absolute', top: 'clamp(8px, 1.5vw, 12px)', left: 'clamp(8px, 1.5vw, 12px)',
-                  background: '#b76e79', color: '#fff',
-                  fontSize: 'clamp(9px, 1.2vw, 11px)',
+                  position: 'absolute', 
+                  top: 'clamp(6px, 1vw, 12px)', 
+                  left: 'clamp(6px, 1vw, 12px)',
+                  background: '#b76e79', 
+                  color: '#fff',
+                  fontSize: 'clamp(8px, 1.2vw, 11px)',
                   fontWeight: 700,
-                  padding: '3px 8px',
+                  padding: 'clamp(2px, 0.5vw, 4px) clamp(6px, 1vw, 10px)',
                   borderRadius: '20px',
                   zIndex: 2,
                 }}
@@ -83,19 +86,21 @@ export default function ProductCard({ product, index = 0 }) {
             whileTap={{ scale: 0.85 }}
             onClick={handleWishlist}
             style={{
-              position: 'absolute', top: 'clamp(8px, 1.5vw, 12px)', right: 'clamp(8px, 1.5vw, 12px)',
+              position: 'absolute', 
+              top: 'clamp(6px, 1vw, 12px)', 
+              right: 'clamp(6px, 1vw, 12px)',
               background: wishlisted ? '#fde8ec' : 'rgba(255,255,255,0.9)',
               border: '1px solid #fde8ec',
               borderRadius: '50%',
-              width: 'clamp(30px, 4vw, 34px)',
-              height: 'clamp(30px, 4vw, 34px)',
+              width: 'clamp(28px, 4vw, 34px)',
+              height: 'clamp(28px, 4vw, 34px)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               cursor: 'pointer', zIndex: 2,
               backdropFilter: 'blur(8px)',
             }}
           >
             <Heart
-              size={15}
+              size={14}
               fill={wishlisted ? '#b76e79' : 'transparent'}
               color={wishlisted ? '#b76e79' : '#8c6468'}
             />
@@ -103,7 +108,7 @@ export default function ProductCard({ product, index = 0 }) {
 
           {/* Product image */}
           <div style={{
-            height: 'clamp(160px, 25vw, 200px)',
+            height: 'clamp(140px, 25vw, 200px)',
             overflow: 'hidden',
             background: '#fdf6f0',
           }}>
@@ -117,23 +122,23 @@ export default function ProductCard({ product, index = 0 }) {
           </div>
 
           {/* Info */}
-          <div style={{ padding: 'clamp(12px, 1.5vw, 16px)' }}>
+          <div style={{ padding: 'clamp(10px, 1.5vw, 16px)' }}>
             {/* Category */}
             <div style={{
-              fontSize: 'clamp(10px, 1.2vw, 11px)',
+              fontSize: 'clamp(9px, 1.2vw, 11px)',
               color: '#b76e79',
               fontWeight: 600, textTransform: 'uppercase',
-              letterSpacing: '1px', marginBottom: '4px',
+              letterSpacing: '1px', marginBottom: '3px',
             }}>
               {product.category}
             </div>
 
             {/* Name */}
             <div style={{
-              fontSize: 'clamp(13px, 1.5vw, 15px)',
+              fontSize: 'clamp(12px, 1.5vw, 15px)',
               fontWeight: 700,
               color: '#3d1f25',
-              marginBottom: '6px',
+              marginBottom: '4px',
               lineHeight: 1.35,
               display: '-webkit-box',
               WebkitLineClamp: 2,
@@ -146,19 +151,19 @@ export default function ProductCard({ product, index = 0 }) {
             {/* Stars */}
             <div style={{
               display: 'flex', alignItems: 'center', gap: '4px',
-              marginBottom: 'clamp(8px, 1vw, 12px)',
+              marginBottom: 'clamp(6px, 1vw, 12px)',
             }}>
               <div style={{ display: 'flex', gap: '1px' }}>
                 {[...Array(5)].map((_, i) => (
                   <Star
                     key={i}
-                    size={12}
+                    size={11}
                     fill={i < Math.floor(product.rating || 4.5) ? '#f5a623' : '#e8e8e8'}
                     color={i < Math.floor(product.rating || 4.5) ? '#f5a623' : '#e8e8e8'}
                   />
                 ))}
               </div>
-              <span style={{ fontSize: 'clamp(10px, 1.2vw, 12px)', color: '#8c6468', fontWeight: 600 }}>
+              <span style={{ fontSize: 'clamp(9px, 1.2vw, 12px)', color: '#8c6468', fontWeight: 600 }}>
                 {product.rating || '4.5'}
               </span>
             </div>
@@ -166,11 +171,11 @@ export default function ProductCard({ product, index = 0 }) {
             {/* Price */}
             <div style={{
               display: 'flex', alignItems: 'center', gap: '6px',
-              marginBottom: 'clamp(10px, 1.5vw, 14px)',
+              marginBottom: 'clamp(8px, 1.5vw, 14px)',
               flexWrap: 'wrap',
             }}>
               <span style={{
-                fontSize: 'clamp(15px, 1.8vw, 17px)',
+                fontSize: 'clamp(14px, 1.8vw, 17px)',
                 fontWeight: 800,
                 color: '#3d1f25',
               }}>
@@ -178,7 +183,7 @@ export default function ProductCard({ product, index = 0 }) {
               </span>
               {product.originalPrice && (
                 <span style={{
-                  fontSize: 'clamp(11px, 1.2vw, 13px)',
+                  fontSize: 'clamp(10px, 1.2vw, 13px)',
                   color: '#bbb',
                   textDecoration: 'line-through',
                 }}>
@@ -201,8 +206,8 @@ export default function ProductCard({ product, index = 0 }) {
                   ? '#c2748a'
                   : 'linear-gradient(135deg, #b76e79, #c2748a)',
                 color: '#fff', border: 'none', borderRadius: '50px',
-                padding: 'clamp(10px, 1.2vw, 12px) clamp(12px, 1.5vw, 16px)',
-                fontSize: 'clamp(11px, 1.2vw, 13px)',
+                padding: 'clamp(8px, 1.2vw, 12px) clamp(10px, 1.5vw, 16px)',
+                fontSize: 'clamp(10px, 1.2vw, 13px)',
                 fontWeight: 700,
                 cursor: 'pointer',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -210,7 +215,7 @@ export default function ProductCard({ product, index = 0 }) {
                 transition: 'background 0.2s',
               }}
             >
-              <ShoppingCart size={15} />
+              <ShoppingCart size={14} />
               {adding ? 'Added! ✓' : 'Add to Cart'}
             </motion.button>
           </div>

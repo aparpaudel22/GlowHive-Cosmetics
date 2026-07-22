@@ -58,7 +58,7 @@ export default function FeaturedProducts() {
           </Link>
         </motion.div>
 
-        {/* Responsive product grid - 4 columns on desktop, 2 on tablet, 1 on mobile */}
+        {/* Responsive product grid */}
         <div style={{
           display: 'grid',
           gridTemplateColumns: '1fr',
@@ -66,8 +66,8 @@ export default function FeaturedProducts() {
         }}>
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))',
-            gap: 'clamp(16px, 2vw, 24px)',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 160px), 1fr))',
+            gap: 'clamp(14px, 2vw, 24px)',
           }}>
             {featured.map((product, i) => (
               <ProductCard key={product.id} product={product} index={i} />

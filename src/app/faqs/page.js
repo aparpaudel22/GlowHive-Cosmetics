@@ -31,125 +31,24 @@ const FAQ_CATEGORIES = [
 ];
 
 const FAQS = [
-  // Orders
-  {
-    id: 1,
-    category: 'orders',
-    question: 'How do I track my order?',
-    answer: 'You can track your order by logging into your account and visiting the "My Orders" section. Click on the specific order to see real-time tracking updates. You\'ll also receive email notifications with tracking information once your order ships.',
-  },
-  {
-    id: 2,
-    category: 'orders',
-    question: 'Can I modify or cancel my order?',
-    answer: 'Orders can be modified or cancelled within 1 hour of placing them. After that, the order enters our processing system and cannot be changed. To request a cancellation, please contact our support team immediately at support@glowhive.com or call +977 984-1234567.',
-  },
-  {
-    id: 3,
-    category: 'orders',
-    question: 'How do I know my order has been confirmed?',
-    answer: 'You\'ll receive a confirmation email with your order details immediately after placing your order. You can also check the status of your order in the "My Orders" section of your account.',
-  },
-
-  // Shipping
-  {
-    id: 4,
-    category: 'shipping',
-    question: 'How long does shipping take?',
-    answer: 'We offer fast delivery across Nepal. Standard shipping takes 3-5 business days, while express shipping delivers in 1-2 business days. Delivery times may vary based on your location and any ongoing promotions.',
-  },
-  {
-    id: 5,
-    category: 'shipping',
-    question: 'Do you offer free shipping?',
-    answer: 'Yes! We offer free shipping on all orders over Rs. 5000. For orders below this amount, a flat shipping fee of Rs. 200 applies. Use code GLOWHIVE15 for additional discounts on your order.',
-  },
-  {
-    id: 6,
-    category: 'shipping',
-    question: 'Do you ship internationally?',
-    answer: 'Currently, we ship only within Nepal. We\'re working on expanding our delivery network to serve our international customers soon. Stay tuned for updates!',
-  },
-
-  // Returns & Refunds
-  {
-    id: 7,
-    category: 'returns',
-    question: 'What is your return policy?',
-    answer: 'We offer a 30-day return policy on all products. Items must be unused, in their original packaging, and in the same condition as received. To initiate a return, go to your orders page and click "Request Return" on the eligible order.',
-  },
-  {
-    id: 8,
-    category: 'returns',
-    question: 'How do I request a return?',
-    answer: 'Visit your "My Orders" page, select the order with the item you wish to return, and click "Request Return". Follow the simple steps to select a reason and submit your request. Our team will review and approve your return within 2 business days.',
-  },
-  {
-    id: 9,
-    category: 'returns',
-    question: 'How do I get a refund?',
-    answer: 'Once your return is approved and we receive the item, refunds are processed within 3-5 business days. Refunds are credited to your original payment method (eSewa, Khalti, or Bank Transfer). For Cash on Delivery orders, no refund is needed as no payment was taken.',
-  },
-
-  // Payment
-  {
-    id: 10,
-    category: 'payment',
-    question: 'What payment methods do you accept?',
-    answer: 'We accept multiple payment methods for your convenience: Cash on Delivery (COD), eSewa Wallet, Khalti Wallet, and Bank Transfer. Choose the option that works best for you during checkout.',
-  },
-  {
-    id: 11,
-    category: 'payment',
-    question: 'Is Cash on Delivery available?',
-    answer: 'Yes, Cash on Delivery (COD) is available for all orders. Simply select "Cash on Delivery" during checkout and pay when you receive your package. No advance payment is required.',
-  },
-  {
-    id: 12,
-    category: 'payment',
-    question: 'Is my payment secure?',
-    answer: 'Absolutely! We use industry-standard encryption to protect your payment information. All transactions are processed securely through trusted payment gateways. Your financial information is never stored on our servers.',
-  },
-
-  // Account
-  {
-    id: 13,
-    category: 'account',
-    question: 'How do I create an account?',
-    answer: 'Click the "Sign In" button in the top right corner of our website, then select "Register" to create your account. You can also sign up with Google for a faster registration process. Fill in your name, email, and phone number to get started.',
-  },
-  {
-    id: 14,
-    category: 'account',
-    question: 'How do I reset my password?',
-    answer: 'On the login page, click "Forgot Password?" and enter your registered email address. We\'ll send you a link to reset your password. Follow the instructions in the email to create a new secure password.',
-  },
-  {
-    id: 15,
-    category: 'account',
-    question: 'Can I delete my account?',
-    answer: 'Yes, you can delete your account from the "Account" page. Scroll down and click "Delete Account". You\'ll need to type "DELETE" to confirm. This action is permanent and all your data will be removed from our system.',
-  },
-
-  // General
-  {
-    id: 16,
-    category: 'all',
-    question: 'How do I contact customer support?',
-    answer: 'You can reach our customer support team through multiple channels: Email us at support@glowhive.com, Call us at +977 984-1234567 (9 AM to 9 PM, 7 days a week), or Use the chat button in the bottom right corner of our website for instant assistance.',
-  },
-  {
-    id: 17,
-    category: 'all',
-    question: 'Can I get help with my order?',
-    answer: 'Yes! Our support team is here to help with any issues related to your order. Whether you need assistance with tracking, returns, or product information, just reach out to us and we\'ll resolve your query within 24 hours.',
-  },
-  {
-    id: 18,
-    category: 'all',
-    question: 'Are your products authentic and safe?',
-    answer: '100% yes! We source all our products directly from authorized brands and distributors. Our products are dermatologically tested and safe for all skin types. We stand behind the quality of every product we sell on GlowHive.',
-  },
+  { id: 1, category: 'orders', question: 'How do I track my order?', answer: 'You can track your order by logging into your account and visiting the "My Orders" section. Click on the specific order to see real-time tracking updates. You\'ll also receive email notifications with tracking information once your order ships.' },
+  { id: 2, category: 'orders', question: 'Can I modify or cancel my order?', answer: 'Orders can be modified or cancelled within 1 hour of placing them. After that, the order enters our processing system and cannot be changed. To request a cancellation, please contact our support team immediately at support@glowhive.com or call +977 984-1234567.' },
+  { id: 3, category: 'orders', question: 'How do I know my order has been confirmed?', answer: 'You\'ll receive a confirmation email with your order details immediately after placing your order. You can also check the status of your order in the "My Orders" section of your account.' },
+  { id: 4, category: 'shipping', question: 'How long does shipping take?', answer: 'We offer fast delivery across Nepal. Standard shipping takes 3-5 business days, while express shipping delivers in 1-2 business days. Delivery times may vary based on your location and any ongoing promotions.' },
+  { id: 5, category: 'shipping', question: 'Do you offer free shipping?', answer: 'Yes! We offer free shipping on all orders over Rs. 5000. For orders below this amount, a flat shipping fee of Rs. 200 applies. Use code GLOWHIVE15 for additional discounts on your order.' },
+  { id: 6, category: 'shipping', question: 'Do you ship internationally?', answer: 'Currently, we ship only within Nepal. We\'re working on expanding our delivery network to serve our international customers soon. Stay tuned for updates!' },
+  { id: 7, category: 'returns', question: 'What is your return policy?', answer: 'We offer a 30-day return policy on all products. Items must be unused, in their original packaging, and in the same condition as received. To initiate a return, go to your orders page and click "Request Return" on the eligible order.' },
+  { id: 8, category: 'returns', question: 'How do I request a return?', answer: 'Visit your "My Orders" page, select the order with the item you wish to return, and click "Request Return". Follow the simple steps to select a reason and submit your request. Our team will review and approve your return within 2 business days.' },
+  { id: 9, category: 'returns', question: 'How do I get a refund?', answer: 'Once your return is approved and we receive the item, refunds are processed within 3-5 business days. Refunds are credited to your original payment method (eSewa, Khalti, or Bank Transfer). For Cash on Delivery orders, no refund is needed as no payment was taken.' },
+  { id: 10, category: 'payment', question: 'What payment methods do you accept?', answer: 'We accept multiple payment methods for your convenience: Cash on Delivery (COD), eSewa Wallet, Khalti Wallet, and Bank Transfer. Choose the option that works best for you during checkout.' },
+  { id: 11, category: 'payment', question: 'Is Cash on Delivery available?', answer: 'Yes, Cash on Delivery (COD) is available for all orders. Simply select "Cash on Delivery" during checkout and pay when you receive your package. No advance payment is required.' },
+  { id: 12, category: 'payment', question: 'Is my payment secure?', answer: 'Absolutely! We use industry-standard encryption to protect your payment information. All transactions are processed securely through trusted payment gateways. Your financial information is never stored on our servers.' },
+  { id: 13, category: 'account', question: 'How do I create an account?', answer: 'Click the "Sign In" button in the top right corner of our website, then select "Register" to create your account. You can also sign up with Google for a faster registration process. Fill in your name, email, and phone number to get started.' },
+  { id: 14, category: 'account', question: 'How do I reset my password?', answer: 'On the login page, click "Forgot Password?" and enter your registered email address. We\'ll send you a link to reset your password. Follow the instructions in the email to create a new secure password.' },
+  { id: 15, category: 'account', question: 'Can I delete my account?', answer: 'Yes, you can delete your account from the "Account" page. Scroll down and click "Delete Account". You\'ll need to type "DELETE" to confirm. This action is permanent and all your data will be removed from our system.' },
+  { id: 16, category: 'all', question: 'How do I contact customer support?', answer: 'You can reach our customer support team through multiple channels: Email us at support@glowhive.com, Call us at +977 984-1234567 (9 AM to 9 PM, 7 days a week), or Use the chat button in the bottom right corner of our website for instant assistance.' },
+  { id: 17, category: 'all', question: 'Can I get help with my order?', answer: 'Yes! Our support team is here to help with any issues related to your order. Whether you need assistance with tracking, returns, or product information, just reach out to us and we\'ll resolve your query within 24 hours.' },
+  { id: 18, category: 'all', question: 'Are your products authentic and safe?', answer: '100% yes! We source all our products directly from authorized brands and distributors. Our products are dermatologically tested and safe for all skin types. We stand behind the quality of every product we sell on GlowHive.' },
 ];
 
 export default function FAQsPage() {
@@ -175,7 +74,7 @@ export default function FAQsPage() {
         {/* ─── Hero Section ─── */}
         <div style={{
           background: 'linear-gradient(135deg, #3d1f25 0%, #b76e79 60%, #e8a4b0 100%)',
-          padding: '60px 28px 50px',
+          padding: 'clamp(40px, 8vw, 60px) clamp(16px, 4vw, 28px) clamp(40px, 6vw, 50px)',
           textAlign: 'center',
           position: 'relative',
           overflow: 'hidden',
@@ -192,7 +91,7 @@ export default function FAQsPage() {
               <Sparkles size={18} color="rgba(255,255,255,0.8)" />
             </div>
             <h1 style={{
-              fontSize: '44px',
+              fontSize: 'clamp(28px, 6vw, 44px)',
               fontWeight: 800,
               color: '#fff',
               fontFamily: "'Playfair Display', Georgia, serif",
@@ -201,7 +100,7 @@ export default function FAQsPage() {
               Frequently Asked Questions
             </h1>
             <p style={{
-              fontSize: '16px',
+              fontSize: 'clamp(14px, 2vw, 16px)',
               color: 'rgba(255,255,255,0.75)',
               maxWidth: '480px',
               margin: '0 auto 24px',
@@ -234,9 +133,10 @@ export default function FAQsPage() {
                   border: 'none',
                   outline: 'none',
                   color: '#fff',
-                  fontSize: '14px',
+                  fontSize: 'clamp(13px, 1.2vw, 14px)',
                   fontFamily: "'Inter', sans-serif",
                   padding: '10px 0',
+                  minWidth: '80px',
                 }}
                 onFocus={(e) => e.currentTarget.parentElement.style.borderColor = 'rgba(255,255,255,0.6)'}
                 onBlur={(e) => e.currentTarget.parentElement.style.borderColor = 'rgba(255,255,255,0.2)'}
@@ -249,10 +149,11 @@ export default function FAQsPage() {
                   border: 'none',
                   borderRadius: '50px',
                   color: '#fff',
-                  fontSize: '13px',
+                  fontSize: 'clamp(11px, 1vw, 13px)',
                   fontWeight: 600,
                   cursor: 'pointer',
                   display: searchQuery ? 'block' : 'none',
+                  flexShrink: 0,
                 }}
               >
                 Clear
@@ -262,7 +163,7 @@ export default function FAQsPage() {
         </div>
 
         {/* ─── Main Content ─── */}
-        <div style={{ maxWidth: '820px', margin: '0 auto', padding: '32px 20px 60px' }}>
+        <div style={{ maxWidth: '820px', margin: '0 auto', padding: 'clamp(24px, 4vw, 32px) clamp(16px, 3vw, 20px) 60px' }}>
 
           {/* ─── Category Tabs ─── */}
           <div style={{
@@ -272,6 +173,7 @@ export default function FAQsPage() {
             paddingBottom: '16px',
             marginBottom: '24px',
             scrollbarWidth: 'none',
+            WebkitOverflowScrolling: 'touch',
             flexWrap: 'nowrap',
           }}>
             {FAQ_CATEGORIES.map(cat => (
@@ -287,7 +189,7 @@ export default function FAQsPage() {
                   whiteSpace: 'nowrap',
                   padding: '8px 16px',
                   borderRadius: '50px',
-                  fontSize: '13px',
+                  fontSize: 'clamp(12px, 1.1vw, 13px)',
                   fontWeight: activeCategory === cat.id ? 700 : 600,
                   cursor: 'pointer',
                   border: `1.5px solid ${activeCategory === cat.id ? '#b76e79' : '#fde8ec'}`,
@@ -309,8 +211,10 @@ export default function FAQsPage() {
             justifyContent: 'space-between',
             alignItems: 'center',
             marginBottom: '20px',
+            flexWrap: 'wrap',
+            gap: '8px',
           }}>
-            <span style={{ fontSize: '13px', color: '#8c6468' }}>
+            <span style={{ fontSize: 'clamp(12px, 1.1vw, 13px)', color: '#8c6468' }}>
               {filteredFAQs.length} {filteredFAQs.length === 1 ? 'question' : 'questions'}
             </span>
             {searchQuery && (
@@ -338,7 +242,7 @@ export default function FAQsPage() {
                 animate={{ opacity: 1, y: 0 }}
                 style={{
                   textAlign: 'center',
-                  padding: '60px 20px',
+                  padding: 'clamp(40px, 8vw, 60px) 20px',
                   background: '#fff',
                   borderRadius: '20px',
                   border: '1px solid #fde8ec',
@@ -378,8 +282,8 @@ export default function FAQsPage() {
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'space-between',
-                        gap: '16px',
-                        padding: '18px 20px',
+                        gap: '12px',
+                        padding: 'clamp(14px, 2.5vw, 18px) clamp(14px, 2.5vw, 20px)',
                         width: '100%',
                         background: 'transparent',
                         border: 'none',
@@ -388,7 +292,7 @@ export default function FAQsPage() {
                         fontFamily: "'Inter', sans-serif",
                       }}
                     >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
+                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', flex: 1 }}>
                         <div style={{
                           width: '32px',
                           height: '32px',
@@ -398,11 +302,12 @@ export default function FAQsPage() {
                           alignItems: 'center',
                           justifyContent: 'center',
                           flexShrink: 0,
+                          marginTop: '2px',
                         }}>
                           <HelpCircle size={16} color="#b76e79" />
                         </div>
                         <span style={{
-                          fontSize: '15px',
+                          fontSize: 'clamp(14px, 1.3vw, 15px)',
                           fontWeight: openFAQ === faq.id ? 700 : 600,
                           color: '#3d1f25',
                           lineHeight: 1.5,
@@ -436,7 +341,7 @@ export default function FAQsPage() {
                           style={{ overflow: 'hidden' }}
                         >
                           <div style={{
-                            padding: '0 20px 20px 20px',
+                            padding: '0 clamp(14px, 2.5vw, 20px) clamp(16px, 2.5vw, 20px) clamp(14px, 2.5vw, 20px)',
                             borderTop: '1px solid #fde8ec',
                             paddingTop: '16px',
                           }}>
@@ -454,7 +359,7 @@ export default function FAQsPage() {
                                 flexShrink: 0,
                               }} />
                               <p style={{
-                                fontSize: '14px',
+                                fontSize: 'clamp(13px, 1.1vw, 14px)',
                                 color: '#5a3a40',
                                 lineHeight: 1.8,
                                 margin: 0,
@@ -482,7 +387,7 @@ export default function FAQsPage() {
               background: 'linear-gradient(135deg, #fdf0f3, #fff8f5)',
               borderRadius: '20px',
               border: '1px solid #fde8ec',
-              padding: '32px',
+              padding: 'clamp(24px, 4vw, 32px)',
               textAlign: 'center',
             }}
           >
@@ -499,7 +404,7 @@ export default function FAQsPage() {
               <MessageCircle size={28} color="#b76e79" />
             </div>
             <h3 style={{
-              fontSize: '20px',
+              fontSize: 'clamp(18px, 2.5vw, 20px)',
               fontWeight: 800,
               color: '#3d1f25',
               fontFamily: "'Playfair Display', Georgia, serif",
@@ -508,7 +413,7 @@ export default function FAQsPage() {
               Still Need Help?
             </h3>
             <p style={{
-              fontSize: '14px',
+              fontSize: 'clamp(13px, 1.1vw, 14px)',
               color: '#8c6468',
               maxWidth: '400px',
               margin: '0 auto 20px',
@@ -533,7 +438,7 @@ export default function FAQsPage() {
                   color: '#fff',
                   borderRadius: '50px',
                   textDecoration: 'none',
-                  fontSize: '14px',
+                  fontSize: 'clamp(13px, 1.1vw, 14px)',
                   fontWeight: 700,
                   transition: 'all 0.2s',
                 }}
@@ -553,7 +458,7 @@ export default function FAQsPage() {
                   color: '#b76e79',
                   borderRadius: '50px',
                   textDecoration: 'none',
-                  fontSize: '14px',
+                  fontSize: 'clamp(13px, 1.1vw, 14px)',
                   fontWeight: 700,
                   border: '1.5px solid #b76e79',
                   transition: 'all 0.2s',
@@ -569,13 +474,17 @@ export default function FAQsPage() {
               fontSize: '12px',
               color: '#b76e79',
             }}>
-              
               Available 9 AM - 9 PM, 7 days a week
             </div>
           </motion.div>
         </div>
       </div>
       <Footer />
+      <style jsx>{`
+        ::-webkit-scrollbar {
+          display: none;
+        }
+      `}</style>
     </>
   );
 }

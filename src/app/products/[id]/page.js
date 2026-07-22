@@ -22,9 +22,9 @@ export default function ProductDetailPage() {
   if (!product) {
     return (
       <div style={{ minHeight: '100vh', background: '#fff8f5' }}>
-        <div style={{ textAlign: 'center', padding: '120px 28px' }}>
+        <div style={{ textAlign: 'center', padding: 'clamp(60px, 12vw, 120px) clamp(16px, 3vw, 28px)' }}>
           <p style={{ fontSize: '64px' }}>😔</p>
-          <h2 style={{ fontSize: '24px', fontWeight: 700, color: '#3d1f25', margin: '16px 0 8px' }}>
+          <h2 style={{ fontSize: 'clamp(20px, 3vw, 24px)', fontWeight: 700, color: '#3d1f25', margin: '16px 0 8px' }}>
             Product not found
           </h2>
           <Link href="/products" style={{ color: '#b76e79', fontWeight: 600, textDecoration: 'none' }}>
@@ -54,15 +54,22 @@ export default function ProductDetailPage() {
   return (
     <div style={{ minHeight: '100vh', background: '#fff8f5' }}>
 
-      <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '28px' }}>
+      <div style={{ maxWidth: '1280px', margin: '0 auto', padding: 'clamp(16px, 3vw, 28px)' }}>
 
         {/* Breadcrumb */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '28px', fontSize: '13px' }}>
+        <div style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: '8px', 
+          marginBottom: 'clamp(20px, 4vw, 28px)', 
+          fontSize: 'clamp(12px, 1.1vw, 13px)',
+          flexWrap: 'wrap',
+        }}>
           <Link href="/" style={{ color: '#9ca3af', textDecoration: 'none' }}>Home</Link>
           <span style={{ color: '#d1d5db' }}>/</span>
           <Link href="/products" style={{ color: '#9ca3af', textDecoration: 'none' }}>Shop</Link>
           <span style={{ color: '#d1d5db' }}>/</span>
-          <span style={{ color: '#3d1f25', fontWeight: 500 }}>{product.name}</span>
+          <span style={{ color: '#3d1f25', fontWeight: 500, wordBreak: 'break-word' }}>{product.name}</span>
         </div>
 
         {/* Back button */}
@@ -71,24 +78,31 @@ export default function ProductDetailPage() {
           style={{
             display: 'flex', alignItems: 'center', gap: '6px',
             background: 'none', border: 'none', cursor: 'pointer',
-            color: '#b76e79', fontSize: '14px', fontWeight: 600,
-            marginBottom: '24px', padding: 0,
+            color: '#b76e79', fontSize: 'clamp(13px, 1.1vw, 14px)', fontWeight: 600,
+            marginBottom: 'clamp(16px, 3vw, 24px)', padding: 0,
           }}
         >
           <ArrowLeft size={16} /> Back
         </button>
 
-        {/* Main grid */}
+        {/* Main grid - responsive */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: '1fr 1fr',
-          gap: '48px',
+          gridTemplateColumns: window.innerWidth < 768 ? '1fr' : '1fr 1fr',
+          gap: window.innerWidth < 768 ? '24px' : '48px',
           alignItems: 'start',
-          marginBottom: '64px',
+          marginBottom: 'clamp(40px, 6vw, 64px)',
         }}>
 
           {/* ── Left: Image ── */}
-          <div style={{ position: 'relative', borderRadius: '24px', overflow: 'hidden', background: '#fdf6f0', aspectRatio: '1 / 1' }}>
+          <div style={{ 
+            position: 'relative', 
+            borderRadius: '24px', 
+            overflow: 'hidden', 
+            background: '#fdf6f0', 
+            aspectRatio: '1 / 1',
+            maxWidth: window.innerWidth < 768 ? '100%' : '100%',
+          }}>
             <img
               src={product.image}
               alt={product.name}
@@ -98,7 +112,7 @@ export default function ProductDetailPage() {
               <span style={{
                 position: 'absolute', top: '16px', left: '16px',
                 background: '#b76e79', color: '#fff',
-                fontSize: '12px', fontWeight: 700,
+                fontSize: 'clamp(11px, 1vw, 12px)', fontWeight: 700,
                 padding: '5px 14px', borderRadius: '999px',
               }}>
                 {product.badge}
@@ -108,7 +122,7 @@ export default function ProductDetailPage() {
               <span style={{
                 position: 'absolute', top: '16px', right: '16px',
                 background: '#22c55e', color: '#fff',
-                fontSize: '12px', fontWeight: 700,
+                fontSize: 'clamp(11px, 1vw, 12px)', fontWeight: 700,
                 padding: '5px 14px', borderRadius: '999px',
               }}>
                 {discount}% OFF
@@ -120,7 +134,7 @@ export default function ProductDetailPage() {
           <div>
             {/* Category */}
             <p style={{
-              fontSize: '11px', fontWeight: 700, color: '#b76e79',
+              fontSize: 'clamp(10px, 1vw, 11px)', fontWeight: 700, color: '#b76e79',
               letterSpacing: '2.5px', textTransform: 'uppercase', marginBottom: '10px',
             }}>
               {product.category.replace('-', ' ')}
@@ -128,7 +142,7 @@ export default function ProductDetailPage() {
 
             {/* Name */}
             <h1 style={{
-              fontSize: '30px', fontWeight: 800, color: '#3d1f25',
+              fontSize: 'clamp(24px, 4vw, 30px)', fontWeight: 800, color: '#3d1f25',
               fontFamily: "'Playfair Display', Georgia, serif",
               lineHeight: 1.3, marginBottom: '16px',
             }}>
@@ -136,7 +150,7 @@ export default function ProductDetailPage() {
             </h1>
 
             {/* Rating */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px', flexWrap: 'wrap' }}>
               <div style={{ display: 'flex', gap: '2px' }}>
                 {[1,2,3,4,5].map(s => (
                   <Star
@@ -151,46 +165,53 @@ export default function ProductDetailPage() {
             </div>
 
             {/* Price */}
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px', marginBottom: '28px' }}>
-              <span style={{ fontSize: '32px', fontWeight: 800, color: '#3d1f25' }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px', marginBottom: '28px', flexWrap: 'wrap' }}>
+              <span style={{ fontSize: 'clamp(26px, 4vw, 32px)', fontWeight: 800, color: '#3d1f25' }}>
                 Rs. {product.price.toLocaleString()}
               </span>
               {product.originalPrice > product.price && (
-                <span style={{ fontSize: '18px', color: '#9ca3af', textDecoration: 'line-through' }}>
+                <span style={{ fontSize: 'clamp(16px, 2vw, 18px)', color: '#9ca3af', textDecoration: 'line-through' }}>
                   Rs. {product.originalPrice.toLocaleString()}
                 </span>
               )}
               {discount > 0 && (
-                <span style={{ fontSize: '13px', fontWeight: 700, color: '#22c55e' }}>
+                <span style={{ fontSize: 'clamp(12px, 1.1vw, 13px)', fontWeight: 700, color: '#22c55e' }}>
                   Save Rs. {(product.originalPrice - product.price).toLocaleString()}
                 </span>
               )}
             </div>
 
             {/* Qty + Add to Cart + Wishlist */}
-            <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap' }}>
+            <div style={{ 
+              display: 'flex', 
+              gap: '12px', 
+              alignItems: 'center', 
+              marginBottom: '24px', 
+              flexWrap: 'wrap' 
+            }}>
 
               {/* Qty */}
               <div style={{
                 display: 'flex', alignItems: 'center',
                 border: '1.5px solid #fde8ec', borderRadius: '12px', overflow: 'hidden',
+                flexShrink: 0,
               }}>
                 <button
                   onClick={() => setQty(q => Math.max(1, q - 1))}
                   style={{
                     background: 'none', border: 'none',
-                    width: '42px', height: '50px',
+                    width: 'clamp(38px, 5vw, 42px)', height: 'clamp(44px, 5vw, 50px)',
                     cursor: 'pointer', fontSize: '20px', color: '#3d1f25',
                   }}
                 >−</button>
-                <span style={{ width: '40px', textAlign: 'center', fontWeight: 700, color: '#3d1f25', fontSize: '16px' }}>
+                <span style={{ width: 'clamp(32px, 4vw, 40px)', textAlign: 'center', fontWeight: 700, color: '#3d1f25', fontSize: '16px' }}>
                   {qty}
                 </span>
                 <button
                   onClick={() => setQty(q => q + 1)}
                   style={{
                     background: 'none', border: 'none',
-                    width: '42px', height: '50px',
+                    width: 'clamp(38px, 5vw, 42px)', height: 'clamp(44px, 5vw, 50px)',
                     cursor: 'pointer', fontSize: '20px', color: '#3d1f25',
                   }}
                 >+</button>
@@ -203,11 +224,11 @@ export default function ProductDetailPage() {
                   flex: 1,
                   background: added ? '#22c55e' : '#b76e79',
                   border: 'none', borderRadius: '12px', color: '#fff',
-                  fontSize: '15px', fontWeight: 700,
-                  padding: '14px 24px', cursor: 'pointer',
+                  fontSize: 'clamp(13px, 1.2vw, 15px)', fontWeight: 700,
+                  padding: 'clamp(12px, 1.5vw, 14px) clamp(16px, 2vw, 24px)', cursor: 'pointer',
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
                   transition: 'background 0.25s',
-                  minWidth: '160px',
+                  minWidth: 'clamp(120px, 15vw, 160px)',
                 }}
               >
                 {added ? <Check size={18} /> : <ShoppingBag size={18} />}
@@ -220,18 +241,24 @@ export default function ProductDetailPage() {
                 style={{
                   background: wished ? '#fde8ec' : '#fff',
                   border: `1.5px solid ${wished ? '#b76e79' : '#fde8ec'}`,
-                  borderRadius: '12px', width: '52px', height: '52px',
+                  borderRadius: '12px', width: 'clamp(46px, 5vw, 52px)', height: 'clamp(46px, 5vw, 52px)',
                   cursor: 'pointer',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   transition: 'all 0.2s',
+                  flexShrink: 0,
                 }}
               >
                 <Heart size={20} fill={wished ? '#b76e79' : 'none'} color="#b76e79" />
               </button>
             </div>
 
-            {/* Trust badges */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '28px' }}>
+            {/* Trust badges - responsive grid */}
+            <div style={{ 
+              display: 'grid', 
+              gridTemplateColumns: window.innerWidth < 480 ? '1fr' : '1fr 1fr', 
+              gap: '10px', 
+              marginBottom: '28px' 
+            }}>
               {[
                 { icon: <Truck size={14} color="#b76e79" />,    text: 'Free delivery on Rs.5000+' },
                 { icon: <RotateCcw size={14} color="#b76e79" />, text: '7-day easy returns'        },
@@ -243,7 +270,7 @@ export default function ProductDetailPage() {
                   background: '#fdf6f0', borderRadius: '10px', padding: '10px 12px',
                 }}>
                   {item.icon}
-                  <span style={{ fontSize: '12px', color: '#3d1f25', fontWeight: 500 }}>{item.text}</span>
+                  <span style={{ fontSize: 'clamp(11px, 1vw, 12px)', color: '#3d1f25', fontWeight: 500 }}>{item.text}</span>
                 </div>
               ))}
             </div>
@@ -260,7 +287,7 @@ export default function ProductDetailPage() {
                       color: activeTab === tab ? '#fff' : '#8c6468',
                       border: 'none', borderRadius: '8px',
                       padding: '8px 16px',
-                      fontSize: '13px', fontWeight: 600,
+                      fontSize: 'clamp(12px, 1.1vw, 13px)', fontWeight: 600,
                       cursor: 'pointer', textTransform: 'capitalize',
                       transition: 'all 0.2s',
                     }}
@@ -269,7 +296,7 @@ export default function ProductDetailPage() {
                   </button>
                 ))}
               </div>
-              <p style={{ fontSize: '14px', color: '#6b7280', lineHeight: 1.8 }}>
+              <p style={{ fontSize: 'clamp(13px, 1.1vw, 14px)', color: '#6b7280', lineHeight: 1.8 }}>
                 {tabContent[activeTab]}
               </p>
             </div>
@@ -280,7 +307,7 @@ export default function ProductDetailPage() {
         {related.length > 0 && (
           <div>
             <h2 style={{
-              fontSize: '24px', fontWeight: 800, color: '#3d1f25',
+              fontSize: 'clamp(20px, 3vw, 24px)', fontWeight: 800, color: '#3d1f25',
               fontFamily: "'Playfair Display', Georgia, serif",
               marginBottom: '24px',
             }}>
@@ -288,7 +315,7 @@ export default function ProductDetailPage() {
             </h2>
             <div style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
+              gridTemplateColumns: window.innerWidth < 480 ? '1fr' : window.innerWidth < 640 ? 'repeat(2, 1fr)' : 'repeat(auto-fill, minmax(200px, 1fr))',
               gap: '20px',
             }}>
               {related.map(p => (
@@ -298,6 +325,9 @@ export default function ProductDetailPage() {
                       background: '#fff', border: '1px solid #fde8ec',
                       borderRadius: '16px', overflow: 'hidden',
                       transition: 'transform 0.2s, box-shadow 0.2s',
+                      height: '100%',
+                      display: 'flex',
+                      flexDirection: 'column',
                     }}
                     onMouseEnter={e => {
                       e.currentTarget.style.transform = 'translateY(-3px)';
@@ -308,13 +338,13 @@ export default function ProductDetailPage() {
                       e.currentTarget.style.boxShadow = 'none';
                     }}
                   >
-                    <div style={{ height: '160px', background: '#fdf6f0' }}>
-                      <img src={p.image} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <div style={{ paddingBottom: '100%', position: 'relative', background: '#fdf6f0' }}>
+                      <img src={p.image} alt={p.name} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
                     </div>
-                    <div style={{ padding: '14px' }}>
-                      <p style={{ fontSize: '13px', fontWeight: 600, color: '#3d1f25', marginBottom: '6px', lineHeight: 1.4 }}>{p.name}</p>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <span style={{ fontSize: '15px', fontWeight: 800, color: '#b76e79' }}>Rs. {p.price.toLocaleString()}</span>
+                    <div style={{ padding: '14px', flex: 1, display: 'flex', flexDirection: 'column' }}>
+                      <p style={{ fontSize: 'clamp(12px, 1.1vw, 13px)', fontWeight: 600, color: '#3d1f25', marginBottom: '6px', lineHeight: 1.4, flex: 1 }}>{p.name}</p>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '4px' }}>
+                        <span style={{ fontSize: 'clamp(14px, 1.2vw, 15px)', fontWeight: 800, color: '#b76e79' }}>Rs. {p.price.toLocaleString()}</span>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
                           <Star size={11} fill="#f59e0b" color="#f59e0b" />
                           <span style={{ fontSize: '12px', fontWeight: 600, color: '#3d1f25' }}>{p.rating}</span>

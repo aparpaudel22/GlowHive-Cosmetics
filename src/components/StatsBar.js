@@ -18,10 +18,14 @@ export default function StatsBar() {
       borderBottom: '1px solid #fde8ec',
     }}>
       <div style={{
-        maxWidth: '1280px', margin: '0 auto', padding: '0 28px',
+        maxWidth: '1280px', 
+        margin: '0 auto', 
+        padding: '0 clamp(12px, 3vw, 28px)',
         display: 'grid',
         gridTemplateColumns: 'repeat(4, 1fr)',
-      }}>
+      }}
+      className="stats-grid"
+      >
         {stats.map((s, i) => (
           <motion.div
             key={s.label}
@@ -31,7 +35,7 @@ export default function StatsBar() {
             transition={{ duration: 0.45, delay: i * 0.1 }}
             whileHover={{ background: '#fdf6f0' }}
             style={{
-              padding: '32px 16px',
+              padding: 'clamp(20px, 4vh, 32px) clamp(8px, 2vw, 16px)',
               textAlign: 'center',
               borderRight: i < stats.length - 1 ? '1px solid #fde8ec' : 'none',
               cursor: 'default',
@@ -40,7 +44,12 @@ export default function StatsBar() {
           >
             {s.isRating ? (
               <>
-                <div style={{ display: 'flex', justifyContent: 'center', gap: '3px', marginBottom: '8px' }}>
+                <div style={{ 
+                  display: 'flex', 
+                  justifyContent: 'center', 
+                  gap: 'clamp(2px, 0.5vw, 3px)', 
+                  marginBottom: 'clamp(4px, 1vh, 8px)' 
+                }}>
                   {[...Array(5)].map((_, si) => (
                     <motion.div
                       key={si}
@@ -54,7 +63,9 @@ export default function StatsBar() {
                   ))}
                 </div>
                 <div style={{
-                  fontSize: '30px', fontWeight: 800, color: '#3d1f25',
+                  fontSize: 'clamp(22px, 3.5vw, 30px)',
+                  fontWeight: 800, 
+                  color: '#3d1f25',
                   fontFamily: "'Playfair Display', Georgia, serif",
                 }}>
                   {s.value}
@@ -62,21 +73,52 @@ export default function StatsBar() {
               </>
             ) : (
               <>
-                <div style={{ fontSize: '22px', marginBottom: '6px' }}>{s.icon}</div>
+                <div style={{ 
+                  fontSize: 'clamp(18px, 2.5vw, 22px)', 
+                  marginBottom: 'clamp(4px, 1vh, 6px)' 
+                }}>{s.icon}</div>
                 <div style={{
-                  fontSize: '30px', fontWeight: 800, color: '#3d1f25',
+                  fontSize: 'clamp(22px, 3.5vw, 30px)',
+                  fontWeight: 800, 
+                  color: '#3d1f25',
                   fontFamily: "'Playfair Display', Georgia, serif",
                 }}>
                   {s.value}
                 </div>
               </>
             )}
-            <div style={{ fontSize: '13px', color: '#8c6468', marginTop: '5px', fontWeight: 500 }}>
+            <div style={{ 
+              fontSize: 'clamp(11px, 1.2vw, 13px)', 
+              color: '#8c6468', 
+              marginTop: 'clamp(4px, 1vh, 5px)', 
+              fontWeight: 500 
+            }}>
               {s.label}
             </div>
           </motion.div>
         ))}
       </div>
+
+      {/* Responsive styles */}
+      <style jsx>{`
+        @media (max-width: 640px) {
+          .stats-grid {
+            grid-template-columns: repeat(2, 1fr) !important;
+          }
+          .stats-grid > div:nth-child(2) {
+            border-right: none !important;
+          }
+          .stats-grid > div:nth-child(4) {
+            border-right: none !important;
+          }
+        }
+        @media (max-width: 400px) {
+          .stats-grid {
+            grid-template-columns: repeat(2, 1fr) !important;
+            gap: 0 !important;
+          }
+        }
+      `}</style>
     </section>
   );
 }
