@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Package, ChevronRight, XCircle, CheckCircle, Truck, AlertCircle, Sparkles, Trash2 } from 'lucide-react';
 import Footer from '@/components/Footer';
+import { useAuth } from '@/context/AuthContext';
 
 const TRACKING_STEPS = [
   { key: 'placed',    label: 'Placed',    icon: '🛍️' },
@@ -50,6 +51,7 @@ const STATUS_FILTERS = [
 ];
 
 export default function OrdersPage() {
+  const { user, isAuthenticated } = useAuth();
   const [orders,        setOrders]        = useState([]);
   const [expandedOrder, setExpandedOrder] = useState(null);
   const [filterStatus,  setFilterStatus]  = useState('all');
@@ -57,14 +59,87 @@ export default function OrdersPage() {
   const [cancelReason,  setCancelReason]  = useState('');
   const [cancelOther,   setCancelOther]   = useState('');
   const [cancelStep,    setCancelStep]    = useState(1);
-  // ── NEW: delete state ──
   const [deleteTarget,  setDeleteTarget]  = useState(null);
+  const [isLoading,     setIsLoading]     = useState(true);
+
+  const loadOrders = () => {
+    try {
+      console.log('Loading orders...');
+      const stored = localStorage.getItem('glowhive_orders');
+      console.log('Stored orders:', stored);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        const sorted = parsed.sort((a, b) => new Date(b.date) - new Date(a.date));
+        console.log('Loaded orders:', sorted);
+        setOrders(sorted);
+      } else {
+        console.log('No orders found');
+        setOrders([]);
+      }
+    } catch (error) {
+      console.error('Error loading orders:', error);
+      setOrders([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    try { setOrders(JSON.parse(localStorage.getItem('glowhive_orders') || '[]')); } catch (_) {}
+    loadOrders();
   }, []);
 
-  const openCancel  = (order) => { setCancelTarget(order); setCancelReason(''); setCancelOther(''); setCancelStep(1); };
+  useEffect(() => {
+    if (user) {
+      console.log('User changed, reloading orders...');
+      loadOrders();
+    }
+  }, [user]);
+
+  useEffect(() => {
+    const handleOrderUpdate = () => {
+      console.log('Order update event received');
+      loadOrders();
+    };
+
+    window.addEventListener('ordersUpdated', handleOrderUpdate);
+    window.addEventListener('storage', (e) => {
+      if (e.key === 'glowhive_orders') {
+        console.log('Storage event for orders detected');
+        loadOrders();
+      }
+    });
+    window.addEventListener('userLoggedIn', handleOrderUpdate);
+    window.addEventListener('userLoggedOut', handleOrderUpdate);
+
+    return () => {
+      window.removeEventListener('ordersUpdated', handleOrderUpdate);
+      window.removeEventListener('userLoggedIn', handleOrderUpdate);
+      window.removeEventListener('userLoggedOut', handleOrderUpdate);
+    };
+  }, []);
+
+  if (!isLoading && !isAuthenticated) {
+    return (
+      <div style={{ minHeight: '100vh', background: '#fdf6f0', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 20px' }}>
+        <div style={{ fontSize: '48px', marginBottom: '20px' }}>🔒</div>
+        <h2 style={{ fontSize: '24px', fontWeight: 800, color: '#3d1f25', fontFamily: "'Playfair Display', Georgia, serif", marginBottom: '10px' }}>Please Sign In</h2>
+        <p style={{ fontSize: '14px', color: '#8c6468', marginBottom: '24px' }}>You need to be logged in to view your orders.</p>
+        <Link href="/auth" style={{ background: 'linear-gradient(135deg,#b76e79,#c2748a)', color: '#fff', padding: '12px 32px', borderRadius: '50px', textDecoration: 'none', fontWeight: 700, fontSize: '14px' }}>
+          Sign In
+        </Link>
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div style={{ minHeight: '100vh', background: '#fdf6f0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <p style={{ color: '#b76e79', fontWeight: 600 }}>Loading your orders...</p>
+      </div>
+    );
+  }
+
+  const openCancel = (order) => { setCancelTarget(order); setCancelReason(''); setCancelOther(''); setCancelStep(1); };
   const closeCancel = () => { setCancelTarget(null); setCancelReason(''); setCancelOther(''); setCancelStep(1); };
 
   const confirmCancel = () => {
@@ -89,7 +164,6 @@ export default function OrdersPage() {
     setCancelStep(3);
   };
 
-  // ── NEW: delete handler (only for delivered / cancelled) ──
   const confirmDelete = () => {
     const updated = orders.filter(o => o.id !== deleteTarget.id);
     setOrders(updated);
@@ -102,7 +176,6 @@ export default function OrdersPage() {
   return (
     <>
     <div style={{ minHeight: '100vh', background: '#fdf6f0', paddingBottom: '60px' }}>
-
       {/* Hero */}
       <div style={{
         background: 'linear-gradient(135deg, #3d1f25 0%, #b76e79 60%, #e8a4b0 100%)',
@@ -127,12 +200,11 @@ export default function OrdersPage() {
             Track, manage and review all your GlowHive purchases in one place.
           </p>
 
-          {/* Stats row */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '32px', marginTop: '28px', flexWrap: 'wrap' }}>
             {[
-              { value: orders.length,                                                   label: 'Total Orders'  },
-              { value: orders.filter(o => o.status !== 'cancelled').length,             label: 'Active Orders' },
-              { value: orders.filter(o => o.status === 'delivered').length,             label: 'Delivered'     },
+              { value: orders.length, label: 'Total Orders' },
+              { value: orders.filter(o => o.status !== 'cancelled').length, label: 'Active Orders' },
+              { value: orders.filter(o => o.status === 'delivered').length, label: 'Delivered' },
             ].map((s, i) => (
               <div key={i} style={{ textAlign: 'center' }}>
                 <div style={{ fontSize: '28px', fontWeight: 900, color: '#fff', lineHeight: 1 }}>{s.value}</div>
@@ -144,8 +216,6 @@ export default function OrdersPage() {
       </div>
 
       <div style={{ maxWidth: '720px', margin: '0 auto', padding: '0 16px' }}>
-
-        {/* Filter tabs */}
         <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', padding: '20px 0 16px', scrollbarWidth: 'none' }}>
           {STATUS_FILTERS.map(f => (
             <button key={f.key} onClick={() => setFilterStatus(f.key)}
@@ -155,7 +225,6 @@ export default function OrdersPage() {
           ))}
         </div>
 
-        {/* Empty state */}
         {filtered.length === 0 && (
           <div style={{ textAlign: 'center', padding: '60px 20px' }}>
             <div style={{ fontSize: '48px', marginBottom: '14px' }}>📦</div>
@@ -167,7 +236,6 @@ export default function OrdersPage() {
           </div>
         )}
 
-        {/* Order cards */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
           <AnimatePresence mode="popLayout">
             {filtered.map((order) => {
@@ -175,7 +243,6 @@ export default function OrdersPage() {
               const stepIdx   = STEP_IDX[order.status] ?? 0;
               const isOpen    = expandedOrder === order.id;
               const canCancel = order.status === 'placed' || order.status === 'picked';
-              // ── Only delivered and cancelled orders can be deleted ──
               const canDelete = order.status === 'delivered' || order.status === 'cancelled';
               const refund    = REFUND_INFO[order.paymentMethod] || REFUND_INFO.cod;
               const isCOD     = order.paymentMethod === 'cod' || !order.paymentMethod;
@@ -190,8 +257,6 @@ export default function OrdersPage() {
                   transition={{ duration: 0.22 }}
                   style={{ background: '#fff', border: '1px solid #fde8ec', borderRadius: '20px', overflow: 'hidden', boxShadow: '0 2px 12px rgba(183,110,121,0.07)' }}
                 >
-
-                  {/* Card header */}
                   <div style={{ padding: '18px 20px' }}>
                     <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px', marginBottom: '12px' }}>
                       <div>
@@ -217,7 +282,6 @@ export default function OrdersPage() {
                       </motion.button>
                     </div>
 
-                    {/* Items preview chips */}
                     <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '12px' }}>
                       {order.items?.slice(0, 3).map((item, i) => (
                         <div key={i} style={{ background: '#fdf6f0', borderRadius: '10px', padding: '6px 10px', fontSize: '11px', color: '#5a3a40', fontWeight: 600 }}>
@@ -231,7 +295,6 @@ export default function OrdersPage() {
                       )}
                     </div>
 
-                    {/* Action buttons */}
                     <div style={{ display: 'flex', gap: '8px' }}>
                       <Link href={`/checkout/success?id=${order.id}`}
                         style={{ flex: 1, textAlign: 'center', fontSize: '12px', fontWeight: 700, color: '#b76e79', textDecoration: 'none', background: '#fdf0f3', border: '1px solid #fde8ec', borderRadius: '50px', padding: '9px 12px' }}>
@@ -243,7 +306,6 @@ export default function OrdersPage() {
                           Cancel Order
                         </motion.button>
                       )}
-                      {/* ── Delete button — only for delivered / cancelled ── */}
                       {canDelete && (
                         <motion.button
                           whileHover={{ background: '#fff0f0' }}
@@ -258,7 +320,6 @@ export default function OrdersPage() {
                     </div>
                   </div>
 
-                  {/* Expanded section — unchanged */}
                   <AnimatePresence>
                     {isOpen && (
                       <motion.div
@@ -269,10 +330,8 @@ export default function OrdersPage() {
                         style={{ overflow: 'hidden' }}
                       >
                         <div style={{ borderTop: '1px solid #fde8ec', padding: '18px 20px', background: '#fdf8f5' }}>
-
                           {order.status !== 'cancelled' ? (
                             <>
-                              {/* Live tracking */}
                               <p style={{ fontSize: '11px', fontWeight: 800, color: '#b76e79', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '16px' }}>
                                 📍 Live Tracking
                               </p>
@@ -307,7 +366,6 @@ export default function OrdersPage() {
                             </>
                           ) : (
                             <>
-                              {/* Cancelled banner */}
                               <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '12px', padding: '14px', display: 'flex', gap: '10px', alignItems: 'flex-start', marginBottom: '14px' }}>
                                 <XCircle size={16} color="#ef4444" style={{ flexShrink: 0, marginTop: '1px' }} />
                                 <div>
@@ -321,7 +379,6 @@ export default function OrdersPage() {
                                 </div>
                               </div>
 
-                              {/* Refund section */}
                               <div style={{ marginBottom: '12px' }}>
                                 <div style={{ fontSize: '11px', fontWeight: 800, color: '#b76e79', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>
                                   💸 Refund Status
@@ -380,10 +437,7 @@ export default function OrdersPage() {
                                         ].map((step, i) => (
                                           <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                                             <div style={{ width: '20px', height: '20px', borderRadius: '50%', flexShrink: 0, background: step.done ? '#22c55e' : '#e5e7eb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                              {step.done
-                                                ? <CheckCircle size={12} color="#fff" />
-                                                : <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#9ca3af' }} />
-                                              }
+                                              {step.done ? <CheckCircle size={12} color="#fff" /> : <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#9ca3af' }} />}
                                             </div>
                                             <span style={{ fontSize: '12px', fontWeight: step.done ? 700 : 400, color: step.done ? '#15803d' : '#9ca3af' }}>
                                               {step.label}
@@ -405,7 +459,6 @@ export default function OrdersPage() {
                             </>
                           )}
 
-                          {/* Support buttons */}
                           <div style={{ display: 'flex', gap: '8px' }}>
                             <a href="tel:+9779841234567" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontSize: '12px', fontWeight: 700, color: '#b76e79', textDecoration: 'none', background: '#fff', border: '1px solid #fde8ec', borderRadius: '50px', padding: '9px' }}>
                               📞 Call Support
@@ -414,12 +467,10 @@ export default function OrdersPage() {
                               ✉️ Email Us
                             </a>
                           </div>
-
                         </div>
                       </motion.div>
                     )}
                   </AnimatePresence>
-
                 </motion.div>
               );
             })}
@@ -427,9 +478,7 @@ export default function OrdersPage() {
         </div>
       </div>
 
-      {/* ══════════════════════════════════
-          CANCEL MODAL  (unchanged)
-      ══════════════════════════════════ */}
+      {/* Cancel Modal */}
       <AnimatePresence>
         {cancelTarget && (
           <>
@@ -438,7 +487,6 @@ export default function OrdersPage() {
               onClick={() => cancelStep !== 3 && closeCancel()}
               style={{ position: 'fixed', inset: 0, background: 'rgba(61,31,37,0.55)', backdropFilter: 'blur(6px)', zIndex: 9000 }}
             />
-
             <div style={{ position: 'fixed', inset: 0, zIndex: 9001, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px', pointerEvents: 'none' }}>
               <motion.div
                 initial={{ scale: 0.88, opacity: 0, y: 20 }}
@@ -447,8 +495,6 @@ export default function OrdersPage() {
                 transition={{ type: 'spring', stiffness: 280, damping: 26 }}
                 style={{ background: '#fff', borderRadius: '24px', padding: '28px', width: 'min(460px, 92vw)', boxShadow: '0 32px 80px rgba(61,31,37,0.28)', maxHeight: '90vh', overflowY: 'auto', pointerEvents: 'auto' }}
               >
-
-                {/* Step 1 — Confirm */}
                 {cancelStep === 1 && (
                   <>
                     <div style={{ textAlign: 'center', marginBottom: '20px' }}>
@@ -490,7 +536,6 @@ export default function OrdersPage() {
                   </>
                 )}
 
-                {/* Step 2 — Reason */}
                 {cancelStep === 2 && (
                   <div style={{ display: 'flex', flexDirection: 'column' }}>
                     <button onClick={() => setCancelStep(1)}
@@ -544,7 +589,7 @@ export default function OrdersPage() {
                         style={{
                           flex: 1.5,
                           background: (!cancelReason || (cancelReason === 'Other' && !cancelOther.trim())) ? '#fde8ec' : '#ef4444',
-                          color:      (!cancelReason || (cancelReason === 'Other' && !cancelOther.trim())) ? '#8c6468' : '#fff',
+                          color: (!cancelReason || (cancelReason === 'Other' && !cancelOther.trim())) ? '#8c6468' : '#fff',
                           border: 'none', borderRadius: '12px', padding: '12px', fontWeight: 800, fontSize: '13px',
                           cursor: (!cancelReason || (cancelReason === 'Other' && !cancelOther.trim())) ? 'not-allowed' : 'pointer',
                           transition: 'all 0.2s',
@@ -555,7 +600,6 @@ export default function OrdersPage() {
                   </div>
                 )}
 
-                {/* Step 3 — Refund confirmation */}
                 {cancelStep === 3 && (
                   <>
                     <div style={{ textAlign: 'center', marginBottom: '20px' }}>
@@ -570,7 +614,7 @@ export default function OrdersPage() {
 
                     {(() => {
                       const refund = REFUND_INFO[cancelTarget.paymentMethod] || REFUND_INFO.cod;
-                      const isCOD  = cancelTarget.paymentMethod === 'cod' || !cancelTarget.paymentMethod;
+                      const isCOD = cancelTarget.paymentMethod === 'cod' || !cancelTarget.paymentMethod;
                       return (
                         <div style={{ background: isCOD ? '#fef9ec' : '#f0fdf4', border: `1.5px solid ${isCOD ? '#fde68a' : '#bbf7d0'}`, borderRadius: '16px', padding: '16px', marginBottom: '20px' }}>
                           <div style={{ fontSize: '12px', fontWeight: 800, color: isCOD ? '#92400e' : '#16a34a', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '12px' }}>
@@ -623,16 +667,13 @@ export default function OrdersPage() {
                     </div>
                   </>
                 )}
-
               </motion.div>
             </div>
           </>
         )}
       </AnimatePresence>
 
-      {/* ══════════════════════════════════
-          DELETE CONFIRM MODAL  (new)
-      ══════════════════════════════════ */}
+      {/* Delete Modal */}
       <AnimatePresence>
         {deleteTarget && (
           <>
@@ -661,7 +702,6 @@ export default function OrdersPage() {
                   </p>
                 </div>
 
-                {/* Mini order summary */}
                 <div style={{ background: '#fdf6f0', borderRadius: '12px', padding: '12px 14px', marginBottom: '20px' }}>
                   <div style={{ fontSize: '11px', fontWeight: 700, color: '#b76e79', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '6px' }}>
                     {STATUS_STYLE[deleteTarget.status]?.label || deleteTarget.status}
@@ -689,7 +729,6 @@ export default function OrdersPage() {
           </>
         )}
       </AnimatePresence>
-
     </div>
     <Footer />
     </>

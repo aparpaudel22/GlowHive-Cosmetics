@@ -8,6 +8,7 @@ import toast from 'react-hot-toast';
 import { useAuth } from '@/context/AuthContext';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 
@@ -17,7 +18,42 @@ const inputStyle = {
   fontSize: '14px', color: '#3d1f25', outline: 'none', boxSizing: 'border-box',
 };
 
-/* ─── Field component — eye-toggle built-in for password fields ─── */
+/* ─── Compress Image Helper ─── */
+const compressImage = (base64String) => {
+  return new Promise((resolve) => {
+    try {
+      const img = new Image();
+      img.src = base64String;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_SIZE = 150;
+        let width = img.width;
+        let height = img.height;
+        
+        if (width > MAX_SIZE || height > MAX_SIZE) {
+          const ratio = Math.min(MAX_SIZE / width, MAX_SIZE / height);
+          width = Math.round(width * ratio);
+          height = Math.round(height * ratio);
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        const compressed = canvas.toDataURL('image/jpeg', 0.7);
+        resolve(compressed);
+      };
+      img.onerror = () => {
+        resolve(base64String);
+      };
+    } catch (e) {
+      resolve(base64String);
+    }
+  });
+};
+
+/* ─── Field component ─── */
 function Field({ icon: Icon, label, action, type = 'text', ...inputProps }) {
   const [showPw, setShowPw] = useState(false);
   const isPassword = type === 'password';
@@ -242,7 +278,6 @@ function TermsModal({ onClose }) {
           display: 'flex',
           flexDirection: 'column',
         }}>
-          {/* Close button */}
           <button onClick={onClose} style={{
             position: 'sticky', top: 0, alignSelf: 'flex-end',
             background: '#fdf6f0', border: 'none', borderRadius: '50%',
@@ -255,7 +290,6 @@ function TermsModal({ onClose }) {
             <X size={18} color="#8c6468" />
           </button>
 
-          {/* Content */}
           <div style={{ flex: 1, overflowY: 'auto' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
               <div style={{
@@ -374,7 +408,6 @@ function TermsModal({ onClose }) {
               </div>
             </div>
 
-            {/* Accept Button */}
             <div style={{
               marginTop: '20px',
               paddingTop: '16px',
@@ -468,6 +501,7 @@ function GoogleButton() {
 /* ─── Main AuthForm ─── */
 export default function AuthForm({ redirectMessage }) {
   const { login, register } = useAuth();
+  const router = useRouter();
   const fileRef = useRef(null);
 
   const [tab,           setTab]           = useState('login');
@@ -486,20 +520,32 @@ export default function AuthForm({ redirectMessage }) {
   });
   const [avatarPreview, setAvatarPreview] = useState(null);
 
-  const handleAvatarChange = (e) => {
+  // ── Handle avatar upload with compression ──
+  const handleAvatarChange = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    
     if (file.size > 3 * 1024 * 1024) {
       toast.error('Photo must be under 3 MB.');
       return;
     }
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const b64 = ev.target.result;
-      setRegData(d => ({ ...d, avatar: b64 }));
-      setAvatarPreview(b64);
-    };
-    reader.readAsDataURL(file);
+    
+    try {
+      const reader = new FileReader();
+      reader.onload = async (ev) => {
+        const base64 = ev.target.result;
+        
+        // Compress the image
+        const compressed = await compressImage(base64);
+        
+        setRegData(d => ({ ...d, avatar: compressed }));
+        setAvatarPreview(compressed);
+        toast.success('Photo uploaded successfully!');
+      };
+      reader.readAsDataURL(file);
+    } catch (error) {
+      toast.error('Failed to upload photo. Please try again.');
+    }
   };
 
   const removeAvatar = () => {
@@ -515,22 +561,25 @@ export default function AuthForm({ redirectMessage }) {
       return;
     }
     setLoading(true);
-    const result = await login(loginData.email, loginData.password);
-    setLoading(false);
     
-    if (result && typeof result === 'object') {
-      if (!result.error) {
+    try {
+      const result = await login(loginData.email, loginData.password);
+      setLoading(false);
+      
+      if (result && result.success) {
         toast.success('Signed in successfully 🎉');
-      } else if (result.error === 'NO_ACCOUNT') {
+        router.push('/');
+      } else if (result && result.error === 'NO_ACCOUNT') {
         toast.error('No account found. Please register first!');
         setTab('register');
         setRegData(d => ({ ...d, email: loginData.email }));
-      } else if (result.error === 'WRONG_PASSWORD') {
+      } else if (result && result.error === 'WRONG_PASSWORD') {
         toast.error('Incorrect password. Try again or reset it.');
       } else {
         toast.error('Sign in failed. Please try again.');
       }
-    } else {
+    } catch (error) {
+      setLoading(false);
       toast.error('Sign in failed. Please try again.');
     }
   };
@@ -559,28 +608,31 @@ export default function AuthForm({ redirectMessage }) {
     }
     
     setLoading(true);
-    const result = await register(
-      regData.name, 
-      regData.email, 
-      regData.password, 
-      regData.phone, 
-      regData.avatar
-    );
-    setLoading(false);
     
-    if (result && typeof result === 'object') {
-      if (!result.error) {
+    try {
+      const result = await register(
+        regData.name, 
+        regData.email, 
+        regData.password, 
+        regData.phone, 
+        regData.avatar
+      );
+      setLoading(false);
+      
+      if (result && result.success) {
         toast.success('Account created — welcome to GlowHive ✨');
-      } else if (result.error === 'ALREADY_EXISTS') {
+        router.push('/');
+      } else if (result && result.error === 'ALREADY_EXISTS') {
         toast.error('Email already registered. Please sign in.');
         setTab('login');
         setLoginData(d => ({ ...d, email: regData.email }));
-      } else if (result.error === 'INVALID_PHONE') {
+      } else if (result && result.error === 'INVALID_PHONE') {
         toast.error('Invalid phone number. Please check and try again.');
       } else {
         toast.error('Registration failed. Please try again.');
       }
-    } else {
+    } catch (error) {
+      setLoading(false);
       toast.error('Registration failed. Please try again.');
     }
   };
@@ -624,7 +676,7 @@ export default function AuthForm({ redirectMessage }) {
             </div>
 
             <div style={{ padding: '32px' }}>
-              {/* ─── Logo Section - Using your logo image ─── */}
+              {/* ─── Logo Section ─── */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '26px' }}>
                 <div style={{ 
                   width: '48px', 
@@ -647,7 +699,6 @@ export default function AuthForm({ redirectMessage }) {
                       objectFit: 'contain',
                     }}
                     onError={(e) => {
-                      // Fallback if image fails to load
                       e.target.style.display = 'none';
                       e.target.parentElement.innerHTML = '<span style="font-size:24px;font-weight:900;color:#b76e79;font-family:\'Playfair Display\',Georgia,serif;">G</span>';
                     }}
@@ -702,7 +753,7 @@ export default function AuthForm({ redirectMessage }) {
                 </form>
               ) : (
                 <form onSubmit={handleRegister} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
-                  {/* Profile Photo Upload - OPTIONAL */}
+                  {/* Profile Photo Upload - OPTIONAL with compression */}
                   <div>
                     <label style={{ fontSize: '13px', fontWeight: 600, color: '#3d1f25', display: 'block', marginBottom: '6px' }}>
                       Profile Photo <span style={{ color: '#c9a3a9', fontWeight: 400 }}>(Optional)</span>
@@ -799,7 +850,6 @@ export default function AuthForm({ redirectMessage }) {
                     onChange={e => setRegData(d => ({ ...d, confirm: e.target.value }))}
                   />
                   
-                  {/* ─── TERMS & CONDITIONS CHECKBOX ─── */}
                   <label style={{ 
                     display: 'flex', 
                     alignItems: 'center', 

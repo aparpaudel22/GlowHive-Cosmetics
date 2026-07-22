@@ -3,45 +3,122 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 
 // ── All keys that belong to a signed-in user ──
-const DATA_KEYS = ['orders', 'profile', 'avatar', 'addresses', 'cart'];
+const DATA_KEYS = ['orders', 'profile', 'avatar', 'addresses', 'cart', 'wishlist', 'cart_selected'];
 
 const generic = (key) => `glowhive_${key}`;
 const scoped = (email, key) => `glowhive_${encodeURIComponent(email)}_${key}`;
 
-/** Copy current generic keys → user-scoped storage */
+/** Copy current generic keys → user-scoped storage (BACKUP) */
 function backupData(email) {
+  console.log('Backing up data for:', email);
   DATA_KEYS.forEach(k => {
-    const val = localStorage.getItem(generic(k));
-    if (val !== null) localStorage.setItem(scoped(email, k), val);
+    try {
+      const val = localStorage.getItem(generic(k));
+      if (val !== null && val !== '[]' && val !== '{}') {
+        if (k === 'avatar' && val.length > 500000) {
+          console.warn('Avatar too large for backup, skipping');
+          return;
+        }
+        localStorage.setItem(scoped(email, k), val);
+        console.log(`Backed up ${k}:`, val.substring(0, 100));
+      } else {
+        localStorage.setItem(scoped(email, k), JSON.stringify([]));
+        console.log(`Backed up ${k}: empty array`);
+      }
+    } catch (e) {
+      console.warn(`Failed to backup ${k}:`, e);
+    }
   });
 }
 
-/** Copy user-scoped storage → generic keys (clears keys with no saved data) */
+/** Copy user-scoped storage → generic keys (RESTORE) - FIXED to merge addresses */
 function restoreData(email) {
+  console.log('Restoring data for:', email);
   DATA_KEYS.forEach(k => {
-    const val = localStorage.getItem(scoped(email, k));
-    if (val !== null) localStorage.setItem(generic(k), val);
-    else localStorage.removeItem(generic(k));
+    try {
+      const val = localStorage.getItem(scoped(email, k));
+      if (val !== null && val !== '[]' && val !== '{}') {
+        if (k === 'avatar' && val.length > 500000) {
+          console.warn('Avatar too large, skipping restore');
+          return;
+        }
+        
+        // ─── SPECIAL HANDLING FOR ADDRESSES ───
+        // Merge addresses instead of overwriting
+        if (k === 'addresses') {
+          try {
+            const existing = localStorage.getItem(generic(k));
+            let existingArr = [];
+            if (existing) {
+              existingArr = JSON.parse(existing);
+              if (!Array.isArray(existingArr)) existingArr = [];
+            }
+            
+            const scopedArr = JSON.parse(val);
+            if (Array.isArray(scopedArr) && scopedArr.length > 0) {
+              // Merge: add scoped addresses that don't exist in generic
+              const merged = [...scopedArr];
+              existingArr.forEach(addr => {
+                const exists = merged.some(a => 
+                  a.address === addr.address && 
+                  a.city === addr.city && 
+                  a.province === addr.province
+                );
+                if (!exists) {
+                  merged.push(addr);
+                }
+              });
+              localStorage.setItem(generic(k), JSON.stringify(merged));
+              console.log(`Merged addresses:`, merged);
+              return;
+            }
+          } catch (e) {
+            console.warn('Failed to merge addresses:', e);
+          }
+        }
+        
+        // For all other keys, restore normally
+        localStorage.setItem(generic(k), val);
+        console.log(`Restored ${k}:`, val.substring(0, 100));
+      } else {
+        // Don't overwrite with empty if there's existing data
+        const existing = localStorage.getItem(generic(k));
+        if (!existing || existing === '[]' || existing === '{}') {
+          localStorage.setItem(generic(k), JSON.stringify([]));
+        }
+        console.log(`Restored ${k}: kept existing or set empty`);
+      }
+    } catch (e) {
+      console.warn(`Failed to restore ${k}:`, e);
+    }
   });
 }
 
-/** Wipe all generic data keys (called on logout / new account) */
+/** Wipe all generic data keys (called on logout) */
 function clearGenericData() {
-  DATA_KEYS.forEach(k => localStorage.removeItem(generic(k)));
+  DATA_KEYS.forEach(k => {
+    try {
+      localStorage.removeItem(generic(k));
+    } catch (e) {
+      console.warn(`Failed to clear ${k}:`, e);
+    }
+  });
 }
 
-/** Delete all user data permanently (called on account deletion) */
+/** Delete all user data permanently */
 function deleteAllUserData(email) {
-  // Remove generic keys
-  DATA_KEYS.forEach(k => localStorage.removeItem(generic(k)));
-  // Remove scoped keys
-  DATA_KEYS.forEach(k => localStorage.removeItem(scoped(email, k)));
-  // Remove user session
-  localStorage.removeItem('glowhive_user');
-  // Remove user from users list
-  const users = JSON.parse(localStorage.getItem('glowhive_users') || '[]');
-  const filteredUsers = users.filter(u => u.email !== email);
-  localStorage.setItem('glowhive_users', JSON.stringify(filteredUsers));
+  try {
+    DATA_KEYS.forEach(k => {
+      localStorage.removeItem(generic(k));
+      localStorage.removeItem(scoped(email, k));
+    });
+    localStorage.removeItem('glowhive_user');
+    const users = JSON.parse(localStorage.getItem('glowhive_users') || '[]');
+    const filteredUsers = users.filter(u => u.email !== email);
+    localStorage.setItem('glowhive_users', JSON.stringify(filteredUsers));
+  } catch (e) {
+    console.error('Failed to delete user data:', e);
+  }
 }
 
 // ─────────────────────────────────────────────
@@ -53,15 +130,26 @@ export function AuthProvider({ children }) {
 
   // ── Rehydrate session on page load ──
   useEffect(() => {
+    console.log('AuthProvider: Rehydrating session...');
     try {
       const stored = localStorage.getItem('glowhive_user');
+      console.log('Stored user:', stored);
       if (stored) {
         const parsed = JSON.parse(stored);
+        console.log('Parsed user:', parsed);
         setUser(parsed);
-        // Restore this user's data so pages see their own orders / profile
-        if (parsed?.email) restoreData(parsed.email);
+        if (parsed?.email) {
+          restoreData(parsed.email);
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new Event('userLoggedIn'));
+          }
+        }
+      } else {
+        console.log('No stored user found');
       }
-    } catch (_) {}
+    } catch (error) {
+      console.error('Rehydration error:', error);
+    }
     setHydrated(true);
   }, []);
 
@@ -69,9 +157,15 @@ export function AuthProvider({ children }) {
   const login = async (email, password) => {
     try {
       const users = JSON.parse(localStorage.getItem('glowhive_users') || '[]');
-      const found = users.find(u => u.email === email);
-      if (!found) return { error: 'NO_ACCOUNT' };
-      if (found.password !== password) return { error: 'WRONG_PASSWORD' };
+      const found = users.find(u => u.email.toLowerCase() === email.toLowerCase());
+      
+      if (!found) {
+        return { success: false, error: 'NO_ACCOUNT' };
+      }
+      
+      if (found.password !== password) {
+        return { success: false, error: 'WRONG_PASSWORD' };
+      }
 
       const u = {
         name: found.name,
@@ -79,133 +173,225 @@ export function AuthProvider({ children }) {
         phone: found.phone || '',
         picture: found.picture || null
       };
+      
       localStorage.setItem('glowhive_user', JSON.stringify(u));
-      // Load this user's saved data into the generic keys
-      restoreData(email);
+      restoreData(found.email);
+      
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('userLoggedIn'));
+        window.dispatchEvent(new StorageEvent('storage', {
+          key: 'glowhive_user',
+          newValue: JSON.stringify(u),
+        }));
+      }
+      
       setUser(u);
-      return {};
-    } catch (_) {
-      return { error: 'UNKNOWN' };
+      
+      return { success: true };
+    } catch (error) {
+      console.error('Login error:', error);
+      return { success: false, error: 'UNKNOWN' };
     }
   };
 
   // ── Register ──
   const register = async (name, email, password, phone, avatar = null) => {
     try {
-      // Validate phone number
       if (!phone || phone.replace(/\D/g, '').length < 10) {
-        return { error: 'INVALID_PHONE' };
+        return { success: false, error: 'INVALID_PHONE' };
       }
 
       const users = JSON.parse(localStorage.getItem('glowhive_users') || '[]');
-      if (users.find(u => u.email === email)) return { error: 'ALREADY_EXISTS' };
+      if (users.find(u => u.email.toLowerCase() === email.toLowerCase())) {
+        return { success: false, error: 'ALREADY_EXISTS' };
+      }
 
-      // Create user with phone and avatar
+      const normalizedEmail = email.toLowerCase();
+      
+      let compressedAvatar = avatar;
+      if (avatar && avatar.length > 200000) {
+        compressedAvatar = await compressImage(avatar);
+      }
+
       const newUser = {
         name,
-        email,
+        email: normalizedEmail,
         password,
         phone: phone.trim(),
-        picture: avatar || null
+        picture: compressedAvatar || null
       };
 
       localStorage.setItem('glowhive_users', JSON.stringify([...users, newUser]));
 
       const u = {
         name,
-        email,
+        email: normalizedEmail,
         phone: phone.trim(),
-        picture: avatar || null
+        picture: compressedAvatar || null
       };
 
       localStorage.setItem('glowhive_user', JSON.stringify(u));
 
-      // Save avatar if provided
-      if (avatar) {
-        localStorage.setItem(generic('avatar'), avatar);
-        localStorage.setItem(scoped(email, 'avatar'), avatar);
+      if (compressedAvatar && compressedAvatar.length < 400000) {
+        try {
+          localStorage.setItem(generic('avatar'), compressedAvatar);
+          localStorage.setItem(scoped(normalizedEmail, 'avatar'), compressedAvatar);
+        } catch (e) {
+          console.warn('Failed to save avatar:', e);
+        }
       }
 
-      // Save profile with phone number
-      const profile = { firstName: name.split(' ')[0] || '', lastName: name.split(' ').slice(1).join(' ') || '', phone: phone.trim() };
-      localStorage.setItem(generic('profile'), JSON.stringify(profile));
-      localStorage.setItem(scoped(email, 'profile'), JSON.stringify(profile));
+      const profile = { 
+        firstName: name.split(' ')[0] || '', 
+        lastName: name.split(' ').slice(1).join(' ') || '',
+        email: normalizedEmail,
+        phone: phone.trim() 
+      };
+      
+      try {
+        localStorage.setItem(generic('profile'), JSON.stringify(profile));
+        localStorage.setItem(scoped(normalizedEmail, 'profile'), JSON.stringify(profile));
+      } catch (e) {
+        console.warn('Failed to save profile:', e);
+      }
 
-      // Brand-new account → start completely fresh
-      clearGenericData();
+      DATA_KEYS.forEach(key => {
+        try {
+          if (!localStorage.getItem(generic(key))) {
+            localStorage.setItem(generic(key), JSON.stringify([]));
+          }
+          if (!localStorage.getItem(scoped(normalizedEmail, key))) {
+            localStorage.setItem(scoped(normalizedEmail, key), JSON.stringify([]));
+          }
+        } catch (e) {
+          console.warn(`Failed to initialize ${key}:`, e);
+        }
+      });
+
+      backupData(normalizedEmail);
       setUser(u);
-      return {};
-    } catch (_) {
-      return { error: 'UNKNOWN' };
+      
+      return { success: true };
+    } catch (error) {
+      console.error('Registration error:', error);
+      return { success: false, error: 'UNKNOWN' };
     }
   };
 
-  // ── Google / OAuth login ──
+  const compressImage = (base64String) => {
+    return new Promise((resolve) => {
+      try {
+        const img = new Image();
+        img.src = base64String;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX_SIZE = 150;
+          let width = img.width;
+          let height = img.height;
+          if (width > MAX_SIZE || height > MAX_SIZE) {
+            const ratio = Math.min(MAX_SIZE / width, MAX_SIZE / height);
+            width = Math.round(width * ratio);
+            height = Math.round(height * ratio);
+          }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          const compressed = canvas.toDataURL('image/jpeg', 0.7);
+          resolve(compressed);
+        };
+        img.onerror = () => resolve(base64String);
+      } catch (e) {
+        resolve(base64String);
+      }
+    });
+  };
+
   const loginWithGoogle = (googleUser) => {
-    // Check if user exists in our system
-    const users = JSON.parse(localStorage.getItem('glowhive_users') || '[]');
-    const existingUser = users.find(u => u.email === googleUser.email);
+    try {
+      const users = JSON.parse(localStorage.getItem('glowhive_users') || '[]');
+      const normalizedEmail = googleUser.email.toLowerCase();
+      const existingUser = users.find(u => u.email.toLowerCase() === normalizedEmail);
 
-    let u;
-    if (existingUser) {
-      // User exists, use their data
-      u = {
-        name: existingUser.name,
-        email: existingUser.email,
-        phone: existingUser.phone || '',
-        picture: existingUser.picture || googleUser.picture || null
-      };
-    } else {
-      // New Google user - they need to provide phone number
-      // We'll store with empty phone and they can update later
-      u = {
-        name: googleUser.name,
-        email: googleUser.email,
-        phone: '',
-        picture: googleUser.picture || null
-      };
+      let u;
+      if (existingUser) {
+        u = {
+          name: existingUser.name,
+          email: existingUser.email,
+          phone: existingUser.phone || '',
+          picture: existingUser.picture || googleUser.picture || null
+        };
+      } else {
+        u = {
+          name: googleUser.name,
+          email: normalizedEmail,
+          phone: '',
+          picture: googleUser.picture || null
+        };
+        const newUser = {
+          name: googleUser.name,
+          email: normalizedEmail,
+          password: '',
+          phone: '',
+          picture: googleUser.picture || null
+        };
+        localStorage.setItem('glowhive_users', JSON.stringify([...users, newUser]));
+        const profile = { 
+          firstName: googleUser.name.split(' ')[0] || '', 
+          lastName: googleUser.name.split(' ').slice(1).join(' ') || '',
+          email: normalizedEmail,
+          phone: '' 
+        };
+        localStorage.setItem(generic('profile'), JSON.stringify(profile));
+        localStorage.setItem(scoped(normalizedEmail, 'profile'), JSON.stringify(profile));
+        DATA_KEYS.forEach(key => {
+          if (!localStorage.getItem(generic(key))) {
+            localStorage.setItem(generic(key), JSON.stringify([]));
+          }
+          if (!localStorage.getItem(scoped(normalizedEmail, key))) {
+            localStorage.setItem(scoped(normalizedEmail, key), JSON.stringify([]));
+          }
+        });
+      }
 
-      // Save to users list with empty phone
-      const newUser = {
-        name: googleUser.name,
-        email: googleUser.email,
-        password: '', // No password for OAuth users
-        phone: '',
-        picture: googleUser.picture || null
-      };
-      localStorage.setItem('glowhive_users', JSON.stringify([...users, newUser]));
+      localStorage.setItem('glowhive_user', JSON.stringify(u));
+      restoreData(u.email);
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('userLoggedIn'));
+      }
+      setUser(u);
+    } catch (error) {
+      console.error('Google login error:', error);
     }
-
-    localStorage.setItem('glowhive_user', JSON.stringify(u));
-    restoreData(u.email);
-    setUser(u);
   };
 
-  // ── Logout ──
   const logout = () => {
-    if (user?.email) {
-      backupData(user.email);
-      clearGenericData();
+    try {
+      if (user?.email) {
+        backupData(user.email);
+        clearGenericData();
+      }
+      localStorage.removeItem('glowhive_user');
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('userLoggedOut'));
+      }
+      setUser(null);
+    } catch (error) {
+      console.error('Logout error:', error);
     }
-    localStorage.removeItem('glowhive_user');
-    setUser(null);
   };
 
-  // ── Delete Account ──
   const deleteAccount = async () => {
     try {
       if (!user?.email) {
         throw new Error('No user is currently logged in.');
       }
-
       const email = user.email;
-
-      // Delete all user data
       deleteAllUserData(email);
-
-      // Update state
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('userLoggedOut'));
+      }
       setUser(null);
-
       return { success: true };
     } catch (error) {
       console.error('Delete account error:', error);
@@ -232,16 +418,15 @@ export function AuthProvider({ children }) {
 export function useAuth() {
   const context = useContext(AuthContext);
   if (!context) {
-    // Return a default value instead of throwing error
     return {
       user: null,
       isAuthenticated: false,
       hydrated: true,
-      login: async () => ({ error: 'Auth not initialized' }),
-      register: async () => ({ error: 'Auth not initialized' }),
+      login: async () => ({ success: false, error: 'Auth not initialized' }),
+      register: async () => ({ success: false, error: 'Auth not initialized' }),
       loginWithGoogle: () => {},
       logout: () => {},
-      deleteAccount: async () => {},
+      deleteAccount: async () => ({ success: false, error: 'Auth not initialized' }),
     };
   }
   return context;

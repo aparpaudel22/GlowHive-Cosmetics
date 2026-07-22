@@ -40,11 +40,9 @@ function Logo() {
   const handleLogoClick = (e) => {
     e.preventDefault();
     
-    // If we're already on the home page, scroll to top
     if (pathname === '/') {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } else {
-      // Otherwise navigate to home page
       router.push('/');
     }
   };
@@ -122,8 +120,7 @@ export default function Navbar() {
   const [orders, setOrders] = useState([]);
 
   const { cartCount } = useCart();
-  const auth = useAuth();
-  const user = auth?.user || null;
+  const { user } = useAuth(); // Simplified
   const pathname = usePathname();
 
   useEffect(() => {
@@ -134,11 +131,48 @@ export default function Navbar() {
 
   useEffect(() => { setMobileOpen(false); }, [pathname]);
 
+  // ── Load orders ──
+  const loadOrders = () => {
+    try {
+      const stored = localStorage.getItem('glowhive_orders');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        const active = parsed.filter(o => o.status !== 'cancelled');
+        setOrders(active);
+      } else {
+        setOrders([]);
+      }
+    } catch (_) {
+      setOrders([]);
+    }
+  };
+
+  // ── Load orders on mount ──
   useEffect(() => {
-    try { setOrders(JSON.parse(localStorage.getItem('glowhive_orders') || '[]')); } catch (_) {}
+    loadOrders();
   }, []);
 
-  const activeOrders = orders.filter(o => o.status !== 'cancelled').length;
+  // ── Listen for order updates ──
+  useEffect(() => {
+    const handleOrderUpdate = () => loadOrders();
+    
+    window.addEventListener('ordersUpdated', handleOrderUpdate);
+    window.addEventListener('userLoggedIn', handleOrderUpdate);
+    window.addEventListener('userLoggedOut', handleOrderUpdate);
+    window.addEventListener('storage', (e) => {
+      if (e.key === 'glowhive_orders') {
+        loadOrders();
+      }
+    });
+
+    return () => {
+      window.removeEventListener('ordersUpdated', handleOrderUpdate);
+      window.removeEventListener('userLoggedIn', handleOrderUpdate);
+      window.removeEventListener('userLoggedOut', handleOrderUpdate);
+    };
+  }, []);
+
+  const activeOrders = orders.length;
 
   return (
     <>
@@ -274,7 +308,7 @@ export default function Navbar() {
               </motion.div>
             </Link>
 
-            {/* Account */}
+            {/* Account - FIXED: consistent routing */}
             <Link href={user ? "/account" : "/auth"} style={{ textDecoration: 'none' }}>
               <motion.div
                 whileHover={{ background: '#fde8ec', scale: 1.08 }}
@@ -505,6 +539,7 @@ export default function Navbar() {
                   </motion.div>
                 </Link>
 
+                {/* Account - FIXED: consistent routing */}
                 <Link href={user ? "/account" : "/auth"} style={{ textDecoration: 'none' }}>
                   <motion.div whileHover={{ x: 4, background: '#fdf0f3' }}
                     style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 14px', borderRadius: '10px', fontSize: '15px', color: '#3d1f25', fontWeight: 500 }}>

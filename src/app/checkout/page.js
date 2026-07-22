@@ -11,6 +11,7 @@ import { IoIosCash } from 'react-icons/io';
 import { BsBank } from 'react-icons/bs';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
+import Link from 'next/link';
 
 // ── Complete Nepal cities with their provinces and postal codes ──
 const NEPAL_CITIES = {
@@ -136,7 +137,23 @@ const BLANK_PROFILE = { firstName: '', lastName: '', email: '', phone: '' };
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { cartItems = [], clearCart } = useCart?.() ?? { cartItems: [], clearCart: () => {} };
+  const { 
+    cartItems, 
+    selectedItems, 
+    getSelectedItems,
+    getSelectedTotal,
+    getSelectedCount,
+    removePurchasedItems,
+    clearCart 
+  } = useCart?.() ?? { 
+    cartItems: [], 
+    selectedItems: [],
+    getSelectedItems: () => [],
+    getSelectedTotal: () => 0,
+    getSelectedCount: () => 0,
+    removePurchasedItems: () => {},
+    clearCart: () => {} 
+  };
   const { user, isAuthenticated, hydrated } = useAuth();
 
   const [step,            setStep]            = useState(1);
@@ -152,6 +169,12 @@ export default function CheckoutPage() {
   const [selectedMethod,  setSelectedMethod]  = useState(null);
   const [placing,         setPlacing]         = useState(false);
   const [citiesByProvince, setCitiesByProvince] = useState([]);
+  const [isLoading,       setIsLoading]       = useState(true);
+
+  // ── Get selected items for checkout ──
+  const checkoutItems = getSelectedItems?.() || [];
+  const subtotal = getSelectedTotal?.() || 0;
+  const itemCount = getSelectedCount?.() || 0;
 
   // ── Get cities for selected province ──
   useEffect(() => {
@@ -161,7 +184,6 @@ export default function CheckoutPage() {
         .sort();
       setCitiesByProvince(cities);
       
-      // If current city doesn't belong to selected province, reset it
       if (addrForm.city && !cities.includes(addrForm.city)) {
         setAddrForm(prev => ({ ...prev, city: '', postalCode: '' }));
       }
@@ -174,7 +196,6 @@ export default function CheckoutPage() {
   useEffect(() => {
     if (addrForm.city && NEPAL_CITIES[addrForm.city]) {
       const cityData = NEPAL_CITIES[addrForm.city];
-      // Auto-set province if not set or if province doesn't match
       if (!addrForm.province || addrForm.province !== cityData.province) {
         setAddrForm(prev => ({ 
           ...prev, 
@@ -189,98 +210,133 @@ export default function CheckoutPage() {
 
   // ── Load personal details & addresses on mount ──
   useEffect(() => {
-    if (!hydrated) return;
-    if (!isAuthenticated) {
-      router.replace('/account?from=checkout');
-      return;
-    }
-
-    try {
-      // Load profile - prioritize saved profile, then user data
-      const savedP = localStorage.getItem('glowhive_profile');
-      let profileData = null;
+    const loadData = async () => {
+      if (!hydrated) {
+        setIsLoading(true);
+        return;
+      }
       
-      if (savedP) {
-        const parsed = JSON.parse(savedP) ?? BLANK_PROFILE;
-        profileData = parsed;
-        setSavedProfile(parsed);
-        setProfile(parsed);
-        
-        // Check if phone is missing
-        if (!parsed.phone?.trim()) {
-          // Try to get phone from user object or registration data
-          const users = JSON.parse(localStorage.getItem('glowhive_users') || '[]');
-          const userData = users.find(u => u.email === (user?.email || parsed.email));
-          if (userData?.phone) {
-            // Update profile with phone from registration
-            const updatedProfile = { ...parsed, phone: userData.phone };
-            setProfile(updatedProfile);
-            setSavedProfile(updatedProfile);
-            localStorage.setItem('glowhive_profile', JSON.stringify(updatedProfile));
-            setEditingProfile(false);
-          } else {
-            setEditingProfile(true);
-          }
-        } else {
-          setEditingProfile(false);
-        }
-      } else if (user) {
-        // No saved profile, use user data
-        const nameParts = (user.name || '').trim().split(' ');
-        
-        // Try to get phone from users list
-        let phone = '';
+      if (!isAuthenticated) {
+        router.replace('/account?from=checkout');
+        return;
+      }
+
+      try {
+        // ── FIRST: Get user data from users list ──
+        let userData = null;
         try {
           const users = JSON.parse(localStorage.getItem('glowhive_users') || '[]');
-          const userData = users.find(u => u.email === user.email);
-          if (userData?.phone) {
-            phone = userData.phone;
+          userData = users.find(u => u.email?.toLowerCase() === user?.email?.toLowerCase());
+        } catch (_) {}
+
+        // ── SECOND: Load saved profile ──
+        let savedP = null;
+        try {
+          const savedProfileStr = localStorage.getItem('glowhive_profile');
+          if (savedProfileStr) {
+            savedP = JSON.parse(savedProfileStr);
           }
         } catch (_) {}
-        
-        const prefilled = {
-          firstName: nameParts[0] || '',
-          lastName:  nameParts.slice(1).join(' ') || '',
-          email:     user.email || '',
-          phone:     phone || '',
-        };
-        setProfile(prefilled);
-        setSavedProfile(prefilled);
-        
-        // Save to localStorage
-        localStorage.setItem('glowhive_profile', JSON.stringify(prefilled));
-        
-        // Only edit if phone is missing
-        setEditingProfile(!phone);
-      } else {
-        setProfile(BLANK_PROFILE);
-        setEditingProfile(true);
-      }
 
-      // Load saved addresses
-      const savedA = localStorage.getItem('glowhive_addresses');
-      if (savedA) {
-        const addrs = JSON.parse(savedA);
-        setSavedAddresses(addrs);
-        if (addrs.length) {
-          setAddrForm(addrs[0]);
+        // ── Build profile data ──
+        let profileData = { ...BLANK_PROFILE };
+        
+        if (savedP) {
+          profileData = {
+            firstName: savedP.firstName || userData?.name?.split(' ')[0] || '',
+            lastName: savedP.lastName || userData?.name?.split(' ').slice(1).join(' ') || '',
+            email: user?.email || savedP.email || '',
+            phone: savedP.phone || userData?.phone || '',
+          };
+        } else if (userData) {
+          const nameParts = (userData.name || '').trim().split(' ');
+          profileData = {
+            firstName: nameParts[0] || '',
+            lastName: nameParts.slice(1).join(' ') || '',
+            email: userData.email || user?.email || '',
+            phone: userData.phone || '',
+          };
+        } else if (user) {
+          const nameParts = (user.name || '').trim().split(' ');
+          profileData = {
+            firstName: nameParts[0] || '',
+            lastName: nameParts.slice(1).join(' ') || '',
+            email: user.email || '',
+            phone: user.phone || '',
+          };
+        }
+
+        setProfile(profileData);
+        setSavedProfile(profileData);
+        
+        if (profileData.firstName && profileData.email) {
+          try {
+            localStorage.setItem('glowhive_profile', JSON.stringify(profileData));
+          } catch (_) {}
+        }
+
+        const hasPhone = profileData.phone && profileData.phone.replace(/\D/g, '').length >= 10;
+        setEditingProfile(!hasPhone);
+
+        // ── THIRD: Load saved addresses ──
+        let loadedAddresses = [];
+        try {
+          const savedA = localStorage.getItem('glowhive_addresses');
+          if (savedA) {
+            loadedAddresses = JSON.parse(savedA);
+            // Ensure it's an array
+            if (!Array.isArray(loadedAddresses)) {
+              loadedAddresses = [];
+            }
+          }
+        } catch (_) {
+          loadedAddresses = [];
+        }
+
+        // ── If no addresses found, try to load from orders ──
+        if (loadedAddresses.length === 0) {
+          try {
+            const orders = JSON.parse(localStorage.getItem('glowhive_orders') || '[]');
+            if (orders.length > 0 && orders[0].address) {
+              const lastAddress = orders[0].address;
+              if (lastAddress.address && lastAddress.city) {
+                loadedAddresses = [lastAddress];
+                // Save to localStorage
+                localStorage.setItem('glowhive_addresses', JSON.stringify(loadedAddresses));
+              }
+            }
+          } catch (_) {}
+        }
+
+        // ── Set addresses ──
+        if (loadedAddresses.length > 0) {
+          setSavedAddresses(loadedAddresses);
+          setAddrForm(loadedAddresses[0]);
+          setSelectedAddrIdx(0);
           setAddingAddress(false);
         } else {
+          setSavedAddresses([]);
+          setAddrForm(BLANK_ADDRESS);
           setAddingAddress(true);
         }
-      } else {
+
+      } catch (error) {
+        console.error('Error loading checkout data:', error);
+        setProfile(BLANK_PROFILE);
+        setAddrForm(BLANK_ADDRESS);
+        setSavedAddresses([]);
+        setEditingProfile(true);
         setAddingAddress(true);
+      } finally {
+        setIsLoading(false);
       }
-    } catch (_) {
-      setProfile(BLANK_PROFILE);
-      setAddrForm(BLANK_ADDRESS);
-      setEditingProfile(true);
-      setAddingAddress(true);
-    }
-  }, [hydrated, isAuthenticated, user]);
+    };
+
+    loadData();
+  }, [hydrated, isAuthenticated, user, router]);
 
   // ── Guards ──
-  if (!hydrated) {
+  if (!hydrated || isLoading) {
     return (
       <div style={{ minHeight: '100vh', background: '#fff8f5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <p style={{ color: '#b76e79', fontWeight: 600, fontSize: '15px' }}>Loading…</p>
@@ -295,12 +351,33 @@ export default function CheckoutPage() {
     );
   }
 
-  const items = cartItems.length ? cartItems : [
-    { id: 1, name: 'Rose Glow Vitamin C Serum', price: 1999, quantity: 1 },
-    { id: 2, name: 'Velvet Matte Lipstick',     price: 699,  quantity: 2 },
-  ];
+  // ── Check if cart is empty or no items selected ──
+  if (cartItems.length === 0) {
+    return (
+      <div style={{ minHeight: '100vh', background: '#fff8f5', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 20px' }}>
+        <div style={{ fontSize: '64px', marginBottom: '20px' }}>🛒</div>
+        <h2 style={{ fontSize: '24px', fontWeight: 800, color: '#3d1f25', fontFamily: "'Playfair Display', Georgia, serif", marginBottom: '10px' }}>Your cart is empty</h2>
+        <p style={{ fontSize: '14px', color: '#8c6468', marginBottom: '24px' }}>Looks like you haven't added any items to your cart yet.</p>
+        <Link href="/products" style={{ padding: '12px 32px', background: 'linear-gradient(135deg, #b76e79, #c2748a)', color: '#fff', border: 'none', borderRadius: '50px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', textDecoration: 'none' }}>
+          Start Shopping
+        </Link>
+      </div>
+    );
+  }
 
-  const subtotal = items.reduce((s, i) => s + i.price * i.quantity, 0);
+  if (checkoutItems.length === 0) {
+    return (
+      <div style={{ minHeight: '100vh', background: '#fff8f5', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 20px' }}>
+        <div style={{ fontSize: '64px', marginBottom: '20px' }}>📦</div>
+        <h2 style={{ fontSize: '24px', fontWeight: 800, color: '#3d1f25', fontFamily: "'Playfair Display', Georgia, serif", marginBottom: '10px' }}>No items selected</h2>
+        <p style={{ fontSize: '14px', color: '#8c6468', marginBottom: '24px' }}>Please select items from your cart to proceed with checkout.</p>
+        <Link href="/cart" style={{ padding: '12px 32px', background: 'linear-gradient(135deg, #b76e79, #c2748a)', color: '#fff', border: 'none', borderRadius: '50px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', textDecoration: 'none' }}>
+          Go to Cart
+        </Link>
+      </div>
+    );
+  }
+
   const shipping = addrForm.city === 'Kathmandu' ? 0 : 150;
   const total    = subtotal + shipping;
 
@@ -333,11 +410,45 @@ export default function CheckoutPage() {
     return !Object.keys(e).length;
   };
 
+  // ── Save address to localStorage (keeps ALL addresses) ──
+  const saveAddressToStorage = (address) => {
+    try {
+      let addrs = [];
+      const savedA = localStorage.getItem('glowhive_addresses');
+      if (savedA) {
+        addrs = JSON.parse(savedA);
+        if (!Array.isArray(addrs)) {
+          addrs = [];
+        }
+      }
+      
+      // Check if address already exists
+      const exists = addrs.some(a => 
+        a.address === address.address && 
+        a.city === address.city && 
+        a.province === address.province
+      );
+      
+      if (!exists) {
+        // Add new address at the beginning
+        addrs = [address, ...addrs];
+        // Keep only last 5 addresses
+        if (addrs.length > 5) {
+          addrs = addrs.slice(0, 5);
+        }
+        localStorage.setItem('glowhive_addresses', JSON.stringify(addrs));
+      }
+      return addrs;
+    } catch (e) {
+      console.error('Error saving address:', e);
+      return [];
+    }
+  };
+
   const handleNext = () => {
-    // ── Phone is always required ──
     if (!editingProfile) {
       const currentProfile = savedProfile ?? profile;
-      if (!currentProfile?.phone?.trim()) {
+      if (!currentProfile?.phone?.trim() || currentProfile.phone.replace(/\D/g, '').length < 10) {
         setEditingProfile(true);
         setProfileErrors({ phone: 'Phone number is required to continue' });
         return;
@@ -349,29 +460,36 @@ export default function CheckoutPage() {
     if (!profileOk || !addrOk) return;
 
     const finalProfile = editingProfile ? profile : (savedProfile ?? profile);
-    localStorage.setItem('glowhive_profile', JSON.stringify(finalProfile));
+    
+    try {
+      localStorage.setItem('glowhive_profile', JSON.stringify(finalProfile));
+    } catch (_) {}
+    
     setSavedProfile(finalProfile);
     setEditingProfile(false);
 
-    let addrs = [...savedAddresses];
+    // ── Save address to localStorage (keeps ALL addresses) ──
     if (addingAddress) {
-      addrs = [addrForm, ...addrs.filter((_, i) => i < 4)];
-      localStorage.setItem('glowhive_addresses', JSON.stringify(addrs));
-      setSavedAddresses(addrs);
+      const savedAddrs = saveAddressToStorage(addrForm);
+      setSavedAddresses(savedAddrs);
       setSelectedAddrIdx(0);
       setAddingAddress(false);
     } else {
-      setAddrForm(savedAddresses[selectedAddrIdx]);
+      // Make sure we have the current address selected
+      const currentAddr = savedAddresses[selectedAddrIdx] || addrForm;
+      setAddrForm(currentAddr);
     }
     setStep(2);
   };
 
   const handlePlaceOrder = () => {
-    if (!selectedMethod) { alert('Please select a payment method'); return; }
+    if (!selectedMethod) { 
+      alert('Please select a payment method');
+      return; 
+    }
 
-    // ── Safety net: block order if phone still missing ──
     const fp = savedProfile ?? profile;
-    if (!fp?.phone?.trim()) {
+    if (!fp?.phone?.trim() || fp.phone.replace(/\D/g, '').length < 10) {
       setStep(1);
       setEditingProfile(true);
       setProfileErrors({ phone: 'Phone number is required to place an order' });
@@ -385,10 +503,30 @@ export default function CheckoutPage() {
     const order = {
       id: orderId,
       date: new Date().toISOString(),
-      items, profile: fp, address: fa,
+      items: checkoutItems.map(item => ({
+        id: item.id,
+        name: item.name,
+        price: item.price,
+        quantity: item.quantity,
+        image: item.image || null
+      })),
+      profile: {
+        firstName: fp.firstName || '',
+        lastName: fp.lastName || '',
+        email: fp.email || '',
+        phone: fp.phone || '',
+      },
+      address: {
+        address: fa.address || '',
+        city: fa.city || '',
+        province: fa.province || '',
+        postalCode: fa.postalCode || '',
+      },
       paymentMethod: selectedMethod.id,
       paymentName: selectedMethod.name,
-      subtotal, shipping, total,
+      subtotal: subtotal,
+      shipping: shipping,
+      total: total,
       status: 'placed',
       statusHistory: [{ status: 'placed', label: 'Order Placed', time: new Date().toISOString() }],
       estimatedDelivery: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000)
@@ -396,11 +534,53 @@ export default function CheckoutPage() {
     };
 
     try {
-      const existing = JSON.parse(localStorage.getItem('glowhive_orders') || '[]');
-      localStorage.setItem('glowhive_orders', JSON.stringify([order, ...existing]));
-    } catch (_) {}
+      // ── Save order ──
+      let existing = [];
+      try {
+        const existingStr = localStorage.getItem('glowhive_orders');
+        if (existingStr) {
+          existing = JSON.parse(existingStr);
+        }
+      } catch (_) {}
+      
+      const updated = [order, ...existing];
+      localStorage.setItem('glowhive_orders', JSON.stringify(updated));
+      
+      // ── Backup to scoped storage ──
+      if (user?.email) {
+        const scopedKey = `glowhive_${encodeURIComponent(user.email)}_orders`;
+        localStorage.setItem(scopedKey, JSON.stringify(updated));
+      }
+      
+      // ── Dispatch events ──
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('ordersUpdated'));
+        window.dispatchEvent(new StorageEvent('storage', {
+          key: 'glowhive_orders',
+          newValue: JSON.stringify(updated),
+          oldValue: JSON.stringify(existing),
+        }));
+      }
+      
+      // ─── REMOVE PURCHASED ITEMS FROM CART ───
+      const purchasedIds = checkoutItems.map(item => item.id);
+      if (typeof removePurchasedItems === 'function') {
+        removePurchasedItems(purchasedIds);
+      } else {
+        // Fallback: manually remove purchased items
+        const remainingItems = cartItems.filter(item => !purchasedIds.includes(item.id));
+        localStorage.setItem('glowhive_cart', JSON.stringify(remainingItems));
+        const remainingSelected = selectedItems.filter(id => !purchasedIds.includes(id));
+        localStorage.setItem('glowhive_cart_selected', JSON.stringify(remainingSelected));
+      }
+      
+    } catch (error) {
+      console.error('Error saving order:', error);
+      alert('There was an error placing your order. Please try again.');
+      setPlacing(false);
+      return;
+    }
 
-    if (clearCart) clearCart();
     setTimeout(() => router.push('/checkout/success?id=' + orderId), 400);
   };
 
@@ -446,6 +626,11 @@ export default function CheckoutPage() {
               </div>
             ))}
           </div>
+          
+          {/* Show selected items count */}
+          <p style={{ fontSize: '13px', color: '#8c6468', marginTop: '10px' }}>
+            {itemCount} item{itemCount !== 1 ? 's' : ''} selected for checkout
+          </p>
         </div>
       </div>
 
@@ -471,7 +656,7 @@ export default function CheckoutPage() {
                         </h2>
                         {editingProfile && (
                           <p style={{ fontSize: '11px', color: '#b76e79', margin: '2px 0 0', fontWeight: 600 }}>
-                             Fill all the box below to checkout.
+                            Please fill in your details to continue.
                           </p>
                         )}
                       </div>
@@ -497,19 +682,19 @@ export default function CheckoutPage() {
                       ].map(([lbl, val, col]) => (
                         <div key={lbl} style={{ background: '#fdf6f0', borderRadius: '10px', padding: '10px 14px', gridColumn: col }}>
                           <div style={{ fontSize: '10px', fontWeight: 700, color: '#b76e79', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '2px' }}>{lbl}</div>
-                          <div style={{ fontSize: '14px', fontWeight: 600, color: '#3d1f25' }}>{val}</div>
+                          <div style={{ fontSize: '14px', fontWeight: 600, color: '#3d1f25' }}>{val || '—'}</div>
                         </div>
                       ))}
                     </div>
                   ) : (
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
                       {[
-                        { key: 'firstName', label: 'First Name *', placeholder: 'Ram',          type: 'text' },
-                        { key: 'lastName',  label: 'Last Name *',  placeholder: 'Sharma',        type: 'text' },
-                        { key: 'email',     label: 'Email *',      placeholder: 'ram@email.com', type: 'email', col: '1/-1' },
-                        { key: 'phone',     label: 'Phone *',      placeholder: '98XXXXXXXX',    type: 'tel',   col: '1/-1' },
+                        { key: 'firstName', label: 'First Name *', placeholder: 'Ram', type: 'text' },
+                        { key: 'lastName', label: 'Last Name *', placeholder: 'Sharma', type: 'text' },
+                        { key: 'email', label: 'Email *', placeholder: 'ram@email.com', type: 'email', col: '1/-1' },
+                        { key: 'phone', label: 'Phone *', placeholder: '98XXXXXXXX', type: 'tel', col: '1/-1' },
                       ].map(f => (
-                        <div key={f.key} style={{ gridColumn: f.col }}>
+                        <div key={f.key} style={{ gridColumn: f.col || 'auto' }}>
                           <label style={labelStyle}>{f.label}</label>
                           <input
                             type={f.type}
@@ -603,7 +788,6 @@ export default function CheckoutPage() {
                               value={addrForm.province} 
                               onChange={e => {
                                 updateAddr('province', e.target.value);
-                                // Reset city when province changes
                                 setAddrForm(prev => ({ ...prev, city: '', postalCode: '' }));
                               }} 
                               style={{ ...inp(addrErrors.province), cursor: 'pointer' }}
@@ -732,10 +916,13 @@ export default function CheckoutPage() {
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '18px' }}>
               <Truck size={17} color="#b76e79" />
               <h3 style={{ fontSize: '15px', fontWeight: 800, color: '#3d1f25' }}>Order Summary</h3>
+              <span style={{ fontSize: '11px', color: '#b76e79', fontWeight: 600, marginLeft: 'auto' }}>
+                {itemCount} item{itemCount !== 1 ? 's' : ''}
+              </span>
             </div>
 
             <div style={{ maxHeight: '260px', overflowY: 'auto', marginBottom: '14px' }}>
-              {items.map(item => (
+              {checkoutItems.map(item => (
                 <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px', fontSize: '13px' }}>
                   <span style={{ color: '#8c6468', maxWidth: '160px', lineHeight: 1.4 }}>
                     {item.name} <span style={{ fontWeight: 700 }}>× {item.quantity}</span>

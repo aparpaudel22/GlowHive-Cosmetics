@@ -21,6 +21,43 @@ const inp = {
   color: '#1a0a0f', transition: 'border 0.2s',
 };
 
+// ─── Compress Image Helper ───
+const compressImage = (base64String) => {
+  return new Promise((resolve) => {
+    try {
+      const img = new Image();
+      img.src = base64String;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_SIZE = 150; // Max width/height in pixels
+        
+        let width = img.width;
+        let height = img.height;
+        
+        if (width > MAX_SIZE || height > MAX_SIZE) {
+          const ratio = Math.min(MAX_SIZE / width, MAX_SIZE / height);
+          width = Math.round(width * ratio);
+          height = Math.round(height * ratio);
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        // Compress to JPEG with 70% quality
+        const compressed = canvas.toDataURL('image/jpeg', 0.7);
+        resolve(compressed);
+      };
+      img.onerror = () => {
+        resolve(base64String);
+      };
+    } catch (e) {
+      resolve(base64String);
+    }
+  });
+};
+
 export default function AccountPage() {
   const router       = useRouter();
   const searchParams = useSearchParams();
@@ -61,18 +98,22 @@ export default function AccountPage() {
       
       // Load avatar - check multiple sources
       const av = localStorage.getItem('glowhive_avatar');
-      if (av) {
+      if (av && av.length < 400000) {
         setAvatar(av);
-      } else if (user?.picture && typeof user.picture === 'string') {
+      } else if (user?.picture && typeof user.picture === 'string' && user.picture.length < 400000) {
         setAvatar(user.picture);
       } else if (user?.email) {
         // Check if avatar exists in scoped storage
-        const scopedAvatar = localStorage.getItem(`glowhive_${encodeURIComponent(user.email)}_avatar`);
-        if (scopedAvatar) {
-          setAvatar(scopedAvatar);
-          // Also set it in generic storage for future use
-          localStorage.setItem('glowhive_avatar', scopedAvatar);
-        }
+        try {
+          const scopedAvatar = localStorage.getItem(`glowhive_${encodeURIComponent(user.email)}_avatar`);
+          if (scopedAvatar && scopedAvatar.length < 400000) {
+            setAvatar(scopedAvatar);
+            // Also set it in generic storage for future use
+            try {
+              localStorage.setItem('glowhive_avatar', scopedAvatar);
+            } catch (_) {}
+          }
+        } catch (_) {}
       }
     } catch (_) {}
   }, [hydrated, isAuthenticated, user]);
@@ -92,34 +133,73 @@ export default function AccountPage() {
     <AuthForm redirectMessage={from === 'checkout' ? 'Please sign in to complete your purchase.' : null} />
   );
 
-  // ── Photo upload ──
-  const handlePhotoChange = (e) => {
+  // ── Photo upload with compression and size limit ──
+  const handlePhotoChange = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 3 * 1024 * 1024) { toast.error('Photo must be under 3 MB.'); return; }
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const b64 = ev.target.result;
-      setAvatar(b64);
-      localStorage.setItem('glowhive_avatar', b64);
-      // Also save in scoped storage
-      if (user?.email) {
-        localStorage.setItem(`glowhive_${encodeURIComponent(user.email)}_avatar`, b64);
+    
+    if (file.size > 3 * 1024 * 1024) { 
+      toast.error('Photo must be under 3 MB.'); 
+      return; 
+    }
+    
+    try {
+      const reader = new FileReader();
+      reader.onload = async (ev) => {
+        const base64 = ev.target.result;
+        
+        // Compress the image to reduce size
+        let compressed = base64;
+        try {
+          compressed = await compressImage(base64);
+        } catch (_) {
+          compressed = base64;
+        }
+        
+        // Check if compressed image is still too large
+        if (compressed.length > 300000) {
+          toast.error('Image is still too large after compression. Please try a smaller image.');
+          return;
+        }
+        
+        setAvatar(compressed);
+        
+        // Save to generic storage
+        try {
+          localStorage.setItem('glowhive_avatar', compressed);
+        } catch (_) {
+          toast.error('Failed to save avatar. Image too large.');
+          return;
+        }
+        
+        // Save to scoped storage
+        if (user?.email) {
+          try {
+            localStorage.setItem(`glowhive_${encodeURIComponent(user.email)}_avatar`, compressed);
+          } catch (_) {
+            // Scoped storage failed, but generic worked
+            console.warn('Failed to save to scoped storage');
+          }
+        }
+        
         // Update in users list
         try {
           const users = JSON.parse(localStorage.getItem('glowhive_users') || '[]');
           const updatedUsers = users.map(u => {
             if (u.email === user.email) {
-              return { ...u, picture: b64 };
+              return { ...u, picture: compressed };
             }
             return u;
           });
           localStorage.setItem('glowhive_users', JSON.stringify(updatedUsers));
         } catch (_) {}
-      }
-      toast.success('Profile photo updated!');
-    };
-    reader.readAsDataURL(file);
+        
+        toast.success('Profile photo updated!');
+      };
+      reader.readAsDataURL(file);
+    } catch (error) {
+      toast.error('Failed to upload photo. Please try again.');
+    }
   };
 
   // ── Save personal details ──
@@ -196,7 +276,6 @@ export default function AccountPage() {
     { icon: <Truck size={14} color="#f43f68" />,      label: 'To Ship',    desc: 'Being prepared',        href: '/orders',           bg: '#fef1f4' },
     { icon: <CreditCard size={14} color="#c9a87c" />, label: 'To Pay',     desc: 'Cash on delivery',      href: '/orders/to-pay',    bg: '#fdf8ef' },
     { icon: <Package size={14} color="#5b8dd9" />,    label: 'To Receive', desc: 'On its way to you',     href: '/orders/to-receive', bg: '#eef3fd' },
-    // ── NEW: Returns link ──
     { icon: <RefreshCw size={14} color="#b76e79" />,  label: 'Returns',    desc: 'Manage your returns',   href: '/returns',          bg: '#fdf0f3' },
   ];
 
@@ -233,9 +312,9 @@ export default function AccountPage() {
                 cursor: 'pointer', overflow: 'hidden',
               }}
             >
-              {avatar ? (
+              {avatar && avatar.length < 400000 ? (
                 <img src={avatar} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
-              ) : user?.picture && typeof user.picture === 'string' ? (
+              ) : user?.picture && typeof user.picture === 'string' && user.picture.length < 400000 ? (
                 <img src={user.picture} alt={user.name || 'User'} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
               ) : (
                 <div style={{ width: '100%', height: '100%', borderRadius: '50%', background: '#f9e4ea', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -291,7 +370,7 @@ export default function AccountPage() {
               )}
             </AnimatePresence>
 
-            {/* Name + badge - FIXED: Only render user properties, not the user object */}
+            {/* Name + badge */}
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '6px' }}>
               <div>
                 <h1 style={{ fontSize: '22px', fontWeight: 800, color: '#1a0a0f', fontFamily: "'Playfair Display', Georgia, serif", marginBottom: '4px' }}>
@@ -521,7 +600,8 @@ export default function AccountPage() {
 
             {/* Sign out */}
             <motion.button
-              whileHover={{ scale: 1.02, background: '#fff0f3' }} whileTap={{ scale: 0.97 }}
+              whileHover={{ scale: 1.02, background: '#fff0f3' }}
+              whileTap={{ scale: 0.97 }}
               onClick={handleLogout}
               style={{
                 width: '100%', padding: '13px', background: '#fff',

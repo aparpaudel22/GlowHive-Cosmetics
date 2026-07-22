@@ -1,23 +1,42 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Trash2, Plus, Minus, ShoppingBag, Tag, ArrowRight, Package, X } from 'lucide-react';
+import { Trash2, Plus, Minus, ShoppingBag, Tag, ArrowRight, Package, X, Check } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import Footer from '@/components/Footer';
 
 const COUPONS = { GLOWHIVE15: 15, WELCOME10: 10, BEAUTY20: 20 };
 
 export default function CartPage() {
-  const { cartItems, removeFromCart, updateQuantity } = useCart();
-  const [coupon, setCoupon]             = useState('');
+  const { 
+    cartItems, 
+    selectedItems, 
+    removeFromCart, 
+    updateQuantity, 
+    toggleSelectItem,
+    selectAllItems,
+    deselectAllItems,
+    getSelectedCount,
+    getSelectedTotal
+  } = useCart();
+  
+  const [coupon, setCoupon] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState(null);
-  const [couponError, setCouponError]   = useState('');
+  const [couponError, setCouponError] = useState('');
 
-  const subtotal       = cartItems.reduce((sum, i) => sum + i.price * i.quantity, 0);
+  // Calculate totals based on selected items
+  const selectedCount = getSelectedCount?.() || 0;
+  const selectedSubtotal = getSelectedTotal?.() || 0;
+  
+  // All items subtotal (for display)
+  const allSubtotal = cartItems.reduce((sum, i) => sum + i.price * i.quantity, 0);
+  
+  // Use selected subtotal for calculations
+  const subtotal = selectedSubtotal > 0 ? selectedSubtotal : allSubtotal;
   const discountAmount = appliedCoupon ? Math.round(subtotal * (COUPONS[appliedCoupon] / 100)) : 0;
-  const shipping       = subtotal >= 5000 ? 0 : 299;
-  const total          = subtotal - discountAmount + shipping;
+  const shipping = subtotal >= 5000 ? 0 : 299;
+  const total = subtotal - discountAmount + shipping;
 
   const handleCoupon = () => {
     const code = coupon.trim().toUpperCase();
@@ -28,6 +47,8 @@ export default function CartPage() {
       setCouponError('Invalid code. Try: GLOWHIVE15, WELCOME10, or BEAUTY20');
     }
   };
+
+  const isAllSelected = cartItems.length > 0 && cartItems.every(item => selectedItems.includes(item.id));
 
   // ── Empty state ──
   if (cartItems.length === 0) {
@@ -45,7 +66,7 @@ export default function CartPage() {
             Your cart is empty
           </h2>
           <p style={{ color: '#9ca3af', marginBottom: '28px', fontSize: '15px' }}>
-            Looks like you haven't added anything yet.<br></br>Browse our collection and find something you'll love!
+            Looks like you haven't added anything yet.<br />Browse our collection and find something you'll love!
           </p>
           <Link href="/products" style={{
             background: '#b76e79', color: '#fff',
@@ -61,7 +82,6 @@ export default function CartPage() {
     );
   }
 
-  // ── Filled cart ──
   return (
     <div style={{ minHeight: '100vh', background: '#fff8f5' }}>
 
@@ -74,6 +94,11 @@ export default function CartPage() {
               ({cartItems.length} {cartItems.length === 1 ? 'item' : 'items'})
             </span>
           </h1>
+          {selectedCount > 0 && selectedCount < cartItems.length && (
+            <p style={{ fontSize: '14px', color: '#8c6468', marginTop: '4px' }}>
+              {selectedCount} item{selectedCount !== 1 ? 's' : ''} selected for checkout
+            </p>
+          )}
         </div>
       </div>
 
@@ -82,64 +107,145 @@ export default function CartPage() {
 
           {/* ── Cart items ── */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-            {cartItems.map((item, index) => (
-              <div key={item.id ?? index} style={{
-                background: '#fff', border: '1px solid #fde8ec',
-                borderRadius: '16px', padding: '18px',
-                display: 'flex', gap: '16px', alignItems: 'center',
-              }}>
-                {/* Image */}
-                <Link href={`/Products/${item.id}`} style={{ textDecoration: 'none', flexShrink: 0 }}>
-                  <div style={{ width: '88px', height: '88px', borderRadius: '12px', overflow: 'hidden', background: '#fdf6f0' }}>
-                    <img src={item.image} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  </div>
-                </Link>
+            
+            {/* ── Select All Controls ── */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '10px 4px',
+              borderBottom: '1px solid #fde8ec',
+              marginBottom: '4px',
+            }}>
+              <button
+                onClick={isAllSelected ? deselectAllItems : selectAllItems}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  color: '#3d1f25',
+                }}
+              >
+                <div style={{
+                  width: '18px',
+                  height: '18px',
+                  borderRadius: '4px',
+                  border: `2px solid ${isAllSelected ? '#b76e79' : '#d1d5db'}`,
+                  background: isAllSelected ? '#b76e79' : '#fff',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'all 0.2s',
+                }}>
+                  {isAllSelected && <Check size={12} color="#fff" />}
+                </div>
+                {isAllSelected ? 'Deselect All' : 'Select All'}
+              </button>
+              
+              {selectedCount > 0 && (
+                <span style={{
+                  fontSize: '12px',
+                  color: '#b76e79',
+                  fontWeight: 600,
+                }}>
+                  {selectedCount} selected
+                </span>
+              )}
+            </div>
 
-                {/* Name + category */}
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <p style={{ fontSize: '10px', color: '#b76e79', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '3px' }}>
-                    {item.category?.replace('-', ' ')}
-                  </p>
-                  <Link href={`/Products/${item.id}`} style={{ textDecoration: 'none' }}>
-                    <p style={{ fontSize: '15px', fontWeight: 600, color: '#3d1f25', marginBottom: '4px', lineHeight: 1.3 }}>
-                      {item.name}
-                    </p>
+            {cartItems.map((item, index) => {
+              const isSelected = selectedItems.includes(item.id);
+              
+              return (
+                <div key={item.id ?? index} style={{
+                  background: '#fff',
+                  border: `2px solid ${isSelected ? '#b76e79' : '#fde8ec'}`,
+                  borderRadius: '16px',
+                  padding: '18px',
+                  display: 'flex',
+                  gap: '16px',
+                  alignItems: 'center',
+                  transition: 'all 0.2s',
+                  boxShadow: isSelected ? '0 4px 16px rgba(183,110,121,0.08)' : 'none',
+                }}>
+                  {/* Checkbox */}
+                  <button
+                    onClick={() => toggleSelectItem(item.id)}
+                    style={{
+                      width: '24px',
+                      height: '24px',
+                      borderRadius: '6px',
+                      border: `2px solid ${isSelected ? '#b76e79' : '#d1d5db'}`,
+                      background: isSelected ? '#b76e79' : '#fff',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                      flexShrink: 0,
+                    }}
+                  >
+                    {isSelected && <Check size={14} color="#fff" />}
+                  </button>
+
+                  {/* Image */}
+                  <Link href={`/Products/${item.id}`} style={{ textDecoration: 'none', flexShrink: 0 }}>
+                    <div style={{ width: '88px', height: '88px', borderRadius: '12px', overflow: 'hidden', background: '#fdf6f0' }}>
+                      <img src={item.image} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    </div>
                   </Link>
-                  <p style={{ fontSize: '15px', fontWeight: 700, color: '#b76e79' }}>
-                    Rs. {item.price.toLocaleString()}
-                  </p>
-                </div>
 
-                {/* Qty control */}
-                <div style={{ display: 'flex', alignItems: 'center', border: '1.5px solid #fde8ec', borderRadius: '10px', overflow: 'hidden', flexShrink: 0 }}>
-                  <button
-                    onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                    style={{ background: 'none', border: 'none', width: '36px', height: '36px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#3d1f25' }}>
-                    <Minus size={13} />
-                  </button>
-                  <span style={{ width: '32px', textAlign: 'center', fontWeight: 700, color: '#3d1f25', fontSize: '14px' }}>
-                    {item.quantity}
-                  </span>
-                  <button
-                    onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                    style={{ background: 'none', border: 'none', width: '36px', height: '36px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#3d1f25' }}>
-                    <Plus size={13} />
-                  </button>
-                </div>
+                  {/* Name + category */}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ fontSize: '10px', color: '#b76e79', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '3px' }}>
+                      {item.category?.replace('-', ' ')}
+                    </p>
+                    <Link href={`/Products/${item.id}`} style={{ textDecoration: 'none' }}>
+                      <p style={{ fontSize: '15px', fontWeight: 600, color: '#3d1f25', marginBottom: '4px', lineHeight: 1.3 }}>
+                        {item.name}
+                      </p>
+                    </Link>
+                    <p style={{ fontSize: '15px', fontWeight: 700, color: '#b76e79' }}>
+                      Rs. {item.price.toLocaleString()}
+                    </p>
+                  </div>
 
-                {/* Line total + remove */}
-                <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                  <p style={{ fontWeight: 800, color: '#3d1f25', fontSize: '16px', marginBottom: '8px' }}>
-                    Rs. {(item.price * item.quantity).toLocaleString()}
-                  </p>
-                  <button
-                    onClick={() => removeFromCart(item.id)}
-                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#f87171', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', fontWeight: 600, marginLeft: 'auto' }}>
-                    <Trash2 size={13} /> Remove
-                  </button>
+                  {/* Qty control */}
+                  <div style={{ display: 'flex', alignItems: 'center', border: '1.5px solid #fde8ec', borderRadius: '10px', overflow: 'hidden', flexShrink: 0 }}>
+                    <button
+                      onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                      style={{ background: 'none', border: 'none', width: '36px', height: '36px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#3d1f25' }}>
+                      <Minus size={13} />
+                    </button>
+                    <span style={{ width: '32px', textAlign: 'center', fontWeight: 700, color: '#3d1f25', fontSize: '14px' }}>
+                      {item.quantity}
+                    </span>
+                    <button
+                      onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                      style={{ background: 'none', border: 'none', width: '36px', height: '36px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#3d1f25' }}>
+                      <Plus size={13} />
+                    </button>
+                  </div>
+
+                  {/* Line total + remove */}
+                  <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                    <p style={{ fontWeight: 800, color: '#3d1f25', fontSize: '16px', marginBottom: '8px' }}>
+                      Rs. {(item.price * item.quantity).toLocaleString()}
+                    </p>
+                    <button
+                      onClick={() => removeFromCart(item.id)}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#f87171', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', fontWeight: 600, marginLeft: 'auto' }}>
+                      <Trash2 size={13} /> Remove
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
 
             {/* Free shipping nudge */}
             {subtotal < 5000 && (
@@ -164,12 +270,22 @@ export default function CartPage() {
           <div style={{ background: '#fff', border: '1px solid #fde8ec', borderRadius: '20px', padding: '24px', position: 'sticky', top: '90px' }}>
             <h2 style={{ fontSize: '18px', fontWeight: 800, color: '#3d1f25', marginBottom: '20px' }}>
               Order Summary
+              {selectedCount > 0 && selectedCount < cartItems.length && (
+                <span style={{ fontSize: '13px', fontWeight: 600, color: '#b76e79', display: 'block', marginTop: '2px' }}>
+                  {selectedCount} of {cartItems.length} items selected
+                </span>
+              )}
+              {selectedCount === cartItems.length && (
+                <span style={{ fontSize: '13px', fontWeight: 600, color: '#22c55e', display: 'block', marginTop: '2px' }}>
+                  All items selected
+                </span>
+              )}
             </h2>
 
             {/* Price rows */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '13px', marginBottom: '20px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
-                <span style={{ color: '#6b7280' }}>Subtotal ({cartItems.reduce((s, i) => s + i.quantity, 0)} items)</span>
+                <span style={{ color: '#6b7280' }}>Subtotal ({selectedCount || cartItems.reduce((s, i) => s + i.quantity, 0)} items)</span>
                 <span style={{ fontWeight: 600, color: '#3d1f25' }}>Rs. {subtotal.toLocaleString()}</span>
               </div>
               {discountAmount > 0 && (
@@ -239,22 +355,47 @@ export default function CartPage() {
               </div>
             )}
 
-            {/* Checkout button */}
-            <Link href="/checkout" style={{ textDecoration: 'none', display: 'block' }}>
-              <button style={{
-                width: '100%', background: '#b76e79',
-                border: 'none', borderRadius: '12px',
-                color: '#fff', fontSize: '16px', fontWeight: 700,
-                padding: '16px', cursor: 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-                transition: 'background 0.2s',
-              }}
-                onMouseEnter={e => e.currentTarget.style.background = '#a05e6a'}
-                onMouseLeave={e => e.currentTarget.style.background = '#b76e79'}
+            {/* Checkout button - Disabled if no items selected */}
+            <Link href={selectedCount > 0 ? "/checkout" : "#"} style={{ textDecoration: 'none', display: 'block' }}>
+              <button
+                disabled={selectedCount === 0}
+                style={{
+                  width: '100%',
+                  background: selectedCount > 0 ? '#b76e79' : '#d1d5db',
+                  border: 'none',
+                  borderRadius: '12px',
+                  color: '#fff',
+                  fontSize: '16px',
+                  fontWeight: 700,
+                  padding: '16px',
+                  cursor: selectedCount > 0 ? 'pointer' : 'not-allowed',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  transition: 'background 0.2s',
+                }}
+                onMouseEnter={e => {
+                  if (selectedCount > 0) {
+                    e.currentTarget.style.background = '#a05e6a';
+                  }
+                }}
+                onMouseLeave={e => {
+                  if (selectedCount > 0) {
+                    e.currentTarget.style.background = '#b76e79';
+                  }
+                }}
               >
-                Proceed to Checkout <ArrowRight size={18} />
+                {selectedCount === 0 ? 'Select Items to Checkout' : 'Proceed to Checkout'}
+                {selectedCount > 0 && <ArrowRight size={18} />}
               </button>
             </Link>
+
+            {selectedCount === 0 && (
+              <p style={{ fontSize: '11px', color: '#f87171', textAlign: 'center', marginTop: '8px' }}>
+                Please select at least one item to proceed
+              </p>
+            )}
 
             <Link href="/products" style={{
               display: 'block', textAlign: 'center',
