@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ShoppingBag, Heart, Star, Sparkles } from 'lucide-react';
@@ -124,6 +124,36 @@ function NewArrivalCard({ product, addToCart }) {
 
 export default function NewArrivalsPage() {
   const { addToCart } = useCart();
+  const [windowWidth, setWindowWidth] = useState(0);
+
+  useEffect(() => {
+    // Set initial window width
+    setWindowWidth(window.innerWidth);
+    
+    // Handle resize
+    const handleResize = () => {
+      setWindowWidth(window.innerWidth);
+    };
+    
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Determine grid columns based on window width
+  const getGridColumns = () => {
+    if (windowWidth === 0) return 'repeat(3, 1fr)'; // Default for SSR
+    if (windowWidth < 480) return '1fr';
+    if (windowWidth < 768) return 'repeat(2, 1fr)';
+    if (windowWidth < 1024) return 'repeat(3, 1fr)';
+    return 'repeat(4, 1fr)';
+  };
+
+  const getStatsGridColumns = () => {
+    if (windowWidth === 0) return 'repeat(3, 1fr)'; // Default for SSR
+    if (windowWidth < 480) return '1fr';
+    if (windowWidth < 768) return 'repeat(3, 1fr)';
+    return 'repeat(3, 1fr)';
+  };
 
   return (
     <div style={{ minHeight: '100vh', background: '#fff8f5' }}>
@@ -150,7 +180,7 @@ export default function NewArrivalsPage() {
       <div style={{ maxWidth: '1280px', margin: '0 auto', padding: 'clamp(24px, 4vw, 40px) clamp(16px, 3vw, 28px)' }}>
         <div style={{ 
           display: 'grid', 
-          gridTemplateColumns: window.innerWidth < 480 ? '1fr' : window.innerWidth < 768 ? 'repeat(3, 1fr)' : 'repeat(3, 1fr)', 
+          gridTemplateColumns: getStatsGridColumns(),
           gap: '1px', 
           background: '#fde8ec', 
           borderRadius: '16px', 
@@ -167,7 +197,7 @@ export default function NewArrivalsPage() {
 
         <div style={{ 
           display: 'grid', 
-          gridTemplateColumns: window.innerWidth < 480 ? '1fr' : window.innerWidth < 768 ? 'repeat(2, 1fr)' : window.innerWidth < 1024 ? 'repeat(3, 1fr)' : 'repeat(4, 1fr)', 
+          gridTemplateColumns: getGridColumns(),
           gap: 'clamp(16px, 2vw, 22px)' 
         }}>
           {newArrivals.map(product => (

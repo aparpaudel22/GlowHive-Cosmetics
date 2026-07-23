@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, Star, ShoppingBag, Heart, Shield, Truck, RotateCcw, Package, Check } from 'lucide-react';
@@ -18,6 +18,20 @@ export default function ProductDetailPage() {
   const [wished, setWished]     = useState(false);
   const [added, setAdded]       = useState(false);
   const [activeTab, setActiveTab] = useState('description');
+  const [windowWidth, setWindowWidth] = useState(0);
+
+  useEffect(() => {
+    // Set initial window width
+    setWindowWidth(window.innerWidth);
+    
+    // Handle resize
+    const handleResize = () => {
+      setWindowWidth(window.innerWidth);
+    };
+    
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   if (!product) {
     return (
@@ -50,6 +64,9 @@ export default function ProductDetailPage() {
     ingredients: 'Aqua, Glycerin, Niacinamide, Sodium Hyaluronate, Panthenol, Allantoin, Tocopherol (Vitamin E), Phenoxyethanol, Ethylhexylglycerin. Full INCI list printed on packaging.',
     'how to use': 'Apply a small amount to cleansed skin. Gently massage in upward circular motions until fully absorbed. Use morning and/or evening. Always follow with SPF during the day.',
   };
+
+  // Use windowWidth state for responsive design
+  const isMobile = windowWidth < 768;
 
   return (
     <div style={{ minHeight: '100vh', background: '#fff8f5' }}>
@@ -88,8 +105,8 @@ export default function ProductDetailPage() {
         {/* Main grid - responsive */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: window.innerWidth < 768 ? '1fr' : '1fr 1fr',
-          gap: window.innerWidth < 768 ? '24px' : '48px',
+          gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
+          gap: isMobile ? '24px' : '48px',
           alignItems: 'start',
           marginBottom: 'clamp(40px, 6vw, 64px)',
         }}>
@@ -101,7 +118,7 @@ export default function ProductDetailPage() {
             overflow: 'hidden', 
             background: '#fdf6f0', 
             aspectRatio: '1 / 1',
-            maxWidth: window.innerWidth < 768 ? '100%' : '100%',
+            maxWidth: isMobile ? '100%' : '100%',
           }}>
             <img
               src={product.image}
@@ -255,7 +272,7 @@ export default function ProductDetailPage() {
             {/* Trust badges - responsive grid */}
             <div style={{ 
               display: 'grid', 
-              gridTemplateColumns: window.innerWidth < 480 ? '1fr' : '1fr 1fr', 
+              gridTemplateColumns: isMobile && windowWidth < 480 ? '1fr' : '1fr 1fr', 
               gap: '10px', 
               marginBottom: '28px' 
             }}>
@@ -315,7 +332,7 @@ export default function ProductDetailPage() {
             </h2>
             <div style={{
               display: 'grid',
-              gridTemplateColumns: window.innerWidth < 480 ? '1fr' : window.innerWidth < 640 ? 'repeat(2, 1fr)' : 'repeat(auto-fill, minmax(200px, 1fr))',
+              gridTemplateColumns: isMobile && windowWidth < 480 ? '1fr' : isMobile && windowWidth < 640 ? 'repeat(2, 1fr)' : 'repeat(auto-fill, minmax(200px, 1fr))',
               gap: '20px',
             }}>
               {related.map(p => (

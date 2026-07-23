@@ -12,29 +12,34 @@ export function CartProvider({ children }) {
   // Load cart from localStorage
   const loadCart = () => {
     try {
+      // Get cart items
       const saved = localStorage.getItem("glowhive_cart");
+      let parsedCart = [];
       if (saved) {
-        const parsed = JSON.parse(saved);
-        setCartItems(Array.isArray(parsed) ? parsed : []);
-        // Load selected items
-        const savedSelected = localStorage.getItem("glowhive_cart_selected");
-        if (savedSelected) {
-          const parsedSelected = JSON.parse(savedSelected);
-          setSelectedItems(Array.isArray(parsedSelected) ? parsedSelected : []);
-        } else {
-          // Select all items by default
-          const allIds = Array.isArray(parsed) ? parsed.map(item => item.id) : [];
-          setSelectedItems(allIds);
-        }
-      } else {
-        setCartItems([]);
-        setSelectedItems([]);
+        parsedCart = JSON.parse(saved);
+        if (!Array.isArray(parsedCart)) parsedCart = [];
       }
+      
+      // Get selected items
+      const savedSelected = localStorage.getItem("glowhive_cart_selected");
+      let parsedSelected = [];
+      if (savedSelected) {
+        parsedSelected = JSON.parse(savedSelected);
+        if (!Array.isArray(parsedSelected)) parsedSelected = [];
+      }
+      
+      // If no selected items but cart has items, select all
+      if (parsedSelected.length === 0 && parsedCart.length > 0) {
+        parsedSelected = parsedCart.map(item => item.id);
+      }
+      
+      setCartItems(parsedCart);
+      setSelectedItems(parsedSelected);
+      setIsLoading(false);
     } catch (error) {
       console.error("Error loading cart:", error);
       setCartItems([]);
       setSelectedItems([]);
-    } finally {
       setIsLoading(false);
     }
   };
@@ -53,26 +58,37 @@ export function CartProvider({ children }) {
       loadCart();
     };
 
+    // Listen for storage changes from other tabs/windows
+    const handleStorageChange = (e) => {
+      if (e.key === 'glowhive_cart') {
+        loadCart();
+      }
+      if (e.key === 'glowhive_cart_selected') {
+        const saved = localStorage.getItem('glowhive_cart_selected');
+        if (saved) {
+          try {
+            const parsed = JSON.parse(saved);
+            if (Array.isArray(parsed)) {
+              setSelectedItems(parsed);
+            }
+          } catch (error) {
+            console.error('Error parsing selected items:', error);
+          }
+        }
+      }
+    };
+
     if (typeof window !== 'undefined') {
       window.addEventListener('userLoggedIn', handleLogin);
       window.addEventListener('userLoggedOut', handleLogout);
-      window.addEventListener('storage', (e) => {
-        if (e.key === 'glowhive_cart') {
-          loadCart();
-        }
-        if (e.key === 'glowhive_cart_selected') {
-          const saved = localStorage.getItem('glowhive_cart_selected');
-          if (saved) {
-            setSelectedItems(JSON.parse(saved));
-          }
-        }
-      });
+      window.addEventListener('storage', handleStorageChange);
     }
 
     return () => {
       if (typeof window !== 'undefined') {
         window.removeEventListener('userLoggedIn', handleLogin);
         window.removeEventListener('userLoggedOut', handleLogout);
+        window.removeEventListener('storage', handleStorageChange);
       }
     };
   }, []);
@@ -101,38 +117,59 @@ export function CartProvider({ children }) {
 
   const addToCart = (product, quantity = 1) => {
     setCartItems((prev) => {
-      const existing = prev.find((i) => i.id === product.id);
+      const existingIndex = prev.findIndex((i) => i.id === product.id);
       let newCart;
-      if (existing) {
-        newCart = prev.map((i) =>
-          i.id === product.id
-            ? { ...i, quantity: i.quantity + quantity }
-            : i
-        );
+      
+      if (existingIndex !== -1) {
+        // Update existing item
+        newCart = [...prev];
+        newCart[existingIndex] = {
+          ...newCart[existingIndex],
+          quantity: newCart[existingIndex].quantity + quantity
+        };
       } else {
-        newCart = [...prev, { ...product, quantity }];
+        // Add new item with complete product data
+        newCart = [...prev, { 
+          ...product, 
+          quantity: quantity,
+          // Ensure all product properties are preserved
+          id: product.id,
+          name: product.name,
+          price: product.price,
+          image: product.image,
+          category: product.category,
+          originalPrice: product.originalPrice,
+          rating: product.rating,
+          reviews: product.reviews,
+          badge: product.badge,
+          description: product.description,
+          inStock: product.inStock
+        }];
       }
+      
       // Auto-select new item
       const newSelected = [...selectedItems];
       if (!newSelected.includes(product.id)) {
         newSelected.push(product.id);
         setSelectedItems(newSelected);
       }
+      
       return newCart;
     });
   };
 
   const removeFromCart = (id) => {
-    setCartItems((prev) => prev.filter((i) => i.id !== id));
+    setCartItems((prev) => {
+      const newCart = prev.filter((i) => i.id !== id);
+      return newCart;
+    });
     setSelectedItems((prev) => prev.filter((itemId) => itemId !== id));
   };
 
-  // ── NEW: Remove purchased items from cart ──
   const removePurchasedItems = (purchasedIds) => {
     if (!purchasedIds || purchasedIds.length === 0) return;
     setCartItems((prev) => {
       const newCart = prev.filter((i) => !purchasedIds.includes(i.id));
-      // Also remove from selected
       setSelectedItems((prevSelected) => prevSelected.filter((id) => !purchasedIds.includes(id)));
       return newCart;
     });
@@ -199,7 +236,7 @@ export function CartProvider({ children }) {
         selectedItems,
         addToCart,
         removeFromCart,
-        removePurchasedItems, // ← NEW
+        removePurchasedItems,
         updateQuantity,
         toggleSelectItem,
         selectAllItems,
