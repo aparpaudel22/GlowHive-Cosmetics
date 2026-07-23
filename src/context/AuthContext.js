@@ -157,7 +157,14 @@ export function AuthProvider({ children }) {
   const login = async (email, password) => {
     try {
       const users = JSON.parse(localStorage.getItem('glowhive_users') || '[]');
-      const found = users.find(u => u.email.toLowerCase() === email.toLowerCase());
+      
+      // FIXED: Added null/undefined checks before calling toLowerCase
+      const found = users.find(u => {
+        if (u && u.email && email) {
+          return u.email.toLowerCase() === email.toLowerCase();
+        }
+        return false;
+      });
       
       if (!found) {
         return { success: false, error: 'NO_ACCOUNT' };
@@ -202,7 +209,9 @@ export function AuthProvider({ children }) {
       }
 
       const users = JSON.parse(localStorage.getItem('glowhive_users') || '[]');
-      if (users.find(u => u.email.toLowerCase() === email.toLowerCase())) {
+      
+      // FIXED: Added null/undefined check for email in register
+      if (users.find(u => u && u.email && u.email.toLowerCase() === email.toLowerCase())) {
         return { success: false, error: 'ALREADY_EXISTS' };
       }
 
@@ -311,7 +320,9 @@ export function AuthProvider({ children }) {
     try {
       const users = JSON.parse(localStorage.getItem('glowhive_users') || '[]');
       const normalizedEmail = googleUser.email.toLowerCase();
-      const existingUser = users.find(u => u.email.toLowerCase() === normalizedEmail);
+      
+      // FIXED: Added null/undefined check for email in Google login
+      const existingUser = users.find(u => u && u.email && u.email.toLowerCase() === normalizedEmail);
 
       let u;
       if (existingUser) {

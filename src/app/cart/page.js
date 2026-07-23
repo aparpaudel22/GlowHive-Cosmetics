@@ -220,7 +220,8 @@ export default function CartPage() {
                     {isSelected && <Check size={13} color="#fff" />}
                   </button>
 
-                  <Link href={`/Products/${item.id}`} style={{ textDecoration: 'none', flexShrink: 0 }}>
+                  {/* FIXED: Changed to match product page routing - using /products/ instead of /product/ */}
+                  <Link href={`/products/${item.id}`} style={{ textDecoration: 'none', flexShrink: 0 }}>
                     <div style={{ 
                       width: 'clamp(60px, 8vw, 88px)',
                       height: 'clamp(60px, 8vw, 88px)',
@@ -243,7 +244,8 @@ export default function CartPage() {
                     }}>
                       {item.category?.replace('-', ' ')}
                     </p>
-                    <Link href={`/Products/${item.id}`} style={{ textDecoration: 'none' }}>
+                    {/* FIXED: Changed to match product page routing - using /products/ instead of /product/ */}
+                    <Link href={`/products/${item.id}`} style={{ textDecoration: 'none' }}>
                       <p style={{ 
                         fontSize: 'clamp(13px, 1.3vw, 15px)', 
                         fontWeight: 600, 
