@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Heart, ShoppingBag, Star, X, Share2, BellRing } from 'lucide-react';
+import { Heart, ShoppingBag, Star, X, Share2, BellRing, Loader2, Check } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { useWishlist } from '@/context/WishlistContext';
 import { products } from '@/data/Products';
@@ -19,7 +19,11 @@ function WishlistCard({ product, addToCart, removeFromWishlist }) {
     e.preventDefault();
     addToCart(product);
     setAdded(true);
-    setTimeout(() => setAdded(false), 1500);
+    setTimeout(() => {
+      setAdded(false);
+      // Remove from wishlist after adding to cart
+      removeFromWishlist(product.id);
+    }, 1500);
   };
 
   const handleRemove = (e) => {
@@ -56,7 +60,7 @@ function WishlistCard({ product, addToCart, removeFromWishlist }) {
             alt={product.name}
             style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
           />
-          {discount && (
+          {discount && discount > 0 && (
             <div style={{
               position: 'absolute', top: '12px', left: '12px',
               background: '#b76e79', color: '#fff',
@@ -170,12 +174,67 @@ function WishlistCard({ product, addToCart, removeFromWishlist }) {
 
 export default function WishlistPage() {
   const { addToCart } = useCart();
-  const { wishlistIds, removeFromWishlist, clearWishlist } = useWishlist();
+  const { 
+    wishlistIds, 
+    removeFromWishlist, 
+    clearWishlist, 
+    removeMultipleFromWishlist,
+    isLoading 
+  } = useWishlist();
+  const [windowWidth, setWindowWidth] = useState(0);
+  const [addingAll, setAddingAll] = useState(false);
 
+  useEffect(() => {
+    setWindowWidth(window.innerWidth);
+    const handleResize = () => {
+      setWindowWidth(window.innerWidth);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div style={{ minHeight: '100vh', background: '#fff8f5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Loader2 size={40} style={{ animation: 'spin 1s linear infinite', color: '#b76e79' }} />
+        <style>{`
+          @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+          }
+        `}</style>
+      </div>
+    );
+  }
+
+  // Get all wishlist products (ALL products can be added to wishlist)
   const wishlistProducts = products.filter(p => wishlistIds.includes(p.id));
 
+  // Handle "Add All to Cart"
   const handleAddAll = () => {
-    wishlistProducts.forEach(p => p.inStock && addToCart(p));
+    const inStockProducts = wishlistProducts.filter(p => p.inStock);
+    if (inStockProducts.length === 0) return;
+    
+    setAddingAll(true);
+    
+    // Add all in-stock products to cart
+    inStockProducts.forEach(p => addToCart(p));
+    
+    // Remove all added products from wishlist
+    const addedIds = inStockProducts.map(p => p.id);
+    removeMultipleFromWishlist(addedIds);
+    
+    setAddingAll(false);
+  };
+
+  // Get grid columns based on window width
+  const getGridColumns = () => {
+    if (windowWidth === 0) return 'repeat(4, 1fr)';
+    if (windowWidth < 480) return '1fr';
+    if (windowWidth < 640) return 'repeat(2, 1fr)';
+    if (windowWidth < 1024) return 'repeat(3, 1fr)';
+    return 'repeat(4, 1fr)';
   };
 
   // ── Empty state ──
@@ -211,6 +270,8 @@ export default function WishlistPage() {
     );
   }
 
+  const inStockCount = wishlistProducts.filter(p => p.inStock).length;
+
   // ── Filled wishlist ──
   return (
     <div style={{ minHeight: '100vh', background: '#fff8f5' }}>
@@ -227,12 +288,17 @@ export default function WishlistPage() {
             </h1>
             <p style={{ fontSize: 'clamp(13px, 1.1vw, 14px)', color: '#8c6468', marginTop: '4px' }}>
               {wishlistProducts.length} saved {wishlistProducts.length === 1 ? 'item' : 'items'}
+              {inStockCount > 0 && ` (${inStockCount} in stock)`}
             </p>
           </div>
 
           <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
             <button
-              onClick={() => navigator.share ? navigator.share({ title: 'My GlowHive Wishlist', url: window.location.href }) : null}
+              onClick={() => {
+                if (navigator.share) {
+                  navigator.share({ title: 'My GlowHive Wishlist', url: window.location.href });
+                }
+              }}
               style={{
                 background: 'transparent', border: '1.5px solid #3d1f25', color: '#3d1f25',
                 borderRadius: '10px', padding: 'clamp(9px, 1vw, 11px) clamp(16px, 2vw, 22px)', 
@@ -241,16 +307,36 @@ export default function WishlistPage() {
               }}>
               <Share2 size={14} /> Share Wishlist
             </button>
-            <button
-              onClick={handleAddAll}
-              style={{
-                background: '#b76e79', border: 'none', color: '#fff',
-                borderRadius: '10px', padding: 'clamp(9px, 1vw, 11px) clamp(16px, 2vw, 22px)', 
-                fontSize: 'clamp(12px, 1.1vw, 13px)', fontWeight: 700,
-                cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px',
-              }}>
-              <ShoppingBag size={14} /> Add All To Cart
-            </button>
+            {inStockCount > 0 && (
+              <button
+                onClick={handleAddAll}
+                disabled={addingAll}
+                style={{
+                  background: addingAll ? '#22c55e' : '#b76e79', 
+                  border: 'none', color: '#fff',
+                  borderRadius: '10px', padding: 'clamp(9px, 1vw, 11px) clamp(16px, 2vw, 22px)', 
+                  fontSize: 'clamp(12px, 1.1vw, 13px)', fontWeight: 700,
+                  cursor: addingAll ? 'default' : 'pointer', 
+                  display: 'flex', alignItems: 'center', gap: '8px',
+                  opacity: addingAll ? 0.8 : 1,
+                }}
+              >
+                {addingAll ? <Check size={14} /> : <ShoppingBag size={14} />}
+                {addingAll ? 'Added All!' : `Add All (${inStockCount})`}
+              </button>
+            )}
+            {wishlistProducts.length > 0 && (
+              <button
+                onClick={clearWishlist}
+                style={{
+                  background: 'transparent', border: '1.5px solid #d32f2f', color: '#d32f2f',
+                  borderRadius: '10px', padding: 'clamp(9px, 1vw, 11px) clamp(16px, 2vw, 22px)', 
+                  fontSize: 'clamp(12px, 1.1vw, 13px)', fontWeight: 700,
+                  cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px',
+                }}>
+                <X size={14} /> Clear All
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -259,7 +345,7 @@ export default function WishlistPage() {
       <div style={{ maxWidth: '1280px', margin: '0 auto', padding: 'clamp(24px, 4vw, 40px) clamp(16px, 3vw, 28px)' }}>
         <div style={{
           display: 'grid',
-          gridTemplateColumns: window.innerWidth < 480 ? '1fr' : window.innerWidth < 640 ? 'repeat(2, 1fr)' : window.innerWidth < 1024 ? 'repeat(3, 1fr)' : 'repeat(4, 1fr)',
+          gridTemplateColumns: getGridColumns(),
           gap: 'clamp(16px, 2vw, 22px)',
         }}>
           {wishlistProducts.map(product => (

@@ -1,18 +1,40 @@
 "use client";
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useState, useEffect, useRef } from "react";
 
 const CartContext = createContext(null);
+
+// Helper to get current user email from localStorage
+const getCurrentUserEmail = () => {
+  if (typeof window === 'undefined') return null;
+  try {
+    const user = localStorage.getItem('glowhive_user');
+    if (user) {
+      const parsed = JSON.parse(user);
+      return parsed?.email || null;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+};
+
+// Helper to get scoped key for a user
+const getScopedKey = (email, key) => {
+  return `glowhive_${encodeURIComponent(email)}_${key}`;
+};
 
 export function CartProvider({ children }) {
   const [cartItems, setCartItems] = useState([]);
   const [selectedItems, setSelectedItems] = useState([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const isInitialMount = useRef(true);
 
   // Load cart from localStorage
   const loadCart = () => {
+    if (typeof window === 'undefined') return;
+    
     try {
-      // Get cart items
       const saved = localStorage.getItem("glowhive_cart");
       let parsedCart = [];
       if (saved) {
@@ -20,7 +42,6 @@ export function CartProvider({ children }) {
         if (!Array.isArray(parsedCart)) parsedCart = [];
       }
       
-      // Get selected items
       const savedSelected = localStorage.getItem("glowhive_cart_selected");
       let parsedSelected = [];
       if (savedSelected) {
@@ -35,12 +56,40 @@ export function CartProvider({ children }) {
       
       setCartItems(parsedCart);
       setSelectedItems(parsedSelected);
-      setIsLoading(false);
     } catch (error) {
       console.error("Error loading cart:", error);
       setCartItems([]);
       setSelectedItems([]);
+    } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Sync cart to scoped storage (for the current user)
+  const syncToScopedStorage = () => {
+    if (typeof window === 'undefined') return;
+    
+    const email = getCurrentUserEmail();
+    if (!email) return;
+    
+    try {
+      // Sync cart
+      const cartData = localStorage.getItem('glowhive_cart');
+      if (cartData) {
+        const scopedCartKey = getScopedKey(email, 'cart');
+        localStorage.setItem(scopedCartKey, cartData);
+        console.log('Synced cart to scoped storage:', cartData);
+      }
+      
+      // Sync selected items
+      const selectedData = localStorage.getItem('glowhive_cart_selected');
+      if (selectedData) {
+        const scopedSelectedKey = getScopedKey(email, 'cart_selected');
+        localStorage.setItem(scopedSelectedKey, selectedData);
+        console.log('Synced selected items to scoped storage:', selectedData);
+      }
+    } catch (error) {
+      console.error('Error syncing to scoped storage:', error);
     }
   };
 
@@ -49,16 +98,67 @@ export function CartProvider({ children }) {
     loadCart();
   }, []);
 
-  // Listen for auth events to reload cart
+  // Listen for user login/logout to reload cart
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
     const handleLogin = () => {
       loadCart();
     };
+    
     const handleLogout = () => {
       loadCart();
     };
+    
+    window.addEventListener('userLoggedIn', handleLogin);
+    window.addEventListener('userLoggedOut', handleLogout);
+    
+    return () => {
+      window.removeEventListener('userLoggedIn', handleLogin);
+      window.removeEventListener('userLoggedOut', handleLogout);
+    };
+  }, []);
 
-    // Listen for storage changes from other tabs/windows
+  // Save cart to localStorage whenever it changes (but not on initial mount)
+  useEffect(() => {
+    if (typeof window === 'undefined' || isLoading) return;
+    
+    // Skip saving on initial mount to prevent overwriting
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+    
+    try {
+      localStorage.setItem("glowhive_cart", JSON.stringify(cartItems));
+      // Sync to scoped storage after saving
+      syncToScopedStorage();
+    } catch (error) {
+      console.error("Error saving cart:", error);
+    }
+  }, [cartItems, isLoading]);
+
+  // Save selected items to localStorage
+  useEffect(() => {
+    if (typeof window === 'undefined' || isLoading) return;
+    
+    if (isInitialMount.current) {
+      return;
+    }
+    
+    try {
+      localStorage.setItem("glowhive_cart_selected", JSON.stringify(selectedItems));
+      // Sync to scoped storage after saving
+      syncToScopedStorage();
+    } catch (error) {
+      console.error("Error saving selected items:", error);
+    }
+  }, [selectedItems, isLoading]);
+
+  // Listen for storage changes from other tabs/windows
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
     const handleStorageChange = (e) => {
       if (e.key === 'glowhive_cart') {
         loadCart();
@@ -78,42 +178,9 @@ export function CartProvider({ children }) {
       }
     };
 
-    if (typeof window !== 'undefined') {
-      window.addEventListener('userLoggedIn', handleLogin);
-      window.addEventListener('userLoggedOut', handleLogout);
-      window.addEventListener('storage', handleStorageChange);
-    }
-
-    return () => {
-      if (typeof window !== 'undefined') {
-        window.removeEventListener('userLoggedIn', handleLogin);
-        window.removeEventListener('userLoggedOut', handleLogout);
-        window.removeEventListener('storage', handleStorageChange);
-      }
-    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
-
-  // Save cart to localStorage whenever it changes
-  useEffect(() => {
-    if (!isLoading) {
-      try {
-        localStorage.setItem("glowhive_cart", JSON.stringify(cartItems));
-      } catch (error) {
-        console.error("Error saving cart:", error);
-      }
-    }
-  }, [cartItems, isLoading]);
-
-  // Save selected items to localStorage
-  useEffect(() => {
-    if (!isLoading) {
-      try {
-        localStorage.setItem("glowhive_cart_selected", JSON.stringify(selectedItems));
-      } catch (error) {
-        console.error("Error saving selected items:", error);
-      }
-    }
-  }, [selectedItems, isLoading]);
 
   const addToCart = (product, quantity = 1) => {
     setCartItems((prev) => {
@@ -121,48 +188,32 @@ export function CartProvider({ children }) {
       let newCart;
       
       if (existingIndex !== -1) {
-        // Update existing item
         newCart = [...prev];
         newCart[existingIndex] = {
           ...newCart[existingIndex],
           quantity: newCart[existingIndex].quantity + quantity
         };
       } else {
-        // Add new item with complete product data
         newCart = [...prev, { 
           ...product, 
           quantity: quantity,
-          // Ensure all product properties are preserved
-          id: product.id,
-          name: product.name,
-          price: product.price,
-          image: product.image,
-          category: product.category,
-          originalPrice: product.originalPrice,
-          rating: product.rating,
-          reviews: product.reviews,
-          badge: product.badge,
-          description: product.description,
-          inStock: product.inStock
         }];
       }
       
       // Auto-select new item
-      const newSelected = [...selectedItems];
-      if (!newSelected.includes(product.id)) {
-        newSelected.push(product.id);
-        setSelectedItems(newSelected);
-      }
+      setSelectedItems((prevSelected) => {
+        if (!prevSelected.includes(product.id)) {
+          return [...prevSelected, product.id];
+        }
+        return prevSelected;
+      });
       
       return newCart;
     });
   };
 
   const removeFromCart = (id) => {
-    setCartItems((prev) => {
-      const newCart = prev.filter((i) => i.id !== id);
-      return newCart;
-    });
+    setCartItems((prev) => prev.filter((i) => i.id !== id));
     setSelectedItems((prev) => prev.filter((itemId) => itemId !== id));
   };
 
@@ -200,11 +251,11 @@ export function CartProvider({ children }) {
   const clearCart = () => {
     setCartItems([]);
     setSelectedItems([]);
-    try {
+    if (typeof window !== 'undefined') {
       localStorage.setItem("glowhive_cart", JSON.stringify([]));
       localStorage.setItem("glowhive_cart_selected", JSON.stringify([]));
-    } catch (error) {
-      console.error("Error clearing cart:", error);
+      // Also sync empty cart to scoped storage
+      syncToScopedStorage();
     }
   };
 
@@ -229,30 +280,30 @@ export function CartProvider({ children }) {
     return sum + price * i.quantity;
   }, 0);
 
+  const value = {
+    cartItems,
+    selectedItems,
+    addToCart,
+    removeFromCart,
+    removePurchasedItems,
+    updateQuantity,
+    toggleSelectItem,
+    selectAllItems,
+    deselectAllItems,
+    clearCart,
+    getSelectedItems,
+    getSelectedTotal,
+    getSelectedCount,
+    totalItems,
+    totalPrice,
+    isCartOpen,
+    setIsCartOpen,
+    isLoading,
+    refreshCart: loadCart,
+  };
+
   return (
-    <CartContext.Provider
-      value={{
-        cartItems,
-        selectedItems,
-        addToCart,
-        removeFromCart,
-        removePurchasedItems,
-        updateQuantity,
-        toggleSelectItem,
-        selectAllItems,
-        deselectAllItems,
-        clearCart,
-        getSelectedItems,
-        getSelectedTotal,
-        getSelectedCount,
-        totalItems,
-        totalPrice,
-        isCartOpen,
-        setIsCartOpen,
-        isLoading,
-        refreshCart: loadCart,
-      }}
-    >
+    <CartContext.Provider value={value}>
       {children}
     </CartContext.Provider>
   );
@@ -260,6 +311,8 @@ export function CartProvider({ children }) {
 
 export function useCart() {
   const ctx = useContext(CartContext);
-  if (!ctx) throw new Error("useCart must be used inside CartProvider");
+  if (!ctx) {
+    throw new Error("useCart must be used inside CartProvider");
+  }
   return ctx;
 }

@@ -11,6 +11,7 @@ import {
 import { useAuth } from '@/context/AuthContext';
 import AuthForm from '@/components/AuthForm';
 import toast from 'react-hot-toast';
+import { HiReceiptRefund } from 'react-icons/hi';
 
 const BLANK_PROFILE = { firstName: '', lastName: '', phone: '' };
 
@@ -234,6 +235,7 @@ export default function AccountPage() {
     { icon: <Truck size={14} color="#f43f68" />,      label: 'To Ship',    desc: 'Being prepared',        href: '/orders',           bg: '#fef1f4' },
     { icon: <CreditCard size={14} color="#c9a87c" />, label: 'To Pay',     desc: 'Cash on delivery',      href: '/orders/to-pay',    bg: '#fdf8ef' },
     { icon: <Package size={14} color="#5b8dd9" />,    label: 'To Receive', desc: 'On its way to you',     href: '/orders/to-receive', bg: '#eef3fd' },
+    { icon: <HiReceiptRefund size={14} color="#b76e79" />,  label: 'To Receive Refund', desc: 'Track your refunds', href: '/orders/to-receive-refund', bg: '#fdf0f3' },
     { icon: <RefreshCw size={14} color="#b76e79" />,  label: 'Returns',    desc: 'Manage your returns',   href: '/returns',          bg: '#fdf0f3' },
   ];
 

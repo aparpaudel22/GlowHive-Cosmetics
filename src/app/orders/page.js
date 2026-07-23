@@ -64,7 +64,22 @@ export default function OrdersPage() {
 
   const loadOrders = () => {
     try {
-      const stored = localStorage.getItem('glowhive_orders');
+      let stored = null;
+      
+      // First try to get user-specific orders
+      try {
+        const userData = JSON.parse(localStorage.getItem('glowhive_user') || 'null');
+        if (userData?.email) {
+          const scopedKey = `glowhive_${encodeURIComponent(userData.email)}_orders`;
+          stored = localStorage.getItem(scopedKey);
+        }
+      } catch (e) {}
+      
+      // If no user-specific orders, try generic
+      if (!stored) {
+        stored = localStorage.getItem('glowhive_orders');
+      }
+      
       if (stored) {
         const parsed = JSON.parse(stored);
         const sorted = parsed.sort((a, b) => new Date(b.date) - new Date(a.date));
@@ -94,7 +109,9 @@ export default function OrdersPage() {
     const handleOrderUpdate = () => loadOrders();
     window.addEventListener('ordersUpdated', handleOrderUpdate);
     window.addEventListener('storage', (e) => {
-      if (e.key === 'glowhive_orders') loadOrders();
+      if (e.key === 'glowhive_orders' || (e.key && e.key.includes('glowhive_') && e.key.includes('_orders'))) {
+        loadOrders();
+      }
     });
     window.addEventListener('userLoggedIn', handleOrderUpdate);
     window.addEventListener('userLoggedOut', handleOrderUpdate);
@@ -132,6 +149,7 @@ export default function OrdersPage() {
   const confirmCancel = () => {
     const finalReason = cancelReason === 'Other' ? cancelOther.trim() : cancelReason;
     if (!finalReason) return;
+    
     const updated = orders.map(o =>
       o.id === cancelTarget.id
         ? {
@@ -146,15 +164,51 @@ export default function OrdersPage() {
           }
         : o
     );
+    
     setOrders(updated);
     localStorage.setItem('glowhive_orders', JSON.stringify(updated));
+    
+    try {
+      const userData = JSON.parse(localStorage.getItem('glowhive_user') || 'null');
+      if (userData?.email) {
+        const scopedKey = `glowhive_${encodeURIComponent(userData.email)}_orders`;
+        localStorage.setItem(scopedKey, JSON.stringify(updated));
+      }
+    } catch (e) {}
+    
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('ordersUpdated'));
+      window.dispatchEvent(new StorageEvent('storage', {
+        key: 'glowhive_orders',
+        newValue: JSON.stringify(updated),
+      }));
+    }
+    
     setCancelStep(3);
   };
 
   const confirmDelete = () => {
     const updated = orders.filter(o => o.id !== deleteTarget.id);
+    
     setOrders(updated);
     localStorage.setItem('glowhive_orders', JSON.stringify(updated));
+    
+    try {
+      const userData = JSON.parse(localStorage.getItem('glowhive_user') || 'null');
+      if (userData?.email) {
+        const scopedKey = `glowhive_${encodeURIComponent(userData.email)}_orders`;
+        localStorage.setItem(scopedKey, JSON.stringify(updated));
+      }
+    } catch (e) {}
+    
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('ordersUpdated'));
+      window.dispatchEvent(new StorageEvent('storage', {
+        key: 'glowhive_orders',
+        newValue: JSON.stringify(updated),
+      }));
+    }
+    
     setDeleteTarget(null);
   };
 
@@ -164,7 +218,6 @@ export default function OrdersPage() {
     <>
       <div style={{ minHeight: '100vh', background: '#fdf6f0', paddingBottom: '60px' }}>
 
-        {/* Hero */}
         <div style={{
           background: 'linear-gradient(135deg, #3d1f25 0%, #b76e79 60%, #e8a4b0 100%)',
           padding: 'clamp(40px, 6vh, 60px) clamp(16px, 3vw, 28px)',

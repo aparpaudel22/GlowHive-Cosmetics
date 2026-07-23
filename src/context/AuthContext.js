@@ -31,63 +31,142 @@ function backupData(email) {
   });
 }
 
-/** Copy user-scoped storage → generic keys (RESTORE) - FIXED to merge addresses */
+/** Copy user-scoped storage → generic keys (RESTORE) - FIXED for cart and selected items */
 function restoreData(email) {
   console.log('Restoring data for:', email);
   DATA_KEYS.forEach(k => {
     try {
       const val = localStorage.getItem(scoped(email, k));
-      if (val !== null && val !== '[]' && val !== '{}') {
-        if (k === 'avatar' && val.length > 500000) {
-          console.warn('Avatar too large, skipping restore');
-          return;
-        }
-        
-        // ─── SPECIAL HANDLING FOR ADDRESSES ───
-        // Merge addresses instead of overwriting
-        if (k === 'addresses') {
-          try {
-            const existing = localStorage.getItem(generic(k));
-            let existingArr = [];
-            if (existing) {
-              existingArr = JSON.parse(existing);
-              if (!Array.isArray(existingArr)) existingArr = [];
-            }
-            
-            const scopedArr = JSON.parse(val);
-            if (Array.isArray(scopedArr) && scopedArr.length > 0) {
-              // Merge: add scoped addresses that don't exist in generic
-              const merged = [...scopedArr];
-              existingArr.forEach(addr => {
-                const exists = merged.some(a => 
-                  a.address === addr.address && 
-                  a.city === addr.city && 
-                  a.province === addr.province
-                );
-                if (!exists) {
-                  merged.push(addr);
-                }
-              });
-              localStorage.setItem(generic(k), JSON.stringify(merged));
-              console.log(`Merged addresses:`, merged);
-              return;
-            }
-          } catch (e) {
-            console.warn('Failed to merge addresses:', e);
-          }
-        }
-        
-        // For all other keys, restore normally
-        localStorage.setItem(generic(k), val);
-        console.log(`Restored ${k}:`, val.substring(0, 100));
-      } else {
-        // Don't overwrite with empty if there's existing data
-        const existing = localStorage.getItem(generic(k));
-        if (!existing || existing === '[]' || existing === '{}') {
-          localStorage.setItem(generic(k), JSON.stringify([]));
-        }
-        console.log(`Restored ${k}: kept existing or set empty`);
+      
+      // Skip if no data or empty
+      if (val === null || val === '[]' || val === '{}') {
+        console.log(`No data to restore for ${k}, keeping existing`);
+        return;
       }
+      
+      if (k === 'avatar' && val.length > 500000) {
+        console.warn('Avatar too large, skipping restore');
+        return;
+      }
+      
+      // ─── SPECIAL HANDLING FOR CART ───
+      if (k === 'cart') {
+        try {
+          const currentCart = localStorage.getItem(generic('cart'));
+          const scopedCart = JSON.parse(val);
+          
+          if (!Array.isArray(scopedCart) || scopedCart.length === 0) {
+            console.log('Scoped cart is empty, keeping current');
+            return;
+          }
+          
+          let currentCartArray = [];
+          if (currentCart) {
+            currentCartArray = JSON.parse(currentCart);
+            if (!Array.isArray(currentCartArray)) currentCartArray = [];
+          }
+          
+          // If current cart has items, merge them (avoid duplicates by id)
+          if (currentCartArray.length > 0) {
+            const merged = [...currentCartArray];
+            scopedCart.forEach(scopedItem => {
+              const exists = merged.some(item => item.id === scopedItem.id);
+              if (!exists) {
+                merged.push(scopedItem);
+              } else {
+                // If exists, keep the one with higher quantity
+                const existingIndex = merged.findIndex(item => item.id === scopedItem.id);
+                if (existingIndex !== -1 && scopedItem.quantity > merged[existingIndex].quantity) {
+                  merged[existingIndex].quantity = scopedItem.quantity;
+                }
+              }
+            });
+            localStorage.setItem(generic('cart'), JSON.stringify(merged));
+            console.log(`Merged cart items:`, merged);
+            return;
+          } else {
+            // If current cart is empty, restore saved cart
+            localStorage.setItem(generic('cart'), val);
+            console.log(`Restored cart:`, val);
+            return;
+          }
+        } catch (e) {
+          console.warn('Failed to merge cart:', e);
+          localStorage.setItem(generic('cart'), val);
+        }
+        return;
+      }
+      
+      // ─── SPECIAL HANDLING FOR CART_SELECTED ───
+      if (k === 'cart_selected') {
+        try {
+          const currentSelected = localStorage.getItem(generic('cart_selected'));
+          const scopedSelected = JSON.parse(val);
+          
+          if (!Array.isArray(scopedSelected) || scopedSelected.length === 0) {
+            console.log('Scoped selected is empty, keeping current');
+            return;
+          }
+          
+          let currentSelectedArray = [];
+          if (currentSelected) {
+            currentSelectedArray = JSON.parse(currentSelected);
+            if (!Array.isArray(currentSelectedArray)) currentSelectedArray = [];
+          }
+          
+          // Merge selected items
+          const merged = [...currentSelectedArray];
+          scopedSelected.forEach(id => {
+            if (!merged.includes(id)) {
+              merged.push(id);
+            }
+          });
+          localStorage.setItem(generic('cart_selected'), JSON.stringify(merged));
+          console.log(`Merged selected items:`, merged);
+          return;
+        } catch (e) {
+          console.warn('Failed to merge selected items:', e);
+          localStorage.setItem(generic('cart_selected'), val);
+        }
+        return;
+      }
+      
+      // ─── SPECIAL HANDLING FOR ADDRESSES ───
+      if (k === 'addresses') {
+        try {
+          const existing = localStorage.getItem(generic(k));
+          let existingArr = [];
+          if (existing) {
+            existingArr = JSON.parse(existing);
+            if (!Array.isArray(existingArr)) existingArr = [];
+          }
+          
+          const scopedArr = JSON.parse(val);
+          if (Array.isArray(scopedArr) && scopedArr.length > 0) {
+            const merged = [...scopedArr];
+            existingArr.forEach(addr => {
+              const exists = merged.some(a => 
+                a.address === addr.address && 
+                a.city === addr.city && 
+                a.province === addr.province
+              );
+              if (!exists) {
+                merged.push(addr);
+              }
+            });
+            localStorage.setItem(generic(k), JSON.stringify(merged));
+            console.log(`Merged addresses:`, merged);
+            return;
+          }
+        } catch (e) {
+          console.warn('Failed to merge addresses:', e);
+        }
+      }
+      
+      // For all other keys, restore normally
+      localStorage.setItem(generic(k), val);
+      console.log(`Restored ${k}:`, val.substring(0, 100));
+      
     } catch (e) {
       console.warn(`Failed to restore ${k}:`, e);
     }
@@ -158,7 +237,6 @@ export function AuthProvider({ children }) {
     try {
       const users = JSON.parse(localStorage.getItem('glowhive_users') || '[]');
       
-      // FIXED: Added null/undefined checks before calling toLowerCase
       const found = users.find(u => {
         if (u && u.email && email) {
           return u.email.toLowerCase() === email.toLowerCase();
@@ -182,6 +260,8 @@ export function AuthProvider({ children }) {
       };
       
       localStorage.setItem('glowhive_user', JSON.stringify(u));
+      
+      // CRITICAL FIX: Restore user data BEFORE setting user state
       restoreData(found.email);
       
       if (typeof window !== 'undefined') {
@@ -210,7 +290,6 @@ export function AuthProvider({ children }) {
 
       const users = JSON.parse(localStorage.getItem('glowhive_users') || '[]');
       
-      // FIXED: Added null/undefined check for email in register
       if (users.find(u => u && u.email && u.email.toLowerCase() === email.toLowerCase())) {
         return { success: false, error: 'ALREADY_EXISTS' };
       }
@@ -321,7 +400,6 @@ export function AuthProvider({ children }) {
       const users = JSON.parse(localStorage.getItem('glowhive_users') || '[]');
       const normalizedEmail = googleUser.email.toLowerCase();
       
-      // FIXED: Added null/undefined check for email in Google login
       const existingUser = users.find(u => u && u.email && u.email.toLowerCase() === normalizedEmail);
 
       let u;
@@ -366,7 +444,10 @@ export function AuthProvider({ children }) {
       }
 
       localStorage.setItem('glowhive_user', JSON.stringify(u));
+      
+      // CRITICAL FIX: Restore user data BEFORE setting user state
       restoreData(u.email);
+      
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new Event('userLoggedIn'));
       }

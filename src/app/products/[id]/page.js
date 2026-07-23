@@ -5,20 +5,25 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, Star, ShoppingBag, Heart, Shield, Truck, RotateCcw, Package, Check } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
+import { useWishlist } from '@/context/WishlistContext';
 import { products } from '@/data/Products';
 import Footer from '@/components/Footer';
+import toast from 'react-hot-toast';
 
 export default function ProductDetailPage() {
   const { id } = useParams();
   const router = useRouter();
   const product = products.find(p => p.id === Number(id));
   const { addToCart } = useCart();
+  const { isWishlisted, toggleWishlist } = useWishlist();
 
   const [qty, setQty]           = useState(1);
-  const [wished, setWished]     = useState(false);
   const [added, setAdded]       = useState(false);
   const [activeTab, setActiveTab] = useState('description');
   const [windowWidth, setWindowWidth] = useState(0);
+
+  // Check if product is in wishlist
+  const wished = product ? isWishlisted(product.id) : false;
 
   useEffect(() => {
     // Set initial window width
@@ -56,7 +61,17 @@ export default function ProductDetailPage() {
   const handleAddToCart = () => {
     for (let i = 0; i < qty; i++) addToCart(product);
     setAdded(true);
+    toast.success(`${product.name} added to cart! 🛍️`);
     setTimeout(() => setAdded(false), 2000);
+  };
+
+  const handleWishlistToggle = () => {
+    toggleWishlist(product.id);
+    if (wished) {
+      toast.success('Removed from wishlist 💔');
+    } else {
+      toast.success('Added to wishlist 💗');
+    }
   };
 
   const tabContent = {
@@ -252,9 +267,9 @@ export default function ProductDetailPage() {
                 {added ? 'Added to Cart!' : 'Add to Cart'}
               </button>
 
-              {/* Wishlist */}
+              {/* Wishlist - FIXED: Using wishlist context with toast */}
               <button
-                onClick={() => setWished(w => !w)}
+                onClick={handleWishlistToggle}
                 style={{
                   background: wished ? '#fde8ec' : '#fff',
                   border: `1.5px solid ${wished ? '#b76e79' : '#fde8ec'}`,

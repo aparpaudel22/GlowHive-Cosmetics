@@ -119,20 +119,86 @@ export default function ToReceivePage() {
   const [orders, setOrders] = useState([]);
   const [confirm, setConfirm] = useState(null);
 
+  const loadOrders = () => {
+    try {
+      let allOrders = JSON.parse(localStorage.getItem('glowhive_orders') || '[]');
+      
+      try {
+        const userData = JSON.parse(localStorage.getItem('glowhive_user') || 'null');
+        if (userData?.email) {
+          const scopedKey = `glowhive_${encodeURIComponent(userData.email)}_orders`;
+          const scopedOrders = localStorage.getItem(scopedKey);
+          if (scopedOrders) {
+            const parsedScoped = JSON.parse(scopedOrders);
+            if (parsedScoped.length > 0) {
+              allOrders = parsedScoped;
+            }
+          }
+        }
+      } catch (e) {}
+      
+      setOrders(allOrders.filter(o => 
+        TO_RECEIVE_STATUSES.includes(o.status) &&
+        o.status !== 'cancelled'
+      ));
+    } catch (_) { setOrders([]); }
+  };
+
   useEffect(() => {
     if (!hydrated) return;
     if (!isAuthenticated) { router.replace('/account'); return; }
-    try {
-      const all = JSON.parse(localStorage.getItem('glowhive_orders') || '[]');
-      setOrders(all.filter(o => TO_RECEIVE_STATUSES.includes(o.status)));
-    } catch (_) { setOrders([]); }
+    loadOrders();
   }, [hydrated, isAuthenticated]);
 
+  useEffect(() => {
+    const handleUpdate = () => loadOrders();
+    window.addEventListener('ordersUpdated', handleUpdate);
+    window.addEventListener('storage', (e) => {
+      if (e.key === 'glowhive_orders' || (e.key && e.key.includes('glowhive_') && e.key.includes('_orders'))) {
+        loadOrders();
+      }
+    });
+    return () => {
+      window.removeEventListener('ordersUpdated', handleUpdate);
+      window.removeEventListener('storage', handleUpdate);
+    };
+  }, []);
+
   const deleteOrder = (id) => {
-    const all = JSON.parse(localStorage.getItem('glowhive_orders') || '[]');
-    const updated = all.filter(o => o.id !== id);
+    let allOrders = JSON.parse(localStorage.getItem('glowhive_orders') || '[]');
+    
+    try {
+      const userData = JSON.parse(localStorage.getItem('glowhive_user') || 'null');
+      if (userData?.email) {
+        const scopedKey = `glowhive_${encodeURIComponent(userData.email)}_orders`;
+        const scopedOrders = localStorage.getItem(scopedKey);
+        if (scopedOrders) {
+          allOrders = JSON.parse(scopedOrders);
+        }
+      }
+    } catch (e) {}
+    
+    const updated = allOrders.filter(o => o.id !== id);
+    
     localStorage.setItem('glowhive_orders', JSON.stringify(updated));
-    setOrders(prev => prev.filter(o => o.id !== id));
+    
+    try {
+      const userData = JSON.parse(localStorage.getItem('glowhive_user') || 'null');
+      if (userData?.email) {
+        const scopedKey = `glowhive_${encodeURIComponent(userData.email)}_orders`;
+        localStorage.setItem(scopedKey, JSON.stringify(updated));
+      }
+    } catch (e) {}
+    
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('ordersUpdated'));
+      window.dispatchEvent(new StorageEvent('storage', {
+        key: 'glowhive_orders',
+        newValue: JSON.stringify(updated),
+      }));
+    }
+    
+    loadOrders();
     setConfirm(null);
   };
 

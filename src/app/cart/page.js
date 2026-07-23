@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Trash2, Plus, Minus, ShoppingBag, Tag, ArrowRight, Package, X, Check } from 'lucide-react';
+import { Trash2, Plus, Minus, ShoppingBag, Tag, ArrowRight, Package, X, Check, Loader2 } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import Footer from '@/components/Footer';
 
@@ -18,12 +18,28 @@ export default function CartPage() {
     selectAllItems,
     deselectAllItems,
     getSelectedCount,
-    getSelectedTotal
+    getSelectedTotal,
+    isLoading
   } = useCart();
   
   const [coupon, setCoupon] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [couponError, setCouponError] = useState('');
+
+  // Show loading state while cart is loading
+  if (isLoading) {
+    return (
+      <div style={{ minHeight: '100vh', background: '#fff8f5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Loader2 size={40} style={{ animation: 'spin 1s linear infinite', color: '#b76e79' }} />
+        <style>{`
+          @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+          }
+        `}</style>
+      </div>
+    );
+  }
 
   const selectedCount = getSelectedCount?.() || 0;
   const selectedSubtotal = getSelectedTotal?.() || 0;
@@ -220,7 +236,6 @@ export default function CartPage() {
                     {isSelected && <Check size={13} color="#fff" />}
                   </button>
 
-                  {/* FIXED: Changed to match product page routing - using /products/ instead of /product/ */}
                   <Link href={`/products/${item.id}`} style={{ textDecoration: 'none', flexShrink: 0 }}>
                     <div style={{ 
                       width: 'clamp(60px, 8vw, 88px)',
@@ -244,7 +259,6 @@ export default function CartPage() {
                     }}>
                       {item.category?.replace('-', ' ')}
                     </p>
-                    {/* FIXED: Changed to match product page routing - using /products/ instead of /product/ */}
                     <Link href={`/products/${item.id}`} style={{ textDecoration: 'none' }}>
                       <p style={{ 
                         fontSize: 'clamp(13px, 1.3vw, 15px)', 

@@ -4,8 +4,10 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Search, SlidersHorizontal, ShoppingBag, Heart, Star, X } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
+import { useWishlist } from '@/context/WishlistContext';
 import { products } from '@/data/Products';
 import Footer from '@/components/Footer';
+import toast from 'react-hot-toast';
 
 const CATEGORY_LIST = [
   { value: '',          label: 'All Products' },
@@ -27,14 +29,27 @@ const SORT_OPTIONS = [
 
 function ProductCard({ product, addToCart }) {
   const router = useRouter();
-  const [wished, setWished] = useState(false);
-  const [added, setAdded]   = useState(false);
+  const { isWishlisted, toggleWishlist } = useWishlist();
+  const [added, setAdded] = useState(false);
+
+  const wished = isWishlisted(product.id);
 
   const handleAdd = (e) => {
     e.stopPropagation();
     addToCart(product);
     setAdded(true);
+    toast.success(`${product.name} added to cart! 🛍️`);
     setTimeout(() => setAdded(false), 1500);
+  };
+
+  const handleWishlist = (e) => {
+    e.stopPropagation();
+    toggleWishlist(product.id);
+    if (wished) {
+      toast.success('Removed from wishlist 💔');
+    } else {
+      toast.success('Added to wishlist 💗');
+    }
   };
 
   const discount = product.originalPrice > product.price
@@ -70,10 +85,21 @@ function ProductCard({ product, addToCart }) {
           </div>
         )}
         <button
-          onClick={e => { e.stopPropagation(); setWished(w => !w); }}
-          style={{ position: 'absolute', top: '10px', right: '10px', background: '#fff', border: 'none', borderRadius: '50%', width: '30px', height: '30px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}
+          onClick={handleWishlist}
+          style={{ 
+            position: 'absolute', top: '10px', right: '10px', 
+            background: wished ? '#fde8ec' : '#fff', 
+            border: '1px solid #fde8ec',
+            borderRadius: '50%', width: '30px', height: '30px', 
+            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', 
+            boxShadow: '0 2px 8px rgba(0,0,0,0.1)' 
+          }}
         >
-          <Heart size={13} fill={wished ? '#b76e79' : 'none'} color={wished ? '#b76e79' : '#9ca3af'} />
+          <Heart 
+            size={13} 
+            fill={wished ? '#b76e79' : 'none'} 
+            color={wished ? '#b76e79' : '#9ca3af'} 
+          />
         </button>
       </div>
       <div style={{ padding: '14px', flex: 1, display: 'flex', flexDirection: 'column' }}>

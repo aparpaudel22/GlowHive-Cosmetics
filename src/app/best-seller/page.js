@@ -5,8 +5,10 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ShoppingBag, Heart, Star, Sparkles } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
+import { useWishlist } from '@/context/WishlistContext';
 import { products } from '@/data/Products';
 import Footer from '@/components/Footer';
+import toast from 'react-hot-toast';
 
 const bestSellers = [
   ...products.filter(p => p.badge === 'Bestseller' || p.badge === 'Best Seller'),
@@ -24,19 +26,27 @@ const uniqueBestSellers = bestSellers.reduce((acc, current) => {
 
 function BestSellerCard({ product, addToCart }) {
   const router = useRouter();
-  const [wished, setWished] = useState(false);
-  const [added, setAdded]   = useState(false);
+  const { isWishlisted, toggleWishlist } = useWishlist();
+  const [added, setAdded] = useState(false);
+
+  const wished = isWishlisted(product.id);
 
   const handleAdd = (e) => {
     e.stopPropagation();
     addToCart(product);
     setAdded(true);
+    toast.success(`${product.name} added to cart! 🛍️`);
     setTimeout(() => setAdded(false), 1500);
   };
 
   const handleWish = (e) => {
     e.stopPropagation();
-    setWished(w => !w);
+    toggleWishlist(product.id);
+    if (wished) {
+      toast.success('Removed from wishlist 💔');
+    } else {
+      toast.success('Added to wishlist 💗');
+    }
   };
 
   return (
@@ -77,8 +87,10 @@ function BestSellerCard({ product, addToCart }) {
           onClick={handleWish}
           style={{
             position: 'absolute', top: '12px', right: '12px',
-            background: '#fff', border: 'none', borderRadius: '50%',
-            width: '32px', height: '32px', cursor: 'pointer',
+            background: wished ? '#fde8ec' : '#fff', 
+            border: '1px solid #fde8ec',
+            borderRadius: '50%', width: '32px', height: '32px', 
+            cursor: 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
           }}
@@ -141,6 +153,7 @@ export default function BestsellerPage() {
   }, []);
 
   const getGridColumns = () => {
+    if (windowWidth === 0) return 'repeat(4, 1fr)';
     if (windowWidth < 480) return '1fr';
     if (windowWidth < 768) return 'repeat(2, 1fr)';
     if (windowWidth < 1024) return 'repeat(3, 1fr)';
@@ -148,6 +161,7 @@ export default function BestsellerPage() {
   };
 
   const getStatsGridColumns = () => {
+    if (windowWidth === 0) return 'repeat(3, 1fr)';
     if (windowWidth < 480) return '1fr';
     if (windowWidth < 768) return 'repeat(3, 1fr)';
     return 'repeat(3, 1fr)';
